@@ -122,7 +122,7 @@ export async function POST(request: NextRequest, { params }: Params) {
     .eq('id', institucion_id)
     .single()
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://libretadigital.app'
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? 'https://libretadigital.app').replace(/\/$/, '')
   let setup_url: string | undefined
   if (isNewUser) {
     const { data: linkData } = await admin.auth.admin.generateLink({
