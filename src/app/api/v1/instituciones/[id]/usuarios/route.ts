@@ -78,6 +78,7 @@ export async function POST(request: NextRequest, { params }: Params) {
     .single()
 
   let persona_id: string
+  let isNewUser = false
 
   if (existente) {
     persona_id = existente.id
@@ -106,6 +107,7 @@ export async function POST(request: NextRequest, { params }: Params) {
 
     if (personaError) return Err.server(personaError.message)
     persona_id = persona.id
+    isNewUser = true
   }
 
   const { error: membError } = await admin
@@ -120,12 +122,24 @@ export async function POST(request: NextRequest, { params }: Params) {
     .eq('id', institucion_id)
     .single()
 
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://libretadigital.app'
+  let setup_url: string | undefined
+  if (isNewUser) {
+    const { data: linkData } = await admin.auth.admin.generateLink({
+      type: 'recovery',
+      email,
+      options: { redirectTo: `${appUrl}/auth/callback?redirect=/update-password` },
+    })
+    setup_url = linkData?.properties?.action_link
+  }
+
   void sendBienvenida(email, {
     nombre,
     email,
     institucion_nombre: inst?.nombre ?? '',
     rol,
-    login_url: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://libretadigital.app'}/login`,
+    login_url: `${appUrl}/login`,
+    setup_url,
   })
 
   return created({ persona_id, email, rol })

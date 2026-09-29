@@ -9,6 +9,7 @@ export interface BienvenidaEmailProps {
   institucion_nombre: string
   rol: string
   login_url: string
+  setup_url?: string
 }
 
 const ROL_LABELS: Record<string, string> = {
@@ -23,6 +24,7 @@ export function BienvenidaEmail({
   institucion_nombre,
   rol,
   login_url,
+  setup_url,
 }: BienvenidaEmailProps) {
   const rolLabel = ROL_LABELS[rol] ?? rol
 
@@ -50,12 +52,26 @@ export function BienvenidaEmail({
                 <strong>{email}</strong>.
               </Text>
 
-              <Button
-                href={login_url}
-                className="bg-gray-900 text-white px-24 py-12 rounded-8 block text-center no-underline box-border text-14 font-medium"
-              >
-                Ingresar a la plataforma
-              </Button>
+              {setup_url ? (
+                <>
+                  <Text className="text-15 text-gray-700 m-0 mb-16">
+                    Como primer paso, creá tu contraseña haciendo clic en el botón:
+                  </Text>
+                  <Button
+                    href={setup_url}
+                    className="bg-gray-900 text-white px-24 py-12 rounded-8 block text-center no-underline box-border text-14 font-medium"
+                  >
+                    Crear contraseña
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  href={login_url}
+                  className="bg-gray-900 text-white px-24 py-12 rounded-8 block text-center no-underline box-border text-14 font-medium"
+                >
+                  Ingresar a la plataforma
+                </Button>
+              )}
 
               <Hr className="border-none border-t border-solid border-gray-200 my-24" />
               <Text className="text-12 text-gray-400 m-0">

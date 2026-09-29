@@ -9,9 +9,9 @@ import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Separator } from '@/components/ui/separator'
 import { Loader2, AlertCircle } from 'lucide-react'
+import Link from 'next/link'
 
 export default function LoginForm() {
-  const supabase = createClient()
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirectTo = searchParams.get('redirect') ?? '/dashboard'
@@ -26,6 +26,7 @@ export default function LoginForm() {
     setLoading(true)
     setError(null)
 
+    const supabase = createClient()
     const { error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error) {
@@ -40,6 +41,7 @@ export default function LoginForm() {
 
   async function handleGoogleLogin() {
     setLoading(true)
+    const supabase = createClient()
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -96,6 +98,14 @@ export default function LoginForm() {
             {loading && <Loader2 data-icon="inline-start" className="animate-spin" />}
             {loading ? 'Ingresando...' : 'Ingresar'}
           </Button>
+          <div className="text-center">
+            <Link
+              href="/forgot-password"
+              className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
+            >
+              ¿Olvidaste tu contraseña?
+            </Link>
+          </div>
         </form>
 
         <div className="flex items-center gap-3">

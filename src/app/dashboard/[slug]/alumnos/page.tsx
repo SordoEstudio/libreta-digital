@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/table'
 import { GraduationCap } from 'lucide-react'
 import NuevoAlumnoSheet from './nuevo-alumno-sheet'
+import AsignarResponsableSheet from './asignar-responsable-sheet'
 
 type Params = { params: Promise<{ slug: string }> }
 
@@ -77,13 +78,20 @@ export default async function AlumnosPage({ params }: Params) {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      render={<Link href={`/dashboard/${slug}/libreta/${alumno.id}`} />}
-                    >
-                      Ver libreta
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        render={<Link href={`/dashboard/${slug}/libreta/${alumno.id}`} />}
+                      >
+                        Ver libreta
+                      </Button>
+                      <AsignarResponsableSheet
+                        alumnoId={alumno.id}
+                        alumnoNombre={alumno.nombre}
+                        instId={inst.id}
+                      />
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

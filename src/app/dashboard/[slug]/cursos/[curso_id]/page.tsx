@@ -1,4 +1,4 @@
-import { requireSession, isSuperadmin, hasAnyRole } from '@/lib/auth'
+import { requireSession, isSuperadmin, hasAnyRole, hasRole } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { BookOpen, Users } from 'lucide-react'
+import NuevaMateriaSheet from './nueva-materia-sheet'
 
 type Params = { params: Promise<{ slug: string; curso_id: string }> }
 
@@ -56,7 +57,12 @@ export default async function CursoDetallePage({ params }: Params) {
       </div>
 
       <div>
-        <h2 className="text-lg font-medium mb-3">Materias</h2>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-medium">Materias</h2>
+          {(isSuperadmin(session) || hasRole(session, inst.id, 'admin')) && (
+            <NuevaMateriaSheet cursoId={curso_id} instId={inst.id} />
+          )}
+        </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {materias?.map(materia => {
             const docentes = (materia.materia_docentes ?? []) as Array<{ personas: { nombre: string } | null }>
