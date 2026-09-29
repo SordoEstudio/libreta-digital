@@ -50,3 +50,38 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   if (error) return Err.server(error.message)
   return ok(data)
 }
+
+export async function DELETE(_request: NextRequest, { params }: Params) {
+  const { id } = await params
+  const session = await getSession()
+  if (!session) return Err.unauthorized()
+
+  const supabase = await createClient()
+  const { data: año } = await supabase
+    .from('años_lectivos')
+    .select('institucion_id, activo')
+    .eq('id', id)
+    .is('deleted_at', null)
+    .single()
+
+  if (!año) return Err.notFound()
+  if (!isSuperadmin(session) && !hasRole(session, año.institucion_id, 'admin')) return Err.forbidden()
+  if (año.activo) return Err.validation('No se puede eliminar el año lectivo activo. Activá otro primero.')
+
+  // Guard: block if year has courses (which would cascade-delete grades)
+  const { count } = await supabase
+    .from('cursos')
+    .select('id', { count: 'exact', head: true })
+    .eq('año_lectivo_id', id)
+    .is('deleted_at', null)
+
+  if ((count ?? 0) > 0) return Err.validation('El año tiene cursos asociados. Eliminá los cursos primero.')
+
+  const { error } = await supabase
+    .from('años_lectivos')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', id)
+
+  if (error) return Err.server(error.message)
+  return ok({ deleted: true })
+}

@@ -7,6 +7,7 @@ import { Calendar } from 'lucide-react'
 import Link from 'next/link'
 import NuevoAñoSheet from './nuevo-año-sheet'
 import ActivarAñoButton from './activar-año-button'
+import EliminarAñoButton from './eliminar-año-button'
 
 type Params = { params: Promise<{ slug: string }> }
 
@@ -68,7 +69,10 @@ export default async function AñosLectivosPage({ params }: Params) {
                       {año.nombre}
                       {año.activo && <Badge>Activo</Badge>}
                     </CardTitle>
-                    {!año.activo && <ActivarAñoButton añoId={año.id} />}
+                    <div className="flex items-center gap-1">
+                      {!año.activo && <ActivarAñoButton añoId={año.id} />}
+                      {!año.activo && <EliminarAñoButton añoId={año.id} añoNombre={año.nombre} />}
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>
