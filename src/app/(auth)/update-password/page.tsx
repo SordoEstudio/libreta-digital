@@ -16,20 +16,30 @@ export default function UpdatePasswordPage() {
   const [linkError, setLinkError] = useState<string | null>(null)
 
   useEffect(() => {
-    // Detect #error= in hash (expired/invalid link from Supabase)
     const hash = window.location.hash
+    const params = new URLSearchParams(hash.replace('#', ''))
+
     if (hash.includes('error=')) {
-      const params = new URLSearchParams(hash.replace('#', ''))
       const code = params.get('error_code')
-      if (code === 'otp_expired') {
-        setLinkError('El link expiró. Solicitá uno nuevo desde "¿Olvidaste tu contraseña?".')
-      } else {
-        setLinkError('El link es inválido o ya fue usado. Solicitá uno nuevo.')
-      }
+      setLinkError(
+        code === 'otp_expired'
+          ? 'El link expiró. Solicitá uno nuevo desde "¿Olvidaste tu contraseña?".'
+          : 'El link es inválido o ya fue usado. Solicitá uno nuevo.'
+      )
       return
     }
-    // Initialize Supabase client on mount so it processes #access_token from URL hash
-    createClient()
+
+    const access_token = params.get('access_token')
+    const refresh_token = params.get('refresh_token')
+    if (!access_token || !refresh_token) {
+      setLinkError('Link inválido. Solicitá uno nuevo.')
+      return
+    }
+
+    // @supabase/ssr uses PKCE by default — must call setSession explicitly for implicit flow tokens
+    createClient().auth.setSession({ access_token, refresh_token }).then(({ error }) => {
+      if (error) setLinkError('El link es inválido o ya fue usado. Solicitá uno nuevo.')
+    })
   }, [])
   const [confirm, setConfirm] = useState('')
   const [loading, setLoading] = useState(false)
