@@ -3,6 +3,8 @@ import { updateSession } from '@/lib/supabase/middleware'
 
 const PUBLIC_ROUTES = [
   '/login',
+  '/forgot-password',
+  '/update-password',
   '/auth/callback',
   '/auth/error',
   '/api/health',
