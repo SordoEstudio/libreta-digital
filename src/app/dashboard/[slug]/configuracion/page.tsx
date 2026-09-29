@@ -35,7 +35,7 @@ export default async function ConfiguracionPage({ params }: Params) {
           <CardHeader>
             <div className="flex items-center gap-2">
               <Calendar className="size-5 text-muted-foreground" />
-              <CardTitle className="text-base">Años lectivos</CardTitle>
+              <CardTitle className="text-base">Períodos</CardTitle>
             </div>
             <CardDescription>
               Creá y gestioná los años lectivos y sus períodos.
@@ -45,7 +45,7 @@ export default async function ConfiguracionPage({ params }: Params) {
             <Button
               variant="outline"
               size="sm"
-              render={<Link href={`/dashboard/${slug}/configuracion/años-lectivos`} />}
+              render={<Link href={`/dashboard/${slug}/configuracion/periodos`} />}
             >
               Gestionar
             </Button>

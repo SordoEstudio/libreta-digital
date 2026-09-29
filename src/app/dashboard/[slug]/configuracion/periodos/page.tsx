@@ -43,7 +43,7 @@ export default async function AñosLectivosPage({ params }: Params) {
             <Link href={`/dashboard/${slug}/configuracion`} className="hover:text-foreground">
               Configuración
             </Link>
-            {' / Años lectivos'}
+            {' / Períodos'}
           </div>
           <h1 className="text-2xl font-semibold">Años lectivos</h1>
           <p className="text-sm text-muted-foreground">{años?.length ?? 0} años</p>

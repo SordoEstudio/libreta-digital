@@ -16,7 +16,7 @@ export default function ActivarAñoButton({ añoId }: Props) {
 
   async function handleActivar() {
     setLoading(true)
-    const res = await fetch(`/api/v1/años-lectivos/${añoId}`, {
+    const res = await fetch(`/api/v1/anos-lectivos/${añoId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ activo: true }),

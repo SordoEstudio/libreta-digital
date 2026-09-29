@@ -1,5 +1,6 @@
 import { requireSession, isSuperadmin, hasRole } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect, notFound } from 'next/navigation'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -39,7 +40,8 @@ export default async function UsuariosPage({ params }: Params) {
   if (!inst) notFound()
   if (!isSuperadmin(session) && !hasRole(session, inst.id, 'admin')) redirect('/dashboard')
 
-  const { data: memberships } = await supabase
+  const admin = createAdminClient()
+  const { data: memberships } = await admin
     .from('memberships')
     .select('rol, personas(id, nombre, email)')
     .eq('institucion_id', inst.id)

@@ -39,7 +39,7 @@ export default function NuevoAñoSheet({ instId }: Props) {
     e.preventDefault()
     setLoading(true)
 
-    const añoRes = await fetch(`/api/v1/instituciones/${instId}/años-lectivos`, {
+    const añoRes = await fetch(`/api/v1/instituciones/${instId}/anos-lectivos`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ nombre, activo }),
