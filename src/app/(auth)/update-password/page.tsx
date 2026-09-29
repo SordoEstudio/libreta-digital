@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
@@ -8,10 +8,29 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertCircle, Loader2 } from 'lucide-react'
+import Link from 'next/link'
 
 export default function UpdatePasswordPage() {
   const router = useRouter()
   const [password, setPassword] = useState('')
+  const [linkError, setLinkError] = useState<string | null>(null)
+
+  useEffect(() => {
+    // Detect #error= in hash (expired/invalid link from Supabase)
+    const hash = window.location.hash
+    if (hash.includes('error=')) {
+      const params = new URLSearchParams(hash.replace('#', ''))
+      const code = params.get('error_code')
+      if (code === 'otp_expired') {
+        setLinkError('El link expiró. Solicitá uno nuevo desde "¿Olvidaste tu contraseña?".')
+      } else {
+        setLinkError('El link es inválido o ya fue usado. Solicitá uno nuevo.')
+      }
+      return
+    }
+    // Initialize Supabase client on mount so it processes #access_token from URL hash
+    createClient()
+  }, [])
   const [confirm, setConfirm] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -53,6 +72,20 @@ export default function UpdatePasswordPage() {
           </p>
         </div>
 
+        {linkError ? (
+          <>
+            <Alert variant="destructive">
+              <AlertCircle className="size-4" />
+              <AlertDescription>{linkError}</AlertDescription>
+            </Alert>
+            <p className="text-center text-sm text-muted-foreground">
+              <Link href="/forgot-password" className="underline underline-offset-4 hover:text-foreground">
+                Solicitar nuevo link
+              </Link>
+            </p>
+          </>
+        ) : (
+        <>
         {error && (
           <Alert variant="destructive">
             <AlertCircle className="size-4" />
@@ -91,6 +124,8 @@ export default function UpdatePasswordPage() {
             {loading ? 'Guardando...' : 'Guardar contraseña'}
           </Button>
         </form>
+        </>
+        )}
       </div>
     </div>
   )
