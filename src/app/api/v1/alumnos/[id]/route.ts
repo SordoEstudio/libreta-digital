@@ -8,9 +8,10 @@ const PatchSchema = z.object({
   nombre: z.string().min(1).optional(),
   email: z.string().email().optional(),
   fecha_nacimiento: z.string().date().optional(),
-  curso_id: z.string().uuid().nullable().optional(),
   activo: z.boolean().optional(),
 }).strict()
+
+// For changing course, use POST /api/v1/alumnos/[id]/inscripciones
 
 type Params = { params: Promise<{ id: string }> }
 

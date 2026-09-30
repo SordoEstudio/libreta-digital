@@ -93,7 +93,11 @@ export default function AsignarDocenteSheet({ materiaId, materiaNombre, docenteA
                 disabled={loadingDocentes}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={loadingDocentes ? 'Cargando...' : 'Sin docente'} />
+                  <SelectValue placeholder={loadingDocentes ? 'Cargando...' : 'Sin docente'}>
+                    {docenteId && docenteId !== NONE
+                      ? (docentes.find(d => d.persona_id === docenteId)?.nombre ?? undefined)
+                      : 'Sin docente'}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={NONE}>Sin docente</SelectItem>

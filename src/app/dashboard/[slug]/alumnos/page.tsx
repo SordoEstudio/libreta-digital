@@ -30,17 +30,30 @@ export default async function AlumnosPage({ params }: Params) {
 
   const { data: alumnos } = await supabase
     .from('alumnos')
-    .select('id, nombre, activo, curso_id, cursos(nombre)')
+    .select('id, nombre, activo, alumno_inscripciones(curso_id, activo, deleted_at, cursos(nombre))')
     .eq('institucion_id', inst.id)
     .is('deleted_at', null)
     .order('nombre')
 
-  const { data: cursosDisponibles } = await supabase
-    .from('cursos')
-    .select('id, nombre')
+  // Only offer active year's courses for new enrollments
+  const { data: añoActivo } = await supabase
+    .from('años_lectivos')
+    .select('id')
     .eq('institucion_id', inst.id)
+    .eq('activo', true)
     .is('deleted_at', null)
-    .order('nombre')
+    .single()
+
+  const { data: cursosDisponibles } = añoActivo
+    ? await supabase
+        .from('cursos')
+        .select('id, nombre')
+        .eq('año_lectivo_id', añoActivo.id)
+        .is('deleted_at', null)
+        .order('nombre')
+    : { data: null }
+
+  type Inscripcion = { curso_id: string; activo: boolean; deleted_at: string | null; cursos: { nombre: string } | null }
 
   return (
     <div className="flex flex-col gap-6">
@@ -64,37 +77,42 @@ export default async function AlumnosPage({ params }: Params) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {alumnos.map(alumno => (
-                <TableRow key={alumno.id}>
-                  <TableCell className="font-medium">{alumno.nombre}</TableCell>
-                  <TableCell>
-                    {(alumno.cursos as { nombre: string } | null)?.nombre ?? (
-                      <span className="text-muted-foreground text-xs">Sin curso</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={alumno.activo ? 'default' : 'secondary'}>
-                      {alumno.activo ? 'Activo' : 'Inactivo'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        render={<Link href={`/dashboard/${slug}/libreta/${alumno.id}`} />}
-                      >
-                        Ver libreta
-                      </Button>
-                      <AsignarResponsableSheet
-                        alumnoId={alumno.id}
-                        alumnoNombre={alumno.nombre}
-                        instId={inst.id}
-                      />
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {alumnos.map(alumno => {
+                const inscripcion = ((alumno.alumno_inscripciones ?? []) as Inscripcion[])
+                  .find(i => i.activo && !i.deleted_at)
+                const cursoNombre = inscripcion?.cursos?.nombre
+                return (
+                  <TableRow key={alumno.id}>
+                    <TableCell className="font-medium">{alumno.nombre}</TableCell>
+                    <TableCell>
+                      {cursoNombre ?? (
+                        <span className="text-muted-foreground text-xs">Sin curso</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={alumno.activo ? 'default' : 'secondary'}>
+                        {alumno.activo ? 'Activo' : 'Inactivo'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          render={<Link href={`/dashboard/${slug}/libreta/${alumno.id}`} />}
+                        >
+                          Ver libreta
+                        </Button>
+                        <AsignarResponsableSheet
+                          alumnoId={alumno.id}
+                          alumnoNombre={alumno.nombre}
+                          instId={inst.id}
+                        />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
             </TableBody>
           </Table>
         </div>

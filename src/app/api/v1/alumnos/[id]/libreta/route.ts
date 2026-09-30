@@ -13,7 +13,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
   const supabase = await createClient()
   const { data: alumno } = await supabase
     .from('alumnos')
-    .select('id, nombre, curso_id, institucion_id')
+    .select('id, nombre, institucion_id')
     .eq('id', alumno_id)
     .is('deleted_at', null)
     .single()
@@ -29,7 +29,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
       evaluaciones(
         id, nombre, tipo, peso, orden, periodo_id,
         periodos(id, nombre),
-        materias(id, nombre)
+        materias(id, materias_catalogo(nombre))
       )
     `)
     .eq('alumno_id', alumno_id)
@@ -38,16 +38,15 @@ export async function GET(_req: NextRequest, { params }: Params) {
   if (error) return Err.server(error.message)
 
   type Periodo = { id: string; nombre: string }
-  type Materia = { id: string; nombre: string }
+  type Materia = { id: string; materias_catalogo: { nombre: string } | null }
   type Evaluacion = {
     id: string; nombre: string; tipo: string; peso: number; orden: number; periodo_id: string
     periodos: Periodo | null
     materias: Materia | null
   }
 
-  // Nested structure: materia → periodo → evaluaciones
   const materiaMap = new Map<string, {
-    materia: Materia
+    materia: { id: string; nombre: string }
     periodos: Map<string, {
       periodo: Periodo
       evaluaciones: Array<{
@@ -63,9 +62,10 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
     const mat = ev.materias
     const per = ev.periodos
+    const matNombre = (mat.materias_catalogo as { nombre: string } | null)?.nombre ?? ''
 
     if (!materiaMap.has(mat.id)) {
-      materiaMap.set(mat.id, { materia: mat, periodos: new Map() })
+      materiaMap.set(mat.id, { materia: { id: mat.id, nombre: matNombre }, periodos: new Map() })
     }
     const materiaEntry = materiaMap.get(mat.id)!
 

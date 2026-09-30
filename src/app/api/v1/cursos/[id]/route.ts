@@ -60,7 +60,7 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   const supabase = await createClient()
 
   const { count } = await supabase
-    .from('alumnos')
+    .from('alumno_inscripciones')
     .select('id', { count: 'exact', head: true })
     .eq('curso_id', id)
     .eq('activo', true)

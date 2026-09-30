@@ -28,7 +28,7 @@ export default async function LibretaPage({ params }: Params) {
 
   const { data: alumno } = await supabase
     .from('alumnos')
-    .select('id, nombre, activo, cursos(nombre)')
+    .select('id, nombre, activo, alumno_inscripciones(curso_id, activo, deleted_at, cursos(nombre))')
     .eq('id', alumno_id)
     .eq('institucion_id', inst.id)
     .single()
@@ -40,7 +40,7 @@ export default async function LibretaPage({ params }: Params) {
     .select(`
       id, valor_numerico, valor_literal, observacion,
       evaluaciones(id, nombre, peso, tipo, periodo_id,
-        materias(id, nombre)
+        materias(id, materias_catalogo(nombre))
       )
     `)
     .eq('alumno_id', alumno_id)
@@ -48,7 +48,7 @@ export default async function LibretaPage({ params }: Params) {
 
   type Evaluacion = {
     id: string; nombre: string; peso: number; tipo: string; periodo_id: string
-    materias: { id: string; nombre: string } | null
+    materias: { id: string; materias_catalogo: { nombre: string } | null } | null
   }
 
   type NotaRow = NonNullable<typeof notas>[number]
@@ -57,14 +57,18 @@ export default async function LibretaPage({ params }: Params) {
     const ev = nota.evaluaciones as Evaluacion | null
     if (!ev?.materias) continue
     const matId = ev.materias.id
+    const nombre = (ev.materias.materias_catalogo as { nombre: string } | null)?.nombre ?? ''
     if (!materiaMap.has(matId)) {
-      materiaMap.set(matId, { nombre: ev.materias.nombre, notas: [] })
+      materiaMap.set(matId, { nombre, notas: [] })
     }
     const entry = materiaMap.get(matId)
     if (entry) entry.notas.push(nota)
   }
 
-  const curso = alumno.cursos as { nombre: string } | null
+  type Inscripcion = { curso_id: string; activo: boolean; deleted_at: string | null; cursos: { nombre: string } | null }
+  const inscripcion = ((alumno.alumno_inscripciones ?? []) as Inscripcion[])
+    .find(i => i.activo && !i.deleted_at)
+  const cursoNombre = inscripcion?.cursos?.nombre
 
   return (
     <div className="flex flex-col gap-6">
@@ -75,7 +79,7 @@ export default async function LibretaPage({ params }: Params) {
         </div>
         <h1 className="text-2xl font-semibold">{alumno.nombre}</h1>
         <div className="flex items-center gap-2 mt-1">
-          {curso?.nombre && <Badge variant="outline">{curso.nombre}</Badge>}
+          {cursoNombre && <Badge variant="outline">{cursoNombre}</Badge>}
           <Badge variant={alumno.activo ? 'default' : 'secondary'}>
             {alumno.activo ? 'Activo' : 'Inactivo'}
           </Badge>

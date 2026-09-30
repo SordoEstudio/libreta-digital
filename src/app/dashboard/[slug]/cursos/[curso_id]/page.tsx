@@ -36,10 +36,10 @@ export default async function CursoDetallePage({ params }: Params) {
 
   const { data: materias } = await supabase
     .from('materias')
-    .select('id, nombre, materia_docentes(personas(nombre))')
+    .select('id, materias_catalogo(nombre), materia_docentes(personas(nombre))')
     .eq('curso_id', curso_id)
     .is('deleted_at', null)
-    .order('nombre')
+    .order('materias_catalogo(nombre)')
 
   return (
     <div className="flex flex-col gap-6">
@@ -66,10 +66,11 @@ export default async function CursoDetallePage({ params }: Params) {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {materias?.map(materia => {
             const docentes = (materia.materia_docentes ?? []) as Array<{ personas: { nombre: string } | null }>
+            const nombre = (materia.materias_catalogo as { nombre: string } | null)?.nombre ?? ''
             return (
               <Card key={materia.id}>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-base">{materia.nombre}</CardTitle>
+                  <CardTitle className="text-base">{nombre}</CardTitle>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-3">
                   {docentes.length > 0 && (

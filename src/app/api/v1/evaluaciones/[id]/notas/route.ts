@@ -24,13 +24,25 @@ export async function GET(_req: NextRequest, { params }: Params) {
   if (!isSuperadmin(session) && !hasAnyRole(session, mat.institucion_id, ['admin', 'docente']))
     return Err.forbidden()
 
-  const { data: alumnos } = await supabase
-    .from('alumnos')
-    .select('id, nombre')
+  // Fetch students enrolled in this course via inscripciones
+  const { data: inscripciones } = await supabase
+    .from('alumno_inscripciones')
+    .select('alumno_id')
     .eq('curso_id', mat.curso_id)
     .eq('activo', true)
     .is('deleted_at', null)
-    .order('nombre')
+
+  const alumnoIds = (inscripciones ?? []).map(i => i.alumno_id)
+
+  const { data: alumnos } = alumnoIds.length > 0
+    ? await supabase
+        .from('alumnos')
+        .select('id, nombre')
+        .in('id', alumnoIds)
+        .eq('activo', true)
+        .is('deleted_at', null)
+        .order('nombre')
+    : { data: [] }
 
   const { data: notas } = await supabase
     .from('notas')

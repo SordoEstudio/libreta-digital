@@ -68,18 +68,34 @@ export async function DELETE(_request: NextRequest, { params }: Params) {
   if (!isSuperadmin(session) && !hasRole(session, año.institucion_id, 'admin')) return Err.forbidden()
   if (año.activo) return Err.validation('No se puede eliminar el año lectivo activo. Activá otro primero.')
 
-  // Guard: block if year has courses (which would cascade-delete grades)
-  const { count } = await supabase
+  // Block only if there are actual notas (grade data) — structure without data is safe to cascade
+  const { count: notasCount } = await supabase
+    .from('notas')
+    .select('evaluaciones!inner(materias!inner(cursos!inner(año_lectivo_id)))', { count: 'exact', head: true })
+    .eq('evaluaciones.materias.cursos.año_lectivo_id', id)
+    .is('deleted_at', null)
+
+  if ((notasCount ?? 0) > 0)
+    return Err.validation('El año tiene notas cargadas. No se puede eliminar.')
+
+  const now = new Date().toISOString()
+
+  // Cascade soft-delete: materias → cursos → año
+  const { data: cursos } = await supabase
     .from('cursos')
-    .select('id', { count: 'exact', head: true })
+    .select('id')
     .eq('año_lectivo_id', id)
     .is('deleted_at', null)
 
-  if ((count ?? 0) > 0) return Err.validation('El año tiene cursos asociados. Eliminá los cursos primero.')
+  if (cursos && cursos.length > 0) {
+    const cursoIds = cursos.map(c => c.id)
+    await supabase.from('materias').update({ deleted_at: now }).in('curso_id', cursoIds).is('deleted_at', null)
+    await supabase.from('cursos').update({ deleted_at: now }).in('id', cursoIds)
+  }
 
   const { error } = await supabase
     .from('años_lectivos')
-    .update({ deleted_at: new Date().toISOString() })
+    .update({ deleted_at: now })
     .eq('id', id)
 
   if (error) return Err.server(error.message)

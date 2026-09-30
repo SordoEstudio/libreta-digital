@@ -7,33 +7,65 @@ export type Json =
   | Json[]
 
 export type Database = {
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
+      alumno_inscripciones: {
+        Row: {
+          activo: boolean
+          alumno_id: string
+          created_at: string
+          curso_id: string
+          deleted_at: string | null
+          id: string
+          institucion_id: string
+        }
+        Insert: {
+          activo?: boolean
+          alumno_id: string
+          created_at?: string
+          curso_id: string
+          deleted_at?: string | null
+          id?: string
+          institucion_id: string
+        }
+        Update: {
+          activo?: boolean
+          alumno_id?: string
+          created_at?: string
+          curso_id?: string
+          deleted_at?: string | null
+          id?: string
+          institucion_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alumno_inscripciones_alumno_id_fkey"
+            columns: ["alumno_id"]
+            isOneToOne: false
+            referencedRelation: "alumnos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alumno_inscripciones_curso_id_fkey"
+            columns: ["curso_id"]
+            isOneToOne: false
+            referencedRelation: "cursos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alumno_inscripciones_institucion_id_fkey"
+            columns: ["institucion_id"]
+            isOneToOne: false
+            referencedRelation: "instituciones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       alumno_responsables: {
         Row: {
           alumno_id: string
@@ -84,7 +116,6 @@ export type Database = {
         Row: {
           activo: boolean
           created_at: string
-          curso_id: string | null
           deleted_at: string | null
           email: string | null
           fecha_nacimiento: string | null
@@ -97,7 +128,6 @@ export type Database = {
         Insert: {
           activo?: boolean
           created_at?: string
-          curso_id?: string | null
           deleted_at?: string | null
           email?: string | null
           fecha_nacimiento?: string | null
@@ -110,7 +140,6 @@ export type Database = {
         Update: {
           activo?: boolean
           created_at?: string
-          curso_id?: string | null
           deleted_at?: string | null
           email?: string | null
           fecha_nacimiento?: string | null
@@ -121,13 +150,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "alumnos_curso_id_fkey"
-            columns: ["curso_id"]
-            isOneToOne: false
-            referencedRelation: "cursos"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "alumnos_institucion_id_fkey"
             columns: ["institucion_id"]
@@ -482,36 +504,43 @@ export type Database = {
       }
       materias: {
         Row: {
+          catalogo_id: string
           created_at: string
           curso_id: string
           deleted_at: string | null
           escala_id: string | null
           id: string
           institucion_id: string
-          nombre: string
           updated_at: string
         }
         Insert: {
+          catalogo_id: string
           created_at?: string
           curso_id: string
           deleted_at?: string | null
           escala_id?: string | null
           id?: string
           institucion_id: string
-          nombre: string
           updated_at?: string
         }
         Update: {
+          catalogo_id?: string
           created_at?: string
           curso_id?: string
           deleted_at?: string | null
           escala_id?: string | null
           id?: string
           institucion_id?: string
-          nombre?: string
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "materias_catalogo_id_fkey"
+            columns: ["catalogo_id"]
+            isOneToOne: false
+            referencedRelation: "materias_catalogo"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "materias_curso_id_fkey"
             columns: ["curso_id"]
@@ -528,6 +557,38 @@ export type Database = {
           },
           {
             foreignKeyName: "materias_institucion_id_fkey"
+            columns: ["institucion_id"]
+            isOneToOne: false
+            referencedRelation: "instituciones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      materias_catalogo: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          id: string
+          institucion_id: string
+          nombre: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          institucion_id: string
+          nombre: string
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          institucion_id?: string
+          nombre?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "materias_catalogo_institucion_id_fkey"
             columns: ["institucion_id"]
             isOneToOne: false
             referencedRelation: "instituciones"
@@ -851,7 +912,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      custom_access_token_hook: { Args: { event: Json }; Returns: Json }
       get_persona_id: { Args: never; Returns: string }
       has_any_role: {
         Args: { inst_id: string; roles: string[] }
@@ -880,12 +940,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -909,11 +969,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -934,11 +994,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -959,11 +1019,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -976,11 +1036,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -990,11 +1050,7 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {},
   },
 } as const
-

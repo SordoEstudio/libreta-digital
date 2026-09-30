@@ -23,7 +23,12 @@ export default function AñoSelector({ años, selectedId, slug }: Props) {
       onValueChange={id => router.push(`/dashboard/${slug}/configuracion?año=${id}`)}
     >
       <SelectTrigger className="w-44">
-        <SelectValue placeholder="Seleccionar año..." />
+        <SelectValue placeholder="Seleccionar año...">
+          {(() => {
+            const a = años.find(x => x.id === selectedId)
+            return a ? `${a.nombre}${a.activo ? ' (activo)' : ''}` : undefined
+          })()}
+        </SelectValue>
       </SelectTrigger>
       <SelectContent>
         {años.map(a => (

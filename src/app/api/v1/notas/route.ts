@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
   const supabase = await createClient()
   const { data: evaluacion } = await supabase
     .from('evaluaciones')
-    .select('id, nombre, tipo, institucion_id, materias(id, nombre, escala_id, cursos(id, nombre, escala_id))')
+    .select('id, nombre, tipo, institucion_id, materias(id, materias_catalogo(nombre), escala_id, cursos(id, nombre, escala_id))')
     .eq('id', parsed.data.evaluacion_id)
     .single()
 
@@ -35,7 +35,9 @@ export async function POST(request: NextRequest) {
   if (!isSuperadmin(session) && !hasAnyRole(session, evaluacion.institucion_id, ['admin', 'docente'])) return Err.forbidden()
 
   const mat = evaluacion.materias as {
-    id: string; nombre: string; escala_id: string | null
+    id: string
+    materias_catalogo: { nombre: string } | null
+    escala_id: string | null
     cursos: { id: string; nombre: string; escala_id: string | null } | null
   } | null
   const escala_id = mat?.escala_id ?? mat?.cursos?.escala_id
@@ -85,6 +87,7 @@ export async function POST(request: NextRequest) {
     .single()
 
   const valor = (data.valor_numerico?.toString() ?? data.valor_literal) ?? '—'
+  const materiaNombre = (mat?.materias_catalogo as { nombre: string } | null)?.nombre ?? ''
 
   void notificarNotaCargada({
     nota_id: data.id,
@@ -92,7 +95,7 @@ export async function POST(request: NextRequest) {
     alumno_nombre: alumno?.nombre ?? 'Alumno',
     evaluacion_nombre: evaluacion.nombre,
     evaluacion_tipo: evaluacion.tipo,
-    materia_nombre: mat?.nombre ?? '',
+    materia_nombre: materiaNombre,
     curso_nombre: mat?.cursos?.nombre ?? '',
     valor,
     institucion_id: evaluacion.institucion_id,

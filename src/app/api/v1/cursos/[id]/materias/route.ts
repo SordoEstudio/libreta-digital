@@ -30,16 +30,17 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
   const { data, error } = await supabase
     .from('materias')
-    .select('id, nombre, escala_id, materia_docentes(persona_id, personas(id, nombre))')
+    .select('id, catalogo_id, escala_id, materias_catalogo(id, nombre), materia_docentes(persona_id, personas(id, nombre))')
     .eq('curso_id', curso_id)
     .is('deleted_at', null)
-    .order('nombre')
+    .order('materias_catalogo(nombre)')
 
   if (error) return Err.server(error.message)
 
   const formatted = data.map(m => ({
     id: m.id,
-    nombre: m.nombre,
+    catalogo_id: m.catalogo_id,
+    nombre: (m.materias_catalogo as { id: string; nombre: string } | null)?.nombre ?? '',
     escala_id: m.escala_id,
     docentes: (m.materia_docentes ?? []).map((md: { persona_id: string; personas: { id: string; nombre: string } | null }) => ({
       persona_id: md.persona_id,
@@ -68,12 +69,34 @@ export async function POST(request: NextRequest, { params }: Params) {
   const parsed = CreateSchema.safeParse(body)
   if (!parsed.success) return Err.validation(parsed.error.issues[0].message)
 
-  const { docentes_ids, ...materiaData } = parsed.data
+  const { nombre, docentes_ids, ...materiaData } = parsed.data
+
+  // Find or create catalog entry
+  let catalogoId: string
+  const { data: existing } = await supabase
+    .from('materias_catalogo')
+    .select('id')
+    .eq('institucion_id', curso.institucion_id)
+    .ilike('nombre', nombre)
+    .is('deleted_at', null)
+    .single()
+
+  if (existing) {
+    catalogoId = existing.id
+  } else {
+    const { data: newEntry, error: catalogError } = await supabase
+      .from('materias_catalogo')
+      .insert({ nombre, institucion_id: curso.institucion_id })
+      .select('id')
+      .single()
+    if (catalogError) return Err.server(catalogError.message)
+    catalogoId = newEntry.id
+  }
 
   const { data: materia, error } = await supabase
     .from('materias')
-    .insert({ ...materiaData, curso_id, institucion_id: curso.institucion_id })
-    .select('id, nombre')
+    .insert({ ...materiaData, catalogo_id: catalogoId, curso_id, institucion_id: curso.institucion_id })
+    .select('id, catalogo_id, materias_catalogo(nombre)')
     .single()
 
   if (error) return Err.server(error.message)
@@ -88,5 +111,9 @@ export async function POST(request: NextRequest, { params }: Params) {
     )
   }
 
-  return created(materia)
+  return created({
+    id: materia.id,
+    catalogo_id: materia.catalogo_id,
+    nombre: (materia.materias_catalogo as { nombre: string } | null)?.nombre ?? nombre,
+  })
 }

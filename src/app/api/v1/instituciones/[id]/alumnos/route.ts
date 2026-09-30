@@ -27,20 +27,33 @@ export async function GET(request: NextRequest, { params }: Params) {
   const activo = sp.get('activo')
 
   const supabase = await createClient()
-  let query = supabase
+  const query = supabase
     .from('alumnos')
-    .select('id, nombre, email, fecha_nacimiento, activo, curso_id, persona_id')
+    .select('id, nombre, email, fecha_nacimiento, activo, persona_id, alumno_inscripciones(curso_id, activo, deleted_at)')
     .eq('institucion_id', institucion_id)
     .is('deleted_at', null)
     .order('nombre')
 
-  if (curso_id) query = query.eq('curso_id', curso_id)
-  if (activo !== null && activo !== undefined) query = query.eq('activo', activo === 'true')
-  if (q) query = query.or(`nombre.ilike.%${q}%,email.ilike.%${q}%`)
+  if (activo !== null && activo !== undefined) query.eq('activo', activo === 'true')
+  if (q) query.or(`nombre.ilike.%${q}%,email.ilike.%${q}%`)
 
   const { data, error } = await query
   if (error) return Err.server(error.message)
-  return ok(data)
+
+  type Inscripcion = { curso_id: string; activo: boolean; deleted_at: string | null }
+  let result = (data ?? []).map(a => ({
+    id: a.id,
+    nombre: a.nombre,
+    email: a.email,
+    fecha_nacimiento: a.fecha_nacimiento,
+    activo: a.activo,
+    persona_id: a.persona_id,
+    curso_id: ((a.alumno_inscripciones ?? []) as Inscripcion[]).find(i => i.activo && !i.deleted_at)?.curso_id ?? null,
+  }))
+
+  if (curso_id) result = result.filter(a => a.curso_id === curso_id)
+
+  return ok(result)
 }
 
 export async function POST(request: NextRequest, { params }: Params) {
@@ -53,13 +66,25 @@ export async function POST(request: NextRequest, { params }: Params) {
   const parsed = CreateSchema.safeParse(body)
   if (!parsed.success) return Err.validation(parsed.error.issues[0].message)
 
+  const { curso_id, ...alumnoData } = parsed.data
+
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('alumnos')
-    .insert({ ...parsed.data, institucion_id })
+    .insert({ ...alumnoData, institucion_id })
     .select('id, nombre')
     .single()
 
   if (error) return Err.server(error.message)
+
+  if (curso_id) {
+    await supabase.from('alumno_inscripciones').insert({
+      alumno_id: data.id,
+      curso_id,
+      institucion_id,
+      activo: true,
+    })
+  }
+
   return created(data)
 }

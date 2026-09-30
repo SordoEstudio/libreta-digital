@@ -21,22 +21,41 @@ export default async function NotasPage({ params }: Params) {
 
   const { data: evaluacion } = await supabase
     .from('evaluaciones')
-    .select('id, nombre, tipo, peso, materias(id, nombre, cursos(id, nombre))')
+    .select('id, nombre, tipo, peso, materias(id, materias_catalogo(nombre), cursos(id, nombre))')
     .eq('id', evaluacion_id)
     .single()
 
   if (!evaluacion) notFound()
 
-  const mat = evaluacion.materias as { id: string; nombre: string; cursos: { id: string; nombre: string } | null } | null
+  const mat = evaluacion.materias as {
+    id: string
+    materias_catalogo: { nombre: string } | null
+    cursos: { id: string; nombre: string } | null
+  } | null
   if (!mat) notFound()
 
-  const { data: alumnos } = await supabase
-    .from('alumnos')
-    .select('id, nombre')
-    .eq('curso_id', mat.cursos?.id ?? '')
+  const materiaNombre = mat.materias_catalogo?.nombre ?? ''
+  const cursoId = mat.cursos?.id ?? ''
+
+  // Fetch students enrolled in this course (via inscripciones)
+  const { data: inscripciones } = await supabase
+    .from('alumno_inscripciones')
+    .select('alumno_id')
+    .eq('curso_id', cursoId)
     .eq('activo', true)
     .is('deleted_at', null)
-    .order('nombre')
+
+  const alumnoIds = (inscripciones ?? []).map(i => i.alumno_id)
+
+  const { data: alumnos } = alumnoIds.length > 0
+    ? await supabase
+        .from('alumnos')
+        .select('id, nombre')
+        .in('id', alumnoIds)
+        .eq('activo', true)
+        .is('deleted_at', null)
+        .order('nombre')
+    : { data: [] }
 
   const { data: notasExistentes } = await supabase
     .from('notas')
@@ -50,7 +69,7 @@ export default async function NotasPage({ params }: Params) {
         <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
           <span>{mat.cursos?.nombre}</span>
           <span>/</span>
-          <span>{mat.nombre}</span>
+          <span>{materiaNombre}</span>
         </div>
         <h1 className="text-2xl font-semibold">{evaluacion.nombre}</h1>
         <p className="text-sm text-muted-foreground capitalize">{evaluacion.tipo}</p>

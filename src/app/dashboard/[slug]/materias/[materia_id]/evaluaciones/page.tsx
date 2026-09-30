@@ -38,7 +38,7 @@ export default async function EvaluacionesPage({ params }: Params) {
 
   const { data: materia } = await supabase
     .from('materias')
-    .select('id, nombre, curso_id, cursos(nombre)')
+    .select('id, materias_catalogo(nombre), cursos(nombre)')
     .eq('id', materia_id)
     .eq('institucion_id', inst.id)
     .is('deleted_at', null)
@@ -46,6 +46,7 @@ export default async function EvaluacionesPage({ params }: Params) {
 
   if (!materia) notFound()
 
+  const materiaNombre = (materia.materias_catalogo as { nombre: string } | null)?.nombre ?? ''
   const cursoNombre = (materia.cursos as { nombre: string } | null)?.nombre ?? ''
 
   const { data: evaluaciones } = await supabase
@@ -71,9 +72,9 @@ export default async function EvaluacionesPage({ params }: Params) {
             <span>/</span>
             <span className="hover:text-foreground cursor-pointer">{cursoNombre}</span>
             <span>/</span>
-            <span>{materia.nombre}</span>
+            <span>{materiaNombre}</span>
           </div>
-          <h1 className="text-2xl font-semibold">{materia.nombre}</h1>
+          <h1 className="text-2xl font-semibold">{materiaNombre}</h1>
           <p className="text-sm text-muted-foreground">{evaluaciones?.length ?? 0} evaluaciones</p>
         </div>
         <NuevaEvaluacionSheet materiaId={materia_id} periodos={periodos ?? []} />

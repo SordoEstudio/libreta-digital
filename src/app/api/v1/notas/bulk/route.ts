@@ -29,14 +29,14 @@ export async function POST(request: NextRequest) {
 
   const { data: evaluacion } = await supabase
     .from('evaluaciones')
-    .select('id, nombre, tipo, institucion_id, materias(nombre, cursos(nombre))')
+    .select('id, nombre, tipo, institucion_id, materias(materias_catalogo(nombre), cursos(nombre))')
     .eq('id', evaluacion_id)
     .single()
 
   if (!evaluacion) return Err.notFound('Evaluación no encontrada')
   if (!isSuperadmin(session) && !hasAnyRole(session, evaluacion.institucion_id, ['admin', 'docente'])) return Err.forbidden()
 
-  const mat = evaluacion.materias as { nombre: string; cursos: { nombre: string } | null } | null
+  const mat = evaluacion.materias as { materias_catalogo: { nombre: string } | null; cursos: { nombre: string } | null } | null
 
   const toUpsert = notas
     .filter(n => n.valor_numerico != null || n.valor_literal != null)
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
         alumno_nombre: alumnoMap.get(nota.alumno_id) ?? 'Alumno',
         evaluacion_nombre: evaluacion.nombre,
         evaluacion_tipo: evaluacion.tipo,
-        materia_nombre: mat?.nombre ?? '',
+        materia_nombre: (mat?.materias_catalogo as { nombre: string } | null)?.nombre ?? '',
         curso_nombre: mat?.cursos?.nombre ?? '',
         valor: (nota.valor_numerico?.toString() ?? nota.valor_literal) ?? '—',
         institucion_id: evaluacion.institucion_id,

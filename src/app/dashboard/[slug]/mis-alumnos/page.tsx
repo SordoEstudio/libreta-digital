@@ -35,15 +35,32 @@ export default async function MisAlumnosPage({ params }: Params) {
 
   const { data: vinculaciones } = await supabase
     .from('alumno_responsables')
-    .select('alumnos(id, nombre, activo, cursos(nombre))')
+    .select('alumnos(id, nombre, activo)')
     .eq('persona_id', session.persona_id)
     .eq('institucion_id', inst.id)
 
-  type AlumnoRow = { id: string; nombre: string; activo: boolean; cursos: { nombre: string } | null }
-
+  type AlumnoBase = { id: string; nombre: string; activo: boolean }
   const alumnos = (vinculaciones ?? [])
-    .map(v => v.alumnos as AlumnoRow | null)
-    .filter((a): a is AlumnoRow => a !== null)
+    .map(v => v.alumnos as AlumnoBase | null)
+    .filter((a): a is AlumnoBase => a !== null)
+
+  // Get current course for each alumno via inscripciones
+  const alumnoIds = alumnos.map(a => a.id)
+  const { data: inscripciones } = alumnoIds.length > 0
+    ? await supabase
+        .from('alumno_inscripciones')
+        .select('alumno_id, cursos(nombre)')
+        .in('alumno_id', alumnoIds)
+        .eq('activo', true)
+        .is('deleted_at', null)
+    : { data: null }
+
+  const cursoMap = new Map(
+    (inscripciones ?? []).map(i => [
+      i.alumno_id,
+      (i.cursos as { nombre: string } | null)?.nombre ?? null,
+    ])
+  )
 
   return (
     <div className="flex flex-col gap-6">
@@ -62,31 +79,34 @@ export default async function MisAlumnosPage({ params }: Params) {
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {alumnos.map(alumno => (
-            <Card key={alumno.id}>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base">{alumno.nombre}</CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-3">
-                <div className="flex items-center gap-2">
-                  {alumno.cursos?.nombre && (
-                    <Badge variant="outline">{alumno.cursos.nombre}</Badge>
-                  )}
-                  <Badge variant={alumno.activo ? 'default' : 'secondary'}>
-                    {alumno.activo ? 'Activo' : 'Inactivo'}
-                  </Badge>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  render={<Link href={`/dashboard/${slug}/libreta/${alumno.id}`} />}
-                >
-                  <BookOpen data-icon="inline-start" />
-                  Ver libreta
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
+          {alumnos.map(alumno => {
+            const cursoNombre = cursoMap.get(alumno.id)
+            return (
+              <Card key={alumno.id}>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base">{alumno.nombre}</CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-3">
+                  <div className="flex items-center gap-2">
+                    {cursoNombre && (
+                      <Badge variant="outline">{cursoNombre}</Badge>
+                    )}
+                    <Badge variant={alumno.activo ? 'default' : 'secondary'}>
+                      {alumno.activo ? 'Activo' : 'Inactivo'}
+                    </Badge>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    render={<Link href={`/dashboard/${slug}/libreta/${alumno.id}`} />}
+                  >
+                    <BookOpen data-icon="inline-start" />
+                    Ver libreta
+                  </Button>
+                </CardContent>
+              </Card>
+            )
+          })}
         </div>
       )}
     </div>

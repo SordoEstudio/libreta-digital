@@ -15,7 +15,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('alumno_responsables')
-    .select('alumnos(id, nombre, apellido, curso_id, activo, institucion_id)')
+    .select('alumnos(id, nombre, activo, institucion_id)')
     .eq('persona_id', persona_id)
     .is('deleted_at', null)
 
