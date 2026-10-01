@@ -2,14 +2,12 @@ import { requireSession, isSuperadmin, hasRole } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import Link from 'next/link'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
 import { GraduationCap } from 'lucide-react'
 import NuevoAlumnoSheet from './nuevo-alumno-sheet'
-import AsignarResponsableSheet from './asignar-responsable-sheet'
+import AlumnoAcciones from './alumno-acciones'
 
 type Params = { params: Promise<{ slug: string }> }
 
@@ -95,20 +93,14 @@ export default async function AlumnosPage({ params }: Params) {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          render={<Link href={`/dashboard/${slug}/libreta/${alumno.id}`} />}
-                        >
-                          Ver libreta
-                        </Button>
-                        <AsignarResponsableSheet
-                          alumnoId={alumno.id}
-                          alumnoNombre={alumno.nombre}
-                          instId={inst.id}
-                        />
-                      </div>
+                      <AlumnoAcciones
+                        alumnoId={alumno.id}
+                        alumnoNombre={alumno.nombre}
+                        activo={alumno.activo}
+                        instId={inst.id}
+                        slug={slug}
+                        cursos={cursosDisponibles ?? []}
+                      />
                     </TableCell>
                   </TableRow>
                 )

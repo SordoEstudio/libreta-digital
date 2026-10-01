@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/table'
 import { Users } from 'lucide-react'
 import NuevoUsuarioSheet from './nuevo-usuario-sheet'
+import DesactivarUsuarioButton from './desactivar-usuario-button'
 
 type Params = { params: Promise<{ slug: string }> }
 
@@ -66,6 +67,7 @@ export default async function UsuariosPage({ params }: Params) {
                 <TableHead>Nombre</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Rol</TableHead>
+                <TableHead className="w-12" />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -79,6 +81,15 @@ export default async function UsuariosPage({ params }: Params) {
                       <Badge variant={ROL_VARIANTS[m.rol] ?? 'outline'}>
                         {ROL_LABELS[m.rol] ?? m.rol}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {persona && m.rol !== 'superadmin' && (
+                        <DesactivarUsuarioButton
+                          instId={inst.id}
+                          personaId={persona.id}
+                          nombre={persona.nombre}
+                        />
+                      )}
                     </TableCell>
                   </TableRow>
                 )

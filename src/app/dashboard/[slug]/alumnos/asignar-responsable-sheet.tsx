@@ -19,11 +19,15 @@ interface Props {
   alumnoId: string
   alumnoNombre: string
   instId: string
+  open?: boolean
+  onOpenChange?: (v: boolean) => void
 }
 
-export default function AsignarResponsableSheet({ alumnoId, alumnoNombre, instId }: Props) {
+export default function AsignarResponsableSheet({ alumnoId, alumnoNombre, instId, open: openProp, onOpenChange }: Props) {
   const router = useRouter()
-  const [open, setOpen] = useState(false)
+  const [openInternal, setOpenInternal] = useState(false)
+  const open = openProp ?? openInternal
+  const setOpen = onOpenChange ?? setOpenInternal
   const [loading, setLoading] = useState(false)
   const [responsableId, setResponsableId] = useState('')
   const [responsables, setResponsables] = useState<Responsable[]>([])
@@ -66,10 +70,12 @@ export default function AsignarResponsableSheet({ alumnoId, alumnoNombre, instId
 
   return (
     <>
-      <Button variant="ghost" size="sm" onClick={() => setOpen(true)}>
-        <UserPlus className="size-3.5" />
-        Responsable
-      </Button>
+      {!onOpenChange && (
+        <Button variant="ghost" size="sm" onClick={() => setOpen(true)}>
+          <UserPlus className="size-3.5" />
+          Responsable
+        </Button>
+      )}
 
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent>
