@@ -4,7 +4,6 @@ import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Checkbox } from '@/components/ui/checkbox'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
@@ -122,9 +121,11 @@ export function NotasEditor({ evaluacionId, alumnos, notasExistentes, slug }: No
                   />
                 </TableCell>
                 <TableCell className="text-center">
-                  <Checkbox
+                  <input
+                    type="checkbox"
                     checked={ausentes[alumno.id] ?? false}
-                    onCheckedChange={v => handleAusente(alumno.id, !!v)}
+                    onChange={e => handleAusente(alumno.id, e.target.checked)}
+                    className="size-4 cursor-pointer accent-primary"
                   />
                 </TableCell>
               </TableRow>

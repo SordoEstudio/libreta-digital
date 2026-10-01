@@ -44,9 +44,8 @@ export default async function UsuariosPage({ params }: Params) {
   const admin = createAdminClient()
   const { data: memberships } = await admin
     .from('memberships')
-    .select('rol, personas(id, nombre, email)')
+    .select('rol, activo, personas(id, nombre, email)')
     .eq('institucion_id', inst.id)
-    .eq('activo', true)
     .order('rol')
 
   return (
@@ -54,7 +53,7 @@ export default async function UsuariosPage({ params }: Params) {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Usuarios</h1>
-          <p className="text-sm text-muted-foreground">{memberships?.length ?? 0} miembros activos</p>
+          <p className="text-sm text-muted-foreground">{memberships?.filter(m => m.activo).length ?? 0} miembros activos</p>
         </div>
         <NuevoUsuarioSheet instId={inst.id} />
       </div>
@@ -67,6 +66,7 @@ export default async function UsuariosPage({ params }: Params) {
                 <TableHead>Nombre</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Rol</TableHead>
+                <TableHead>Estado</TableHead>
                 <TableHead className="w-12" />
               </TableRow>
             </TableHeader>
@@ -74,7 +74,7 @@ export default async function UsuariosPage({ params }: Params) {
               {memberships.map((m, i) => {
                 const persona = m.personas as { id: string; nombre: string; email: string | null } | null
                 return (
-                  <TableRow key={i}>
+                  <TableRow key={i} className={!m.activo ? 'opacity-60' : ''}>
                     <TableCell className="font-medium">{persona?.nombre ?? '—'}</TableCell>
                     <TableCell className="text-muted-foreground text-sm">{persona?.email ?? '—'}</TableCell>
                     <TableCell>
@@ -83,11 +83,17 @@ export default async function UsuariosPage({ params }: Params) {
                       </Badge>
                     </TableCell>
                     <TableCell>
+                      <Badge variant={m.activo ? 'default' : 'secondary'}>
+                        {m.activo ? 'Activo' : 'Inactivo'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
                       {persona && m.rol !== 'superadmin' && (
                         <DesactivarUsuarioButton
                           instId={inst.id}
                           personaId={persona.id}
                           nombre={persona.nombre}
+                          activo={m.activo}
                         />
                       )}
                     </TableCell>
