@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
@@ -36,7 +37,20 @@ export function NotasEditor({ evaluacionId, alumnos, notasExistentes, slug }: No
     const init: Record<string, string> = {}
     for (const alumno of alumnos) {
       const nota = notaMap.get(alumno.id)
-      init[alumno.id] = nota?.valor_numerico?.toString() ?? nota?.valor_literal ?? ''
+      if (nota?.valor_literal === 'A') {
+        init[alumno.id] = ''
+      } else {
+        init[alumno.id] = nota?.valor_numerico?.toString() ?? nota?.valor_literal ?? ''
+      }
+    }
+    return init
+  })
+
+  const [ausentes, setAusentes] = useState<Record<string, boolean>>(() => {
+    const init: Record<string, boolean> = {}
+    for (const alumno of alumnos) {
+      const nota = notaMap.get(alumno.id)
+      init[alumno.id] = nota?.valor_literal === 'A'
     }
     return init
   })
@@ -47,14 +61,22 @@ export function NotasEditor({ evaluacionId, alumnos, notasExistentes, slug }: No
     setValores(prev => ({ ...prev, [alumnoId]: value }))
   }
 
-  async function handleSave() {
-    startTransition(async () => {
-      const notas = alumnos.map(a => ({
-        alumno_id: a.id,
-        valor_numerico: valores[a.id] !== '' ? parseFloat(valores[a.id]) : null,
-        valor_literal: null,
-      }))
+  function handleAusente(alumnoId: string, checked: boolean) {
+    setAusentes(prev => ({ ...prev, [alumnoId]: checked }))
+    if (checked) setValores(prev => ({ ...prev, [alumnoId]: '' }))
+  }
 
+  async function handleSave() {
+    const notas = alumnos.map(a => {
+      if (ausentes[a.id]) {
+        return { alumno_id: a.id, valor_numerico: null, valor_literal: 'A' }
+      }
+      const raw = valores[a.id]
+      const num = raw !== '' ? parseFloat(raw) : null
+      return { alumno_id: a.id, valor_numerico: num, valor_literal: null }
+    })
+
+    startTransition(async () => {
       const res = await fetch(`/api/v1/notas/bulk`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -79,6 +101,7 @@ export function NotasEditor({ evaluacionId, alumnos, notasExistentes, slug }: No
             <TableRow>
               <TableHead>Alumno</TableHead>
               <TableHead className="w-32">Nota</TableHead>
+              <TableHead className="w-24 text-center">Ausente</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -89,10 +112,19 @@ export function NotasEditor({ evaluacionId, alumnos, notasExistentes, slug }: No
                   <Input
                     type="number"
                     step="0.01"
+                    min="0"
+                    max="10"
                     placeholder="—"
                     value={valores[alumno.id] ?? ''}
                     onChange={e => handleChange(alumno.id, e.target.value)}
+                    disabled={ausentes[alumno.id]}
                     className="w-24"
+                  />
+                </TableCell>
+                <TableCell className="text-center">
+                  <Checkbox
+                    checked={ausentes[alumno.id] ?? false}
+                    onCheckedChange={v => handleAusente(alumno.id, !!v)}
                   />
                 </TableCell>
               </TableRow>

@@ -20,7 +20,6 @@ export default function NuevoAlumnoSheet({ instId, cursos }: Props) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [nombre, setNombre] = useState('')
-  const [email, setEmail] = useState('')
   const [cursoId, setCursoId] = useState('')
   const [fechaNacimiento, setFechaNacimiento] = useState('')
 
@@ -29,7 +28,6 @@ export default function NuevoAlumnoSheet({ instId, cursos }: Props) {
     setLoading(true)
 
     const body: Record<string, string> = { nombre }
-    if (email) body.email = email
     if (cursoId) body.curso_id = cursoId
     if (fechaNacimiento) body.fecha_nacimiento = fechaNacimiento
 
@@ -50,7 +48,6 @@ export default function NuevoAlumnoSheet({ instId, cursos }: Props) {
     toast.success(`Alumno "${nombre}" registrado`)
     setOpen(false)
     setNombre('')
-    setEmail('')
     setCursoId('')
     setFechaNacimiento('')
     router.refresh()
@@ -81,21 +78,12 @@ export default function NuevoAlumnoSheet({ instId, cursos }: Props) {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="al-email">Email</Label>
-              <Input
-                id="al-email"
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="alumno@ejemplo.com"
-              />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
               <Label htmlFor="al-curso">Curso</Label>
               <Select value={cursoId} onValueChange={v => setCursoId(v ?? '')}>
                 <SelectTrigger id="al-curso">
-                  <SelectValue placeholder="Asignar curso..." />
+                  <SelectValue placeholder="Asignar curso...">
+                    {cursoId ? cursos.find(c => c.id === cursoId)?.nombre : undefined}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {cursos.map(c => (

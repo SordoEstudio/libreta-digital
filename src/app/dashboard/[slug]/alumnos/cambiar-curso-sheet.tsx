@@ -61,7 +61,9 @@ export default function CambiarCursoSheet({ alumnoId, alumnoNombre, cursos, open
             <Label htmlFor="cc-curso">Nuevo curso *</Label>
             <Select value={cursoId} onValueChange={v => setCursoId(v ?? '')}>
               <SelectTrigger id="cc-curso">
-                <SelectValue placeholder="Seleccionar curso..." />
+                <SelectValue placeholder="Seleccionar curso...">
+                  {cursoId ? cursos.find(c => c.id === cursoId)?.nombre : undefined}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {cursos.map(c => (

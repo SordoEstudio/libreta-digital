@@ -142,5 +142,5 @@ export async function POST(request: NextRequest, { params }: Params) {
     setup_url,
   })
 
-  return created({ persona_id, email, rol })
+  return created({ persona_id, email, rol, setup_url: setup_url ?? null })
 }
