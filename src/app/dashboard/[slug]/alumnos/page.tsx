@@ -1,5 +1,6 @@
 import { requireSession, isSuperadmin, hasRole } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect, notFound } from 'next/navigation'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -8,6 +9,7 @@ import {
 import { GraduationCap } from 'lucide-react'
 import NuevoAlumnoSheet from './nuevo-alumno-sheet'
 import AlumnoAcciones from './alumno-acciones'
+import { ResponsablesChips } from './responsables-chips'
 
 type Params = { params: Promise<{ slug: string }> }
 
@@ -32,6 +34,37 @@ export default async function AlumnosPage({ params }: Params) {
     .eq('institucion_id', inst.id)
     .is('deleted_at', null)
     .order('nombre')
+
+  const alumnoIds = (alumnos ?? []).map(a => a.id)
+
+  type RespRow = {
+    persona_id: string
+    nombre: string
+    email: string | null
+    relacion: string | null
+  }
+  const responsablesMap = new Map<string, RespRow[]>()
+
+  if (alumnoIds.length > 0) {
+    const admin = createAdminClient()
+    const { data: allResp } = await admin
+      .from('alumno_responsables')
+      .select('alumno_id, persona_id, relacion, personas(nombre, email)')
+      .in('alumno_id', alumnoIds)
+
+    for (const r of (allResp ?? [])) {
+      const personas = r.personas as { nombre: string; email: string | null } | null
+      const entry: RespRow = {
+        persona_id: r.persona_id,
+        relacion: r.relacion ?? null,
+        nombre: personas?.nombre ?? '',
+        email: personas?.email ?? null,
+      }
+      const existing = responsablesMap.get(r.alumno_id) ?? []
+      existing.push(entry)
+      responsablesMap.set(r.alumno_id, existing)
+    }
+  }
 
   // Only offer active year's courses for new enrollments
   const { data: añoActivo } = await supabase
@@ -70,6 +103,7 @@ export default async function AlumnosPage({ params }: Params) {
               <TableRow>
                 <TableHead>Nombre</TableHead>
                 <TableHead>Curso</TableHead>
+                <TableHead>Responsables</TableHead>
                 <TableHead>Estado</TableHead>
                 <TableHead className="w-24">Acciones</TableHead>
               </TableRow>
@@ -79,6 +113,7 @@ export default async function AlumnosPage({ params }: Params) {
                 const inscripcion = ((alumno.alumno_inscripciones ?? []) as Inscripcion[])
                   .find(i => i.activo && !i.deleted_at)
                 const cursoNombre = inscripcion?.cursos?.nombre
+                const responsables = responsablesMap.get(alumno.id) ?? []
                 return (
                   <TableRow key={alumno.id}>
                     <TableCell className="font-medium">{alumno.nombre}</TableCell>
@@ -86,6 +121,9 @@ export default async function AlumnosPage({ params }: Params) {
                       {cursoNombre ?? (
                         <span className="text-muted-foreground text-xs">Sin curso</span>
                       )}
+                    </TableCell>
+                    <TableCell>
+                      <ResponsablesChips responsables={responsables} />
                     </TableCell>
                     <TableCell>
                       <Badge variant={alumno.activo ? 'default' : 'secondary'}>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -16,6 +16,11 @@ const ROLES = [
   { value: 'responsable', label: 'Responsable' },
 ]
 
+interface Alumno {
+  id: string
+  nombre: string
+}
+
 interface Props {
   instId: string
 }
@@ -30,6 +35,24 @@ export default function NuevoUsuarioSheet({ instId }: Props) {
   const [inviteLink, setInviteLink] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
+  // G8: assign alumnos after creating a responsable
+  const [personaIdCreada, setPersonaIdCreada] = useState<string | null>(null)
+  const [alumnos, setAlumnos] = useState<Alumno[]>([])
+  const [alumnosSeleccionados, setAlumnosSeleccionados] = useState<Set<string>>(new Set())
+  const [loadingAlumnos, setLoadingAlumnos] = useState(false)
+  const [asignando, setAsignando] = useState(false)
+  const [asignacionHecha, setAsignacionHecha] = useState(false)
+
+  useEffect(() => {
+    if (!inviteLink || rol !== 'responsable') return
+    setLoadingAlumnos(true)
+    fetch(`/api/v1/instituciones/${instId}/alumnos?activo=true`)
+      .then(r => r.json())
+      .then(j => setAlumnos(j.data ?? []))
+      .catch(() => {})
+      .finally(() => setLoadingAlumnos(false))
+  }, [inviteLink, rol, instId])
+
   function handleClose(v: boolean) {
     setOpen(v)
     if (!v) {
@@ -38,6 +61,12 @@ export default function NuevoUsuarioSheet({ instId }: Props) {
       setRol('')
       setInviteLink(null)
       setCopied(false)
+      setPersonaIdCreada(null)
+      setAlumnos([])
+      setAlumnosSeleccionados(new Set())
+      setLoadingAlumnos(false)
+      setAsignando(false)
+      setAsignacionHecha(false)
     }
   }
 
@@ -61,6 +90,7 @@ export default function NuevoUsuarioSheet({ instId }: Props) {
 
     if (json.data?.setup_url) {
       setInviteLink(json.data.setup_url)
+      setPersonaIdCreada(json.data.persona_id ?? null)
     } else {
       toast.success(`Usuario "${nombre}" agregado.`)
       handleClose(false)
@@ -74,6 +104,42 @@ export default function NuevoUsuarioSheet({ instId }: Props) {
     await navigator.clipboard.writeText(inviteLink)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  function toggleAlumno(id: string) {
+    setAlumnosSeleccionados(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  async function handleAsignar() {
+    if (!personaIdCreada || alumnosSeleccionados.size === 0) return
+    setAsignando(true)
+
+    const results = await Promise.allSettled(
+      Array.from(alumnosSeleccionados).map(alumnoId =>
+        fetch(`/api/v1/alumnos/${alumnoId}/responsables`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ persona_id: personaIdCreada }),
+        })
+      )
+    )
+
+    const failed = results.filter(r => r.status === 'rejected').length
+    setAsignando(false)
+    setAsignacionHecha(true)
+
+    if (failed > 0) {
+      toast.error(`${failed} asignación(es) fallaron`)
+    } else {
+      toast.success(`${alumnosSeleccionados.size} alumno(s) asignado(s)`)
+    }
+
+    router.refresh()
   }
 
   return (
@@ -112,6 +178,55 @@ export default function NuevoUsuarioSheet({ instId }: Props) {
                   }
                 </Button>
               </div>
+
+              {rol === 'responsable' && (
+                <div className="flex flex-col gap-3 pt-3 border-t">
+                  <p className="text-sm font-medium">Asignar alumnos <span className="text-xs font-normal text-muted-foreground">(opcional)</span></p>
+
+                  {loadingAlumnos ? (
+                    <div className="flex justify-center py-3">
+                      <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : alumnos.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">Sin alumnos activos registrados.</p>
+                  ) : (
+                    <div className="flex flex-col gap-1 max-h-48 overflow-y-auto rounded-md border divide-y">
+                      {alumnos.map(a => (
+                        <label
+                          key={a.id}
+                          className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer hover:bg-muted/50 transition-colors"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={alumnosSeleccionados.has(a.id)}
+                            onChange={() => toggleAlumno(a.id)}
+                            className="size-4 accent-primary"
+                            disabled={asignacionHecha}
+                          />
+                          {a.nombre}
+                        </label>
+                      ))}
+                    </div>
+                  )}
+
+                  {!asignacionHecha && alumnos.length > 0 && (
+                    <Button
+                      onClick={handleAsignar}
+                      disabled={asignando || alumnosSeleccionados.size === 0}
+                      variant="outline"
+                    >
+                      {asignando && <Loader2 data-icon="inline-start" className="animate-spin" />}
+                      {asignando ? 'Asignando...' : `Asignar ${alumnosSeleccionados.size > 0 ? `(${alumnosSeleccionados.size})` : ''}`}
+                    </Button>
+                  )}
+
+                  {asignacionHecha && (
+                    <p className="text-xs text-muted-foreground">
+                      Alumnos asignados. Podés editar los responsables desde la página de Alumnos.
+                    </p>
+                  )}
+                </div>
+              )}
 
               <Button onClick={() => handleClose(false)} className="mt-2">
                 Listo

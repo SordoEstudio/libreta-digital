@@ -7,10 +7,10 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { MoreHorizontal, BookOpen, UserPlus, ArrowRightLeft, UserCheck, UserX } from 'lucide-react'
+import { MoreHorizontal, BookOpen, Users, ArrowRightLeft, UserCheck, UserX } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
-import AsignarResponsableSheet from './asignar-responsable-sheet'
+import ResponsablesSheet from './responsables-sheet'
 import CambiarCursoSheet from './cambiar-curso-sheet'
 
 interface Props {
@@ -62,8 +62,8 @@ export default function AlumnoAcciones({ alumnoId, alumnoNombre, activo, instId,
             Ver libreta
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setRespOpen(true)}>
-            <UserPlus className="size-4" />
-            Asignar responsable
+            <Users className="size-4" />
+            Responsables
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setCursoOpen(true)}>
             <ArrowRightLeft className="size-4" />
@@ -80,7 +80,7 @@ export default function AlumnoAcciones({ alumnoId, alumnoNombre, activo, instId,
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <AsignarResponsableSheet
+      <ResponsablesSheet
         alumnoId={alumnoId}
         alumnoNombre={alumnoNombre}
         instId={instId}
