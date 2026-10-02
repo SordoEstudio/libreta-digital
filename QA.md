@@ -1,164 +1,199 @@
-# QA — feat/g1-g5-functional
+# QA — Libreta Digital
 
-Branch deployado en Vercel. Ejecutar en orden: cada paso depende del anterior.
-
----
-
-## Prerequisitos
-
-- [x] `RESEND_API_KEY` seteada en Vercel (Production)
-- [x] `EMAIL_FROM` = `Harvi Digital <hola@harvi.digital>` en Vercel (Production)
-- [x] `harvi.digital` verificado en Resend
-- [x] Deploy del branch activo
+Última actualización: 2026-10-02 · Branch base: `master` (`6d400ae`)
 
 ---
 
-## 1. Admin — Setup desde cero
+## Estado general
 
-### 1.1 Año lectivo y periodos
-- [x] Login como admin
-- [x] Ir a **Configuración → Años lectivos**
-- [x] Crear año lectivo "2026", marcar activo
-- [x] Crear periodos (ej: Trimestre 1, Trimestre 2, Trimestre 3)
-- [x] Verificar que aparece "Activo" en la lista
-
-### 1.2 Cursos
-- [x] Ir a **Cursos → Nuevo curso**
-- [x] Crear curso "1º A" (año 2026)
-- [x] Verificar que aparece en la lista
-
-### 1.3 Catálogo de materias
-- [x] Ir a **Materias → Nueva materia**
-- [x] Crear "Matemáticas"
-- [x] Crear "Lengua"
-- [x] Editar nombre de una materia → verificar que actualiza
-- [x] Intentar eliminar materia sin instancias → debe funcionar
-- [x] Crear "Ciencias" para eliminar en este paso
-
-### 1.4 Alumnos
-- [x] Ir a **Alumnos → Nuevo alumno**
-- [x] Crear alumno "Juan García"
-- [x] Verificar que el select de curso muestra nombre (no UUID)
-- [x] Asignar a curso "1º A"
-- [x] Crear segundo alumno "Ana Pérez" sin curso
-- [x] Verificar que campo email NO aparece en el formulario
-
-### 1.5 Usuarios — invitar docente
-- [ ] Ir a **Usuarios → Nuevo usuario**
-- [ ] Nombre: "Prof. López", email real, rol: Docente
-- [ ] Verificar que el select de rol muestra "Docente" (no valor UUID)
-- [ ] Crear → verificar que aparece panel con link de acceso
-- [ ] Copiar link → verificar que se copia al portapapeles
-- [ ] Verificar que llega email desde `hola@harvi.digital`
-- [ ] Si no llega email → usar el link copiado para continuar QA
-
-### 1.6 Asignar materia al curso
-- [ ] Ir a **Cursos → 1º A**
-- [ ] Click "Agregar materia"
-- [ ] Verificar combobox: tipear "Mat" → aparece "Matemáticas"
-- [ ] Seleccionar "Matemáticas" → asignar docente Prof. López
-- [ ] Verificar combobox: tipear "Fisica" (no existe) → aparece opción "Crear 'Fisica'"
-- [ ] Seleccionar "Crear 'Fisica'" → verificar que se crea y aparece en el curso
-- [ ] Ir a **Materias** → verificar que "Fisica" aparece en el catálogo con 1 instancia
-
-### 1.7 Acciones sobre alumnos
-- [x] Ir a **Alumnos** → acciones de "Ana Pérez"
-- [x] **Cambiar curso** → asignar a "1º A" → verificar select muestra nombre
-- [x] **Toggle inactivo** → verificar badge cambia a "Inactivo"
-- [x] **Toggle activo** → verificar badge vuelve a "Activo"
-
-### 1.8 Usuarios — desactivar
-- [x] Ir a **Usuarios** → acciones sobre un usuario (no superadmin)
-- [x] "Desactivar acceso" → confirmar → verificar desaparece de la lista
+| Fase | Features | Estado |
+|------|----------|--------|
+| G1–G8 | Funcional crítico completo | ✅ Implementado |
+| UX1 | Filtros y búsqueda | ✅ Implementado |
+| UX2 | Home por rol | ✅ Implementado |
+| UX3 | ConfirmDialog + consistencia | ✅ Implementado |
+| UX4 | Diseño emails | ⏳ Pendiente |
 
 ---
 
-## 2. Docente — primer ingreso
+## G — Funcional
 
-- [x] Abrir link de invitación (del email o copiado en paso 1.5)
-- [x] Setear contraseña → redirige al dashboard
-- [x] Verificar sidebar muestra "Mis Materias"
-- [x] Ir a **Mis Materias** → ver "Matemáticas" en "1º A"
-- [x] Entrar a Matemáticas → **Nueva evaluación**
-- [x] Crear evaluación "Primer parcial", tipo: parcial, periodo: Trimestre 1
-- [x] Entrar a evaluación → cargar notas:
-  - Juan García: 8
-  tal vez al vorlver a cargar.
-  new row violates row-level security policy for table "notas_historial"
-  - Ana Pérez: marcar **Ausente**
-  no puedo marcar ausente
-- [x] Guardar → verificar toast "X notas guardadas"
-- [ ] Verificar que la nota vacía (sin valor ni ausente) no se guarda
+### G1 · Invite flow
+- [ ] Admin invita usuario → recibe email con link
+- [ ] Link de invite redirige a registro correcto
+- [ ] Usuario registrado aparece en lista con rol asignado
+- [ ] Link copiado desde UI funciona
 
----
+### G2 · Años y períodos
+- [ ] Crear año lectivo desde configuración
+- [ ] Crear períodos dentro de año
+- [ ] Activar año → solo un año activo simultáneamente
+- [ ] Eliminar año sin cursos → OK; con cursos → error claro
+- [ ] Badge "Activo" / "Inactivo" correcto en config page
+- [ ] Botón icono Settings → navega a `/configuracion/periodos`
 
-## 3. G7 — Gestión de responsables
+### G3 · Materias
+- [ ] Crear materia desde catálogo
+- [ ] Asignar materia a curso
+- [ ] Asignar docente a materia (AsignarDocenteSheet)
+- [ ] Editar nombre de materia del catálogo
+- [ ] Eliminar materia del catálogo sin instancias → ConfirmDialog → OK
+- [ ] Eliminar materia con instancias → opción oculta (`hasInstancias = true`)
+- [ ] Búsqueda por nombre en MateriasTabla funciona
+- [ ] Contador "N de M" + Limpiar aparece al buscar
 
-### 3.1 Columna responsables en tabla alumnos
-- [ ] Ir a **Alumnos** → verificar columna "Responsables" visible
-- [ ] Juan García (sin responsables) → muestra "—"
-- [ ] Hover sobre chip de un alumno con responsable → tooltip muestra nombre/email/relación
+### G4 · Vincular responsable
+- [ ] ResponsablesSheet abre desde fila de alumno
+- [ ] Lista responsables actuales con relación, teléfono, DNI, dirección
+- [ ] Agregar responsable existente → aparece en lista
+- [ ] Editar datos de responsable (nombre, relación, teléfono, DNI, dirección)
+- [ ] Desvincular → ConfirmDialog → desvincula correctamente
+- [ ] ConfirmDialog no usa `window.confirm` nativo
 
-### 3.2 Sheet de responsables
-- [ ] Acciones de "Juan García" → "Responsables"
-- [ ] Sheet abre → "Sin responsables asignados."
-- [ ] Sección "Agregar responsable" con select y campo relación
-- [ ] Si no hay responsables creados: mensaje "No hay responsables disponibles..."
-- [ ] Crear responsable vía Usuarios primero (si no existe), volver a este paso
-- [ ] Agregar responsable a Juan García → relación "Padre"
-- [ ] Verificar aparece en lista con nombre, email y relación
-- [ ] Chip aparece en columna de la tabla
-- [ ] Hover chip → tooltip muestra nombre/email/"Padre"
-- [ ] Click en relación "Padre" → input inline → cambiar a "Tutor" → Guardar
-- [ ] Verificar relación actualizada
-- [ ] Botón trash → confirm → responsable desvinculado
-- [ ] Columna vuelve a "—"
-- Boton de editar para poder editar los datos del responsable (aagregar relacion) quitar link de agrgegar relsacion.
-permitir agregar mas de un responsable por alumno
----
+### G5 · Mis alumnos (responsable)
+- [ ] Responsable ve solo sus alumnos en `/mis-alumnos`
+- [ ] Link a libreta de cada alumno funciona
 
-## 4. G8 — Crear responsable + asignar alumnos
+### G6 · Edición usuarios
+- [ ] EditarUsuarioSheet abre al hacer clic en ícono lápiz
+- [ ] Form pre-cargado con datos actuales del usuario
+- [ ] Guardar nombre, rol, teléfono, DNI, dirección → toast éxito + refresh
+- [ ] Email shown as readonly (no editable)
+- [ ] Desactivar acceso → ConfirmDialog → usuario queda inactivo (opacity-60 en tabla)
+- [ ] Activar acceso → sin ConfirmDialog → usuario queda activo
+- [ ] Superadmin no muestra botón editar en UsuariosTabla
 
-- [ ] **Usuarios → Nuevo usuario**, rol: Responsable, email nuevo
-- [ ] Crear → panel de invite link aparece
-- [ ] Verificar sección "Asignar alumnos (opcional)" visible bajo el link
-- [ ] Lista alumnos activos con checkboxes
-- [ ] Seleccionar "Juan García" y "Ana Pérez" → botón "Asignar (2)"
-- [ ] Click Asignar → toast "2 alumno(s) asignado(s)"
-- al crear responsable asignar alimno que sea boton y abra un modal para poder buscar alumnos por nombre/dni(habra gran cantidad) o combo box que muestre nombre y dni (por sihay alumnos con nombres duplicados)
-- [x] Checkboxes se deshabilitan, mensaje de confirmación
-- [ ] Click Listo → sheet cierra
-- [ ] Ir a **Alumnos** → ambos alumnos tienen chip del responsable
-- [ ] Verificar en sheet de responsables de Juan García → responsable aparece (sin relación) no aparece
+### G7 · Responsables gestión completa
+- [ ] Ver lista responsables por alumno
+- [ ] Editar relación in-line
+- [ ] Desvincular con confirmación
+- [ ] Chips de responsables visibles en fila de alumno
 
----
-
-## 5. Responsable — login y libreta
-
-- [ ] Como admin: **Alumnos** → acciones de "Juan García"
-- [ ] "Responsables" → verificar responsable asignado aparece
-- [ ] Responsable: abrir link de invite → setear contraseña → login
-- [ ] Verificar sidebar muestra "Mis alumnos"
-- [ ] Click "Juan García" → ver libreta
-- [ ] Verificar nota del "Primer parcial": 8 visible
-- [ ] Verificar Ana Pérez aparece como "A" (Ausente)
+### G8 · Crear responsable con asignación
+- [ ] Al crear usuario con rol responsable, step 2 muestra multi-select de alumnos
+- [ ] Alumnos seleccionados quedan vinculados al crear
 
 ---
 
-## 6. Validaciones a verificar
+## UX1 · Filtros y búsqueda
 
-| Caso | Resultado esperado |
-|------|--------------------|
-| Materia en catálogo con instancias → intentar eliminar | Error "La materia tiene instancias activas" |
-| Nota numérica < 0 o > 10 | Input lo rechaza (min/max) |
-| Crear usuario con email ya existente mismo rol | Error "Ya tiene ese rol" |
-| Agregar materia con nombre existente (ilike) | Reutiliza entrada del catálogo (no duplicado) |
-| Responsable intenta ver dashboard de admin | Redirect a /dashboard |
+### Alumnos
+- [ ] Búsqueda por nombre filtra en tiempo real
+- [ ] Filtro por curso (select con cursos presentes en datos)
+- [ ] Filtro "Sin curso" muestra alumnos sin inscripción activa
+- [ ] Filtro por estado (Activo / Inactivo / Todos)
+- [ ] Contador "N de M" aparece cuando hay filtros activos
+- [ ] Botón "Limpiar" resetea todos los filtros
+- [ ] Empty state "Sin alumnos" cuando no hay datos
+- [ ] Empty state "Sin resultados" + link limpiar cuando filtros no matchean
+
+### Usuarios
+- [ ] Búsqueda por nombre y email
+- [ ] Filtro por rol (Admin / Docente / Responsable)
+- [ ] Filtro por estado
+- [ ] Contador + Limpiar funcionan
+- [ ] Empty states correctos
+
+### Materias (catálogo)
+- [ ] Búsqueda por nombre
+- [ ] Contador + Limpiar funcionan
+- [ ] Empty state "Sin resultados para X"
 
 ---
 
-## 7. Post-QA
+## UX2 · Home por rol
 
-- [ ] Merge PR `feat/g1-g5-functional` → `master`
-- [ ] Verificar deploy en producción de master
-- [ ] Comenzar fase H (branding, responsive, UI polish)
+### Admin
+- [ ] Stats row: alumnos activos, docentes activos, cursos (con nombre del año activo)
+- [ ] Alerta "N alumnos sin curso" → link "Ver alumnos" navega a `/alumnos`
+- [ ] Alerta "N materias sin docente" → link "Ver configuración" navega a `/configuracion`
+- [ ] Sin alertas: badge verde "Todo en orden"
+- [ ] Sin alumnos registrados: no muestra "Todo en orden"
+- [ ] Accesos rápidos: Alumnos, Usuarios, Configuración
+
+### Docente
+- [ ] Lista de materias asignadas (solo las del docente)
+- [ ] Por evaluación: "X sin nota" (amber) o "Completo" (green) o "Sin alumnos"
+- [ ] Materias con más pendientes aparecen primero
+- [ ] Badge total pendientes en header
+- [ ] Botón "Cargar notas →" navega a `/materias/[id]/evaluaciones`
+- [ ] Sin materias asignadas: empty state
+
+### Responsable
+- [ ] Alumnos a cargo listados con nombre y curso actual
+- [ ] Notas del año activo agrupadas por materia
+- [ ] Sin notas: mensaje "Sin notas cargadas este año"
+- [ ] Sin año activo: mensaje "Sin año lectivo activo"
+- [ ] Link "Ver libreta →" navega a `/libreta/[alumno_id]`
+- [ ] Sin alumnos asignados: empty state
+
+### Dispatch de roles
+- [ ] Superadmin ve HomeAdmin
+- [ ] Rol admin ve HomeAdmin
+- [ ] Solo docente ve HomeDocente
+- [ ] Solo responsable ve HomeResponsable
+- [ ] Docente + admin ve HomeAdmin (admin tiene prioridad)
+
+---
+
+## UX3 · Confirmaciones y consistencia
+
+### ConfirmDialog
+- [ ] Ningún `window.confirm()` nativo en codebase
+- [ ] Título y descripción correctos en cada uso
+- [ ] "Cancelar" cierra sin acción
+- [ ] Estado `loading` deshabilita ambos botones
+- [ ] Variante `destructive` usa color rojo en botón confirmar
+- [ ] ESC cierra sin acción
+
+### Config page
+- [ ] Botón icono Settings navega a periodos (no link de texto)
+- [ ] ActivarAño y EliminarAño ausentes en config page principal
+- [ ] Badge "Activo" / "Inactivo" correcto junto al selector de año
+- [ ] ActivarAño y EliminarAño presentes en `/configuracion/periodos`
+- [ ] EliminarAño usa `variant="destructive"`
+
+---
+
+## Flujos críticos end-to-end
+
+### Flujo admin onboarding
+1. [ ] Crear institución
+2. [ ] Crear año lectivo + períodos
+3. [ ] Invitar docente → recibe email
+4. [ ] Crear curso
+5. [ ] Asignar materia al curso
+6. [ ] Asignar docente a materia
+7. [ ] Crear alumno
+8. [ ] Asignar alumno a curso
+9. [ ] Home admin muestra stats correctos + sin alertas
+
+### Flujo docente cargar notas
+1. [ ] Home docente muestra materia con evaluaciones pendientes
+2. [ ] Click "Cargar notas" → página de evaluaciones
+3. [ ] Crear evaluación
+4. [ ] Cargar notas para cada alumno
+5. [ ] Home docente actualiza estado a "Completo"
+
+### Flujo responsable ver libreta
+1. [ ] Home responsable muestra alumno con notas del año activo
+2. [ ] Click "Ver libreta" → libreta completa
+3. [ ] Notas agrupadas por materia y evaluación
+
+---
+
+## Bugs corregidos
+
+| Commit | Bug | Fix |
+|--------|-----|-----|
+| `6d400ae` | `home-docente`: link "Cargar notas" → `/notas?materia=` (404) | Redirige a `/materias/[id]/evaluaciones` |
+| `6d400ae` | `PATCH /usuarios/[id]`: `.eq('activo', true)` bloqueaba reactivación de usuarios | Removido filtro |
+
+---
+
+## Limitaciones conocidas (aceptables MVP)
+
+- `EditarUsuarioSheet`: no se puede vaciar un campo opcional existente (telefono/dni/dir) enviando cadena vacía — el PATCH ignora strings vacíos
+- `home-admin` alertas "materias sin docente": incluye materias de todos los años, no solo el activo — puede ser ruidoso en instalaciones con historial
+- Sin paginación en tablas — filtrado client-side, OK hasta ~500 registros por página
+- Emails sin diseño Harvi (UX4 pendiente)
