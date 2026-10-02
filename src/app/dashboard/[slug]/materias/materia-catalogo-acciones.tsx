@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { MoreHorizontal, Pencil, Trash2, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 
 interface Props {
   id: string
@@ -24,6 +25,7 @@ export default function MateriaCatalogoAcciones({ id, nombre, hasInstancias }: P
   const [editOpen, setEditOpen] = useState(false)
   const [editNombre, setEditNombre] = useState(nombre)
   const [loading, setLoading] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
 
   async function handleEdit(e: React.FormEvent) {
     e.preventDefault()
@@ -49,8 +51,6 @@ export default function MateriaCatalogoAcciones({ id, nombre, hasInstancias }: P
   }
 
   async function handleDelete() {
-    if (!confirm(`¿Eliminar "${nombre}" del catálogo?`)) return
-
     const res = await fetch(`/api/v1/materias-catalogo/${id}`, { method: 'DELETE' })
 
     if (!res.ok) {
@@ -80,7 +80,7 @@ export default function MateriaCatalogoAcciones({ id, nombre, hasInstancias }: P
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 className="text-destructive focus:text-destructive"
-                onClick={handleDelete}
+                onClick={() => setDeleteOpen(true)}
               >
                 <Trash2 className="size-4" />
                 Eliminar
@@ -89,6 +89,16 @@ export default function MateriaCatalogoAcciones({ id, nombre, hasInstancias }: P
           )}
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <ConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title={`¿Eliminar "${nombre}" del catálogo?`}
+        description="Solo si no tiene notas cargadas. Esta acción no se puede deshacer."
+        confirmLabel="Eliminar"
+        destructive
+        onConfirm={() => { setDeleteOpen(false); handleDelete() }}
+      />
 
       <Sheet open={editOpen} onOpenChange={setEditOpen}>
         <SheetContent>

@@ -53,7 +53,7 @@ export default function EliminarAñoButton({ añoId, añoNombre }: Props) {
           <AlertDialogAction
             onClick={handleEliminar}
             disabled={loading}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            variant="destructive"
           >
             {loading && <Loader2 data-icon="inline-start" className="animate-spin" />}
             Eliminar
