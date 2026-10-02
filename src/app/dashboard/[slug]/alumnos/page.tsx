@@ -2,14 +2,8 @@ import { requireSession, isSuperadmin, hasRole } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect, notFound } from 'next/navigation'
-import { Badge } from '@/components/ui/badge'
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from '@/components/ui/table'
-import { GraduationCap } from 'lucide-react'
 import NuevoAlumnoSheet from './nuevo-alumno-sheet'
-import AlumnoAcciones from './alumno-acciones'
-import { ResponsablesChips } from './responsables-chips'
+import AlumnosTabla from './alumnos-tabla'
 
 type Params = { params: Promise<{ slug: string }> }
 
@@ -86,6 +80,19 @@ export default async function AlumnosPage({ params }: Params) {
 
   type Inscripcion = { curso_id: string; activo: boolean; deleted_at: string | null; cursos: { nombre: string } | null }
 
+  const alumnosData = (alumnos ?? []).map(alumno => {
+    const inscripcion = ((alumno.alumno_inscripciones ?? []) as Inscripcion[])
+      .find(i => i.activo && !i.deleted_at)
+    return {
+      id: alumno.id,
+      nombre: alumno.nombre,
+      activo: alumno.activo,
+      cursoId: inscripcion?.curso_id ?? null,
+      cursoNombre: inscripcion?.cursos?.nombre ?? null,
+      responsables: responsablesMap.get(alumno.id) ?? [],
+    }
+  })
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
@@ -96,62 +103,12 @@ export default async function AlumnosPage({ params }: Params) {
         <NuevoAlumnoSheet instId={inst.id} cursos={cursosDisponibles ?? []} />
       </div>
 
-      {alumnos && alumnos.length > 0 ? (
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nombre</TableHead>
-                <TableHead>Curso</TableHead>
-                <TableHead>Responsables</TableHead>
-                <TableHead>Estado</TableHead>
-                <TableHead className="w-24">Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {alumnos.map(alumno => {
-                const inscripcion = ((alumno.alumno_inscripciones ?? []) as Inscripcion[])
-                  .find(i => i.activo && !i.deleted_at)
-                const cursoNombre = inscripcion?.cursos?.nombre
-                const responsables = responsablesMap.get(alumno.id) ?? []
-                return (
-                  <TableRow key={alumno.id}>
-                    <TableCell className="font-medium">{alumno.nombre}</TableCell>
-                    <TableCell>
-                      {cursoNombre ?? (
-                        <span className="text-muted-foreground text-xs">Sin curso</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <ResponsablesChips responsables={responsables} />
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={alumno.activo ? 'default' : 'secondary'}>
-                        {alumno.activo ? 'Activo' : 'Inactivo'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <AlumnoAcciones
-                        alumnoId={alumno.id}
-                        alumnoNombre={alumno.nombre}
-                        activo={alumno.activo}
-                        instId={inst.id}
-                        slug={slug}
-                        cursos={cursosDisponibles ?? []}
-                      />
-                    </TableCell>
-                  </TableRow>
-                )
-              })}
-            </TableBody>
-          </Table>
-        </div>
-      ) : (
-        <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-          <GraduationCap className="size-12 text-muted-foreground/40" />
-          <p className="text-muted-foreground">Sin alumnos registrados.</p>
-        </div>
-      )}
+      <AlumnosTabla
+        alumnos={alumnosData}
+        instId={inst.id}
+        slug={slug}
+        cursos={cursosDisponibles ?? []}
+      />
     </div>
   )
 }

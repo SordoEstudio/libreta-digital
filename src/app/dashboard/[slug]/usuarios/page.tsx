@@ -2,29 +2,11 @@ import { requireSession, isSuperadmin, hasRole } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect, notFound } from 'next/navigation'
-import { Badge } from '@/components/ui/badge'
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from '@/components/ui/table'
-import { Users } from 'lucide-react'
 import NuevoUsuarioSheet from './nuevo-usuario-sheet'
-import EditarUsuarioSheet from './editar-usuario-sheet'
+import UsuariosTabla from './usuarios-tabla'
 
 type Params = { params: Promise<{ slug: string }> }
 
-const ROL_LABELS: Record<string, string> = {
-  admin: 'Admin',
-  docente: 'Docente',
-  responsable: 'Responsable',
-  superadmin: 'Superadmin',
-}
-
-const ROL_VARIANTS: Record<string, 'default' | 'secondary' | 'outline'> = {
-  admin: 'default',
-  docente: 'secondary',
-  responsable: 'outline',
-  superadmin: 'default',
-}
 
 export default async function UsuariosPage({ params }: Params) {
   const { slug } = await params
@@ -58,62 +40,22 @@ export default async function UsuariosPage({ params }: Params) {
         <NuevoUsuarioSheet instId={inst.id} />
       </div>
 
-      {memberships && memberships.length > 0 ? (
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nombre</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Rol</TableHead>
-                <TableHead>Estado</TableHead>
-                <TableHead className="w-12" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {memberships.map((m, i) => {
-                const persona = m.personas as { id: string; nombre: string; email: string | null; telefono: string | null; dni: string | null; direccion: string | null } | null
-                return (
-                  <TableRow key={i} className={!m.activo ? 'opacity-60' : ''}>
-                    <TableCell className="font-medium">{persona?.nombre ?? '—'}</TableCell>
-                    <TableCell className="text-muted-foreground text-sm">{persona?.email ?? '—'}</TableCell>
-                    <TableCell>
-                      <Badge variant={ROL_VARIANTS[m.rol] ?? 'outline'}>
-                        {ROL_LABELS[m.rol] ?? m.rol}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={m.activo ? 'default' : 'secondary'}>
-                        {m.activo ? 'Activo' : 'Inactivo'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {persona && m.rol !== 'superadmin' && (
-                        <EditarUsuarioSheet
-                          instId={inst.id}
-                          personaId={persona.id}
-                          nombre={persona.nombre}
-                          email={persona.email}
-                          rol={m.rol}
-                          activo={m.activo}
-                          telefono={persona.telefono}
-                          dni={persona.dni}
-                          direccion={persona.direccion}
-                        />
-                      )}
-                    </TableCell>
-                  </TableRow>
-                )
-              })}
-            </TableBody>
-          </Table>
-        </div>
-      ) : (
-        <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-          <Users className="size-12 text-muted-foreground/40" />
-          <p className="text-muted-foreground">Sin usuarios registrados.</p>
-        </div>
-      )}
+      <UsuariosTabla
+        instId={inst.id}
+        usuarios={(memberships ?? []).map(m => {
+          const persona = m.personas as { id: string; nombre: string; email: string | null; telefono: string | null; dni: string | null; direccion: string | null } | null
+          return {
+            personaId: persona?.id ?? '',
+            nombre: persona?.nombre ?? '—',
+            email: persona?.email ?? null,
+            rol: m.rol,
+            activo: m.activo,
+            telefono: persona?.telefono ?? null,
+            dni: persona?.dni ?? null,
+            direccion: persona?.direccion ?? null,
+          }
+        })}
+      />
     </div>
   )
 }

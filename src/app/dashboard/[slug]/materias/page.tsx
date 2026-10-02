@@ -1,12 +1,8 @@
 import { requireSession, isSuperadmin, hasRole } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from '@/components/ui/table'
-import { BookOpen } from 'lucide-react'
 import NuevaMateriaCatalogoSheet from './nueva-materia-catalogo-sheet'
-import MateriaCatalogoAcciones from './materia-catalogo-acciones'
+import MateriasTabla from './materias-tabla'
 
 type Params = { params: Promise<{ slug: string }> }
 
@@ -54,44 +50,13 @@ export default async function MateriasCatalogoPage({ params }: Params) {
         <NuevaMateriaCatalogoSheet instId={inst.id} />
       </div>
 
-      {catalogo && catalogo.length > 0 ? (
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nombre</TableHead>
-                <TableHead>Instancias activas</TableHead>
-                <TableHead className="w-24" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {catalogo.map(entry => {
-                const count = instanciasPorCatalogo.get(entry.id) ?? 0
-                return (
-                  <TableRow key={entry.id}>
-                    <TableCell className="font-medium">{entry.nombre}</TableCell>
-                    <TableCell className="text-muted-foreground text-sm">
-                      {count === 0 ? 'Sin asignar' : `${count} curso${count !== 1 ? 's' : ''}`}
-                    </TableCell>
-                    <TableCell>
-                      <MateriaCatalogoAcciones
-                        id={entry.id}
-                        nombre={entry.nombre}
-                        hasInstancias={count > 0}
-                      />
-                    </TableCell>
-                  </TableRow>
-                )
-              })}
-            </TableBody>
-          </Table>
-        </div>
-      ) : (
-        <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-          <BookOpen className="size-12 text-muted-foreground/40" />
-          <p className="text-muted-foreground">Sin materias en el catálogo. Las materias se crean automáticamente al asignarlas a un curso, o podés agregarlas manualmente.</p>
-        </div>
-      )}
+      <MateriasTabla
+        materias={(catalogo ?? []).map(entry => ({
+          id: entry.id,
+          nombre: entry.nombre,
+          instancias: instanciasPorCatalogo.get(entry.id) ?? 0,
+        }))}
+      />
     </div>
   )
 }
