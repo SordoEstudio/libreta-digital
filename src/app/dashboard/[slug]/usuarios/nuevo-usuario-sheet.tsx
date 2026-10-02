@@ -38,6 +38,7 @@ export default function NuevoUsuarioSheet({ instId }: Props) {
   // G8: assign alumnos after creating a responsable
   const [personaIdCreada, setPersonaIdCreada] = useState<string | null>(null)
   const [alumnos, setAlumnos] = useState<Alumno[]>([])
+  const [alumnoQuery, setAlumnoQuery] = useState('')
   const [alumnosSeleccionados, setAlumnosSeleccionados] = useState<Set<string>>(new Set())
   const [loadingAlumnos, setLoadingAlumnos] = useState(false)
   const [asignando, setAsignando] = useState(false)
@@ -63,6 +64,7 @@ export default function NuevoUsuarioSheet({ instId }: Props) {
       setCopied(false)
       setPersonaIdCreada(null)
       setAlumnos([])
+      setAlumnoQuery('')
       setAlumnosSeleccionados(new Set())
       setLoadingAlumnos(false)
       setAsignando(false)
@@ -119,17 +121,18 @@ export default function NuevoUsuarioSheet({ instId }: Props) {
     if (!personaIdCreada || alumnosSeleccionados.size === 0) return
     setAsignando(true)
 
-    const results = await Promise.allSettled(
-      Array.from(alumnosSeleccionados).map(alumnoId =>
-        fetch(`/api/v1/alumnos/${alumnoId}/responsables`, {
+    const results = await Promise.all(
+      Array.from(alumnosSeleccionados).map(async alumnoId => {
+        const res = await fetch(`/api/v1/alumnos/${alumnoId}/responsables`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ persona_id: personaIdCreada }),
         })
-      )
+        return res.ok
+      })
     )
 
-    const failed = results.filter(r => r.status === 'rejected').length
+    const failed = results.filter(ok => !ok).length
     setAsignando(false)
     setAsignacionHecha(true)
 
@@ -190,22 +193,33 @@ export default function NuevoUsuarioSheet({ instId }: Props) {
                   ) : alumnos.length === 0 ? (
                     <p className="text-xs text-muted-foreground">Sin alumnos activos registrados.</p>
                   ) : (
-                    <div className="flex flex-col gap-1 max-h-48 overflow-y-auto rounded-md border divide-y">
-                      {alumnos.map(a => (
-                        <label
-                          key={a.id}
-                          className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer hover:bg-muted/50 transition-colors"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={alumnosSeleccionados.has(a.id)}
-                            onChange={() => toggleAlumno(a.id)}
-                            className="size-4 accent-primary"
-                            disabled={asignacionHecha}
-                          />
-                          {a.nombre}
-                        </label>
-                      ))}
+                    <div className="flex flex-col gap-2">
+                      <Input
+                        placeholder="Buscar alumno..."
+                        value={alumnoQuery}
+                        onChange={e => setAlumnoQuery(e.target.value)}
+                        disabled={asignacionHecha}
+                        className="h-8 text-sm"
+                      />
+                      <div className="flex flex-col gap-0.5 max-h-44 overflow-y-auto rounded-md border divide-y">
+                        {alumnos
+                          .filter(a => a.nombre.toLowerCase().includes(alumnoQuery.toLowerCase()))
+                          .map(a => (
+                            <label
+                              key={a.id}
+                              className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer hover:bg-muted/50 transition-colors"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={alumnosSeleccionados.has(a.id)}
+                                onChange={() => toggleAlumno(a.id)}
+                                className="size-4 accent-primary"
+                                disabled={asignacionHecha}
+                              />
+                              {a.nombre}
+                            </label>
+                          ))}
+                      </div>
                     </div>
                   )}
 

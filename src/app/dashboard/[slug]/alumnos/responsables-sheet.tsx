@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
-import { Loader2, Trash2, Plus } from 'lucide-react'
+import { Loader2, Trash2, Plus, Pencil, X } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface Responsable {
@@ -157,58 +157,72 @@ export default function ResponsablesSheet({ alumnoId, alumnoNombre, instId, open
               <p className="text-sm text-muted-foreground py-2">Sin responsables asignados.</p>
             ) : (
               responsables.map(r => (
-                <div key={r.persona_id} className="flex items-start gap-2 rounded-lg border p-3">
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm truncate">{r.nombre}</p>
-                    {r.email && <p className="text-xs text-muted-foreground truncate">{r.email}</p>}
-                    {editingId === r.persona_id ? (
-                      <div className="flex items-center gap-1.5 mt-2">
-                        <Input
-                          value={editRelacion}
-                          onChange={e => setEditRelacion(e.target.value)}
-                          placeholder="Relación (ej: Madre)"
-                          className="h-7 text-xs"
-                          autoFocus
-                        />
-                        <Button
-                          size="sm"
-                          className="h-7 px-2 text-xs"
-                          onClick={() => handleSaveRelacion(r.persona_id)}
-                          disabled={saving}
-                        >
-                          {saving ? <Loader2 className="size-3 animate-spin" /> : 'Guardar'}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-7 px-2 text-xs"
-                          onClick={() => setEditingId(null)}
-                        >
-                          Cancelar
-                        </Button>
-                      </div>
-                    ) : (
-                      <button
-                        className="mt-1 text-xs text-muted-foreground hover:text-foreground transition-colors text-left"
-                        onClick={() => { setEditingId(r.persona_id); setEditRelacion(r.relacion ?? '') }}
+                <div key={r.persona_id} className="flex flex-col gap-2 rounded-lg border p-3">
+                  <div className="flex items-start gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">{r.nombre}</p>
+                      {r.email && <p className="text-xs text-muted-foreground truncate">{r.email}</p>}
+                      {editingId !== r.persona_id && (
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {r.relacion ?? <span className="italic">Sin relación</span>}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex gap-1 shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="size-7 p-0"
+                        title={editingId === r.persona_id ? 'Cancelar' : 'Editar relación'}
+                        onClick={() => {
+                          if (editingId === r.persona_id) {
+                            setEditingId(null)
+                          } else {
+                            setEditingId(r.persona_id)
+                            setEditRelacion(r.relacion ?? '')
+                          }
+                        }}
                       >
-                        {r.relacion ? r.relacion : <span className="italic">Sin relación — agregar</span>}
-                      </button>
-                    )}
+                        {editingId === r.persona_id
+                          ? <X className="size-3.5" />
+                          : <Pencil className="size-3.5" />
+                        }
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="size-7 p-0 text-destructive hover:text-destructive"
+                        onClick={() => handleDesvincular(r.persona_id)}
+                        disabled={desvinculating === r.persona_id}
+                        title="Desvincular"
+                      >
+                        {desvinculating === r.persona_id ? (
+                          <Loader2 className="size-3.5 animate-spin" />
+                        ) : (
+                          <Trash2 className="size-3.5" />
+                        )}
+                      </Button>
+                    </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="size-7 p-0 text-destructive hover:text-destructive shrink-0"
-                    onClick={() => handleDesvincular(r.persona_id)}
-                    disabled={desvinculating === r.persona_id}
-                  >
-                    {desvinculating === r.persona_id ? (
-                      <Loader2 className="size-3.5 animate-spin" />
-                    ) : (
-                      <Trash2 className="size-3.5" />
-                    )}
-                  </Button>
+                  {editingId === r.persona_id && (
+                    <div className="flex items-center gap-1.5">
+                      <Input
+                        value={editRelacion}
+                        onChange={e => setEditRelacion(e.target.value)}
+                        placeholder="Relación (ej: Madre, Padre, Tutor)"
+                        className="h-7 text-xs"
+                        autoFocus
+                      />
+                      <Button
+                        size="sm"
+                        className="h-7 px-2 text-xs shrink-0"
+                        onClick={() => handleSaveRelacion(r.persona_id)}
+                        disabled={saving}
+                      >
+                        {saving ? <Loader2 className="size-3 animate-spin" /> : 'Guardar'}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               ))
             )}
