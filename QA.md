@@ -1,6 +1,6 @@
 # QA — Libreta Digital
 
-Última actualización: 2026-10-02 · Branch base: `master` (`6d400ae`)
+Última actualización: 2026-10-02 · Branch base: `master` (`3d04719`)
 
 ---
 
@@ -188,12 +188,12 @@
 |--------|-----|-----|
 | `6d400ae` | `home-docente`: link "Cargar notas" → `/notas?materia=` (404) | Redirige a `/materias/[id]/evaluaciones` |
 | `6d400ae` | `PATCH /usuarios/[id]`: `.eq('activo', true)` bloqueaba reactivación de usuarios | Removido filtro |
+| `3d04719` | `home-admin`: alertas materias sin docente incluían historial de todos los años | Filtrado al año lectivo activo |
+| `3d04719` | `EditarUsuarioSheet` / `ResponsablesSheet`: no se podían vaciar campos opcionales | Schema acepta `null`; frontend envía `null` para campos vacíos |
 
 ---
 
 ## Limitaciones conocidas (aceptables MVP)
 
-- `EditarUsuarioSheet`: no se puede vaciar un campo opcional existente (telefono/dni/dir) enviando cadena vacía — el PATCH ignora strings vacíos
-- `home-admin` alertas "materias sin docente": incluye materias de todos los años, no solo el activo — puede ser ruidoso en instalaciones con historial
 - Sin paginación en tablas — filtrado client-side, OK hasta ~500 registros por página
 - Emails sin diseño Harvi (UX4 pendiente)
