@@ -32,6 +32,9 @@ export default function NuevoUsuarioSheet({ instId }: Props) {
   const [nombre, setNombre] = useState('')
   const [email, setEmail] = useState('')
   const [rol, setRol] = useState('')
+  const [telefono, setTelefono] = useState('')
+  const [dni, setDni] = useState('')
+  const [direccion, setDireccion] = useState('')
   const [inviteLink, setInviteLink] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
@@ -60,6 +63,9 @@ export default function NuevoUsuarioSheet({ instId }: Props) {
       setNombre('')
       setEmail('')
       setRol('')
+      setTelefono('')
+      setDni('')
+      setDireccion('')
       setInviteLink(null)
       setCopied(false)
       setPersonaIdCreada(null)
@@ -79,7 +85,12 @@ export default function NuevoUsuarioSheet({ instId }: Props) {
     const res = await fetch(`/api/v1/instituciones/${instId}/usuarios`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre, email, rol, send_invite: true }),
+      body: JSON.stringify({
+        nombre, email, rol, send_invite: true,
+        ...(telefono && { telefono }),
+        ...(dni && { dni }),
+        ...(direccion && { direccion }),
+      }),
     })
 
     const json = await res.json()
@@ -285,6 +296,36 @@ export default function NuevoUsuarioSheet({ instId }: Props) {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="us-tel">Teléfono</Label>
+                <Input
+                  id="us-tel"
+                  value={telefono}
+                  onChange={e => setTelefono(e.target.value)}
+                  placeholder="Ej: +54 9 11 1234-5678"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="us-dni">DNI / Documento</Label>
+                <Input
+                  id="us-dni"
+                  value={dni}
+                  onChange={e => setDni(e.target.value)}
+                  placeholder="Ej: 40123456"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="us-dir">Dirección</Label>
+                <Input
+                  id="us-dir"
+                  value={direccion}
+                  onChange={e => setDireccion(e.target.value)}
+                  placeholder="Ej: Av. Corrientes 1234"
+                />
               </div>
 
               <p className="text-xs text-muted-foreground">

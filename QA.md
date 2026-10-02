@@ -113,7 +113,8 @@ Branch deployado en Vercel. Ejecutar en orden: cada paso depende del anterior.
 - [ ] Verificar relación actualizada
 - [ ] Botón trash → confirm → responsable desvinculado
 - [ ] Columna vuelve a "—"
-
+- Boton de editar para poder editar los datos del responsable (aagregar relacion) quitar link de agrgegar relsacion.
+permitir agregar mas de un responsable por alumno
 ---
 
 ## 4. G8 — Crear responsable + asignar alumnos
@@ -124,10 +125,11 @@ Branch deployado en Vercel. Ejecutar en orden: cada paso depende del anterior.
 - [ ] Lista alumnos activos con checkboxes
 - [ ] Seleccionar "Juan García" y "Ana Pérez" → botón "Asignar (2)"
 - [ ] Click Asignar → toast "2 alumno(s) asignado(s)"
-- [ ] Checkboxes se deshabilitan, mensaje de confirmación
+- al crear responsable asignar alimno que sea boton y abra un modal para poder buscar alumnos por nombre/dni(habra gran cantidad) o combo box que muestre nombre y dni (por sihay alumnos con nombres duplicados)
+- [x] Checkboxes se deshabilitan, mensaje de confirmación
 - [ ] Click Listo → sheet cierra
 - [ ] Ir a **Alumnos** → ambos alumnos tienen chip del responsable
-- [ ] Verificar en sheet de responsables de Juan García → responsable aparece (sin relación)
+- [ ] Verificar en sheet de responsables de Juan García → responsable aparece (sin relación) no aparece
 
 ---
 

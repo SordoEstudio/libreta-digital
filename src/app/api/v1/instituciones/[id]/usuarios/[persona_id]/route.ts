@@ -7,6 +7,9 @@ import { ok, Err } from '@/lib/api'
 const PatchSchema = z.object({
   rol: z.enum(['admin', 'docente', 'responsable']).optional(),
   nombre: z.string().min(1).optional(),
+  telefono: z.string().optional(),
+  dni: z.string().optional(),
+  direccion: z.string().optional(),
   activo: z.boolean().optional(),
 }).strict()
 

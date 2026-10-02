@@ -117,36 +117,45 @@ export type Database = {
           activo: boolean
           created_at: string
           deleted_at: string | null
+          direccion: string | null
+          dni: string | null
           email: string | null
           fecha_nacimiento: string | null
           id: string
           institucion_id: string
           nombre: string
           persona_id: string | null
+          telefono: string | null
           updated_at: string
         }
         Insert: {
           activo?: boolean
           created_at?: string
           deleted_at?: string | null
+          direccion?: string | null
+          dni?: string | null
           email?: string | null
           fecha_nacimiento?: string | null
           id?: string
           institucion_id: string
           nombre: string
           persona_id?: string | null
+          telefono?: string | null
           updated_at?: string
         }
         Update: {
           activo?: boolean
           created_at?: string
           deleted_at?: string | null
+          direccion?: string | null
+          dni?: string | null
           email?: string | null
           fecha_nacimiento?: string | null
           id?: string
           institucion_id?: string
           nombre?: string
           persona_id?: string | null
+          telefono?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -877,6 +886,8 @@ export type Database = {
           avatar_url: string | null
           created_at: string
           deleted_at: string | null
+          direccion: string | null
+          dni: string | null
           email: string
           id: string
           nombre: string
@@ -888,6 +899,8 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           deleted_at?: string | null
+          direccion?: string | null
+          dni?: string | null
           email: string
           id?: string
           nombre: string
@@ -899,6 +912,8 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           deleted_at?: string | null
+          direccion?: string | null
+          dni?: string | null
           email?: string
           id?: string
           nombre?: string

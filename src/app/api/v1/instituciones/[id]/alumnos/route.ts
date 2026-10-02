@@ -9,6 +9,9 @@ const CreateSchema = z.object({
   nombre: z.string().min(1),
   email: z.string().email().optional(),
   fecha_nacimiento: z.string().date().optional(),
+  dni: z.string().optional(),
+  telefono: z.string().optional(),
+  direccion: z.string().optional(),
   curso_id: z.string().uuid().optional(),
 })
 
@@ -29,7 +32,7 @@ export async function GET(request: NextRequest, { params }: Params) {
   const supabase = await createClient()
   const query = supabase
     .from('alumnos')
-    .select('id, nombre, email, fecha_nacimiento, activo, persona_id, alumno_inscripciones(curso_id, activo, deleted_at)')
+    .select('id, nombre, email, fecha_nacimiento, dni, telefono, direccion, activo, persona_id, alumno_inscripciones(curso_id, activo, deleted_at)')
     .eq('institucion_id', institucion_id)
     .is('deleted_at', null)
     .order('nombre')
@@ -46,6 +49,9 @@ export async function GET(request: NextRequest, { params }: Params) {
     nombre: a.nombre,
     email: a.email,
     fecha_nacimiento: a.fecha_nacimiento,
+    dni: a.dni,
+    telefono: a.telefono,
+    direccion: a.direccion,
     activo: a.activo,
     persona_id: a.persona_id,
     curso_id: ((a.alumno_inscripciones ?? []) as Inscripcion[]).find(i => i.activo && !i.deleted_at)?.curso_id ?? null,

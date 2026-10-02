@@ -14,6 +14,9 @@ interface Responsable {
   persona_id: string
   nombre: string
   email: string | null
+  telefono: string | null
+  dni: string | null
+  direccion: string | null
   relacion: string | null
 }
 
@@ -21,6 +24,14 @@ interface UsuarioResp {
   persona_id: string
   nombre: string
   email: string | null
+}
+
+interface EditState {
+  nombre: string
+  telefono: string
+  dni: string
+  direccion: string
+  relacion: string
 }
 
 interface Props {
@@ -46,7 +57,7 @@ export default function ResponsablesSheet({ alumnoId, alumnoNombre, instId, open
   const [adding, setAdding] = useState(false)
 
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [editRelacion, setEditRelacion] = useState('')
+  const [editState, setEditState] = useState<EditState>({ nombre: '', telefono: '', dni: '', direccion: '', relacion: '' })
   const [saving, setSaving] = useState(false)
 
   const [desvinculating, setDesvinculating] = useState<string | null>(null)
@@ -67,6 +78,17 @@ export default function ResponsablesSheet({ alumnoId, alumnoNombre, instId, open
     if (open) load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
+
+  function startEdit(r: Responsable) {
+    setEditingId(r.persona_id)
+    setEditState({
+      nombre: r.nombre,
+      telefono: r.telefono ?? '',
+      dni: r.dni ?? '',
+      direccion: r.direccion ?? '',
+      relacion: r.relacion ?? '',
+    })
+  }
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault()
@@ -113,25 +135,38 @@ export default function ResponsablesSheet({ alumnoId, alumnoNombre, instId, open
     router.refresh()
   }
 
-  async function handleSaveRelacion(personaId: string) {
+  async function handleSave(personaId: string) {
     setSaving(true)
 
-    const res = await fetch(`/api/v1/alumnos/${alumnoId}/responsables/${personaId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ relacion: editRelacion || null }),
-    })
-    const json = await res.json()
+    const [personaRes, relacionRes] = await Promise.all([
+      fetch(`/api/v1/instituciones/${instId}/usuarios/${personaId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nombre: editState.nombre || undefined,
+          telefono: editState.telefono || undefined,
+          dni: editState.dni || undefined,
+          direccion: editState.direccion || undefined,
+        }),
+      }),
+      fetch(`/api/v1/alumnos/${alumnoId}/responsables/${personaId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ relacion: editState.relacion || null }),
+      }),
+    ])
+
     setSaving(false)
 
-    if (!res.ok) {
-      toast.error(json.error?.message ?? 'Error al guardar')
+    if (!personaRes.ok || !relacionRes.ok) {
+      toast.error('Error al guardar')
       return
     }
 
-    toast.success('Relación actualizada')
+    toast.success('Datos actualizados')
     setEditingId(null)
     await load()
+    router.refresh()
   }
 
   const yaAsignados = new Set(responsables.map(r => r.persona_id))
@@ -161,11 +196,17 @@ export default function ResponsablesSheet({ alumnoId, alumnoNombre, instId, open
                   <div className="flex items-start gap-2">
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm truncate">{r.nombre}</p>
-                      {r.email && <p className="text-xs text-muted-foreground truncate">{r.email}</p>}
+                      <p className="text-xs text-muted-foreground truncate">{r.email}</p>
                       {editingId !== r.persona_id && (
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {r.relacion ?? <span className="italic">Sin relación</span>}
-                        </p>
+                        <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
+                          {r.relacion && <span className="text-xs text-muted-foreground">{r.relacion}</span>}
+                          {r.telefono && <span className="text-xs text-muted-foreground">{r.telefono}</span>}
+                          {r.dni && <span className="text-xs text-muted-foreground">DNI {r.dni}</span>}
+                          {r.direccion && <span className="text-xs text-muted-foreground">{r.direccion}</span>}
+                          {!r.relacion && !r.telefono && !r.dni && !r.direccion && (
+                            <span className="text-xs text-muted-foreground italic">Sin datos adicionales</span>
+                          )}
+                        </div>
                       )}
                     </div>
                     <div className="flex gap-1 shrink-0">
@@ -173,20 +214,10 @@ export default function ResponsablesSheet({ alumnoId, alumnoNombre, instId, open
                         variant="ghost"
                         size="sm"
                         className="size-7 p-0"
-                        title={editingId === r.persona_id ? 'Cancelar' : 'Editar relación'}
-                        onClick={() => {
-                          if (editingId === r.persona_id) {
-                            setEditingId(null)
-                          } else {
-                            setEditingId(r.persona_id)
-                            setEditRelacion(r.relacion ?? '')
-                          }
-                        }}
+                        title={editingId === r.persona_id ? 'Cancelar' : 'Editar'}
+                        onClick={() => editingId === r.persona_id ? setEditingId(null) : startEdit(r)}
                       >
-                        {editingId === r.persona_id
-                          ? <X className="size-3.5" />
-                          : <Pencil className="size-3.5" />
-                        }
+                        {editingId === r.persona_id ? <X className="size-3.5" /> : <Pencil className="size-3.5" />}
                       </Button>
                       <Button
                         variant="ghost"
@@ -196,30 +227,70 @@ export default function ResponsablesSheet({ alumnoId, alumnoNombre, instId, open
                         disabled={desvinculating === r.persona_id}
                         title="Desvincular"
                       >
-                        {desvinculating === r.persona_id ? (
-                          <Loader2 className="size-3.5 animate-spin" />
-                        ) : (
-                          <Trash2 className="size-3.5" />
-                        )}
+                        {desvinculating === r.persona_id
+                          ? <Loader2 className="size-3.5 animate-spin" />
+                          : <Trash2 className="size-3.5" />
+                        }
                       </Button>
                     </div>
                   </div>
+
                   {editingId === r.persona_id && (
-                    <div className="flex items-center gap-1.5">
-                      <Input
-                        value={editRelacion}
-                        onChange={e => setEditRelacion(e.target.value)}
-                        placeholder="Relación (ej: Madre, Padre, Tutor)"
-                        className="h-7 text-xs"
-                        autoFocus
-                      />
+                    <div className="flex flex-col gap-2 pt-1 border-t">
+                      <div className="flex flex-col gap-1">
+                        <Label className="text-xs">Nombre</Label>
+                        <Input
+                          value={editState.nombre}
+                          onChange={e => setEditState(s => ({ ...s, nombre: e.target.value }))}
+                          className="h-7 text-xs"
+                          autoFocus
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <Label className="text-xs">Relación</Label>
+                        <Input
+                          value={editState.relacion}
+                          onChange={e => setEditState(s => ({ ...s, relacion: e.target.value }))}
+                          placeholder="Ej: Madre, Padre, Tutor"
+                          className="h-7 text-xs"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <Label className="text-xs">Teléfono</Label>
+                        <Input
+                          value={editState.telefono}
+                          onChange={e => setEditState(s => ({ ...s, telefono: e.target.value }))}
+                          placeholder="+54 9 11 1234-5678"
+                          className="h-7 text-xs"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <Label className="text-xs">DNI</Label>
+                        <Input
+                          value={editState.dni}
+                          onChange={e => setEditState(s => ({ ...s, dni: e.target.value }))}
+                          placeholder="40123456"
+                          className="h-7 text-xs"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <Label className="text-xs">Dirección</Label>
+                        <Input
+                          value={editState.direccion}
+                          onChange={e => setEditState(s => ({ ...s, direccion: e.target.value }))}
+                          placeholder="Av. Corrientes 1234"
+                          className="h-7 text-xs"
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground">Email: {r.email} (no editable)</p>
                       <Button
                         size="sm"
-                        className="h-7 px-2 text-xs shrink-0"
-                        onClick={() => handleSaveRelacion(r.persona_id)}
-                        disabled={saving}
+                        className="h-7 text-xs"
+                        onClick={() => handleSave(r.persona_id)}
+                        disabled={saving || !editState.nombre}
                       >
-                        {saving ? <Loader2 className="size-3 animate-spin" /> : 'Guardar'}
+                        {saving ? <Loader2 className="size-3 animate-spin mr-1" /> : null}
+                        Guardar
                       </Button>
                     </div>
                   )}

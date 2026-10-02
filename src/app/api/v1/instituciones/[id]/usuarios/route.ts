@@ -11,6 +11,9 @@ const CreateSchema = z.object({
   nombre: z.string().min(1),
   rol: z.enum(['admin', 'docente', 'responsable']),
   send_invite: z.boolean().default(true),
+  telefono: z.string().optional(),
+  dni: z.string().optional(),
+  direccion: z.string().optional(),
 })
 
 type Params = { params: Promise<{ id: string }> }
@@ -28,21 +31,28 @@ export async function GET(request: NextRequest, { params }: Params) {
   const admin = createAdminClient()
   let query = admin
     .from('memberships')
-    .select('rol, personas(id, nombre, email)')
+    .select('rol, activo, personas(id, nombre, email, telefono, dni, direccion)')
     .eq('institucion_id', institucion_id)
-    .eq('activo', true)
 
   if (rol) query = query.eq('rol', rol)
 
   const { data, error } = await query
   if (error) return Err.server(error.message)
 
-  let usuarios = data.map(m => ({
-    persona_id: (m.personas as { id: string } | null)?.id,
-    nombre: (m.personas as { nombre: string } | null)?.nombre ?? '',
-    email: (m.personas as { email: string | null } | null)?.email ?? null,
-    rol: m.rol,
-  }))
+  type P = { id: string; nombre: string; email: string | null; telefono: string | null; dni: string | null; direccion: string | null } | null
+  let usuarios = data.map(m => {
+    const p = m.personas as P
+    return {
+      persona_id: p?.id,
+      nombre: p?.nombre ?? '',
+      email: p?.email ?? null,
+      telefono: p?.telefono ?? null,
+      dni: p?.dni ?? null,
+      direccion: p?.direccion ?? null,
+      rol: m.rol,
+      activo: m.activo,
+    }
+  })
 
   if (q) {
     const lower = q.toLowerCase()
@@ -65,7 +75,7 @@ export async function POST(request: NextRequest, { params }: Params) {
   const parsed = CreateSchema.safeParse(body)
   if (!parsed.success) return Err.validation(parsed.error.issues[0].message)
 
-  const { email, nombre, rol } = parsed.data
+  const { email, nombre, rol, telefono, dni, direccion } = parsed.data
   const supabase = await createClient()
   const admin = createAdminClient()
 
@@ -101,7 +111,7 @@ export async function POST(request: NextRequest, { params }: Params) {
 
     const { data: persona, error: personaError } = await admin
       .from('personas')
-      .insert({ nombre, email, auth_id: authData.user.id })
+      .insert({ nombre, email, auth_id: authData.user.id, telefono, dni, direccion })
       .select('id')
       .single()
 

@@ -22,6 +22,9 @@ export default function NuevoAlumnoSheet({ instId, cursos }: Props) {
   const [nombre, setNombre] = useState('')
   const [cursoId, setCursoId] = useState('')
   const [fechaNacimiento, setFechaNacimiento] = useState('')
+  const [dni, setDni] = useState('')
+  const [telefono, setTelefono] = useState('')
+  const [direccion, setDireccion] = useState('')
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -30,6 +33,9 @@ export default function NuevoAlumnoSheet({ instId, cursos }: Props) {
     const body: Record<string, string> = { nombre }
     if (cursoId) body.curso_id = cursoId
     if (fechaNacimiento) body.fecha_nacimiento = fechaNacimiento
+    if (dni) body.dni = dni
+    if (telefono) body.telefono = telefono
+    if (direccion) body.direccion = direccion
 
     const res = await fetch(`/api/v1/instituciones/${instId}/alumnos`, {
       method: 'POST',
@@ -50,6 +56,9 @@ export default function NuevoAlumnoSheet({ instId, cursos }: Props) {
     setNombre('')
     setCursoId('')
     setFechaNacimiento('')
+    setDni('')
+    setTelefono('')
+    setDireccion('')
     router.refresh()
   }
 
@@ -100,6 +109,36 @@ export default function NuevoAlumnoSheet({ instId, cursos }: Props) {
                 type="date"
                 value={fechaNacimiento}
                 onChange={e => setFechaNacimiento(e.target.value)}
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="al-dni">DNI / Documento</Label>
+              <Input
+                id="al-dni"
+                value={dni}
+                onChange={e => setDni(e.target.value)}
+                placeholder="Ej: 40123456"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="al-tel">Teléfono</Label>
+              <Input
+                id="al-tel"
+                value={telefono}
+                onChange={e => setTelefono(e.target.value)}
+                placeholder="Ej: +54 9 11 1234-5678"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="al-dir">Dirección</Label>
+              <Input
+                id="al-dir"
+                value={direccion}
+                onChange={e => setDireccion(e.target.value)}
+                placeholder="Ej: Av. Corrientes 1234"
               />
             </div>
 
