@@ -65,9 +65,9 @@ export default function EditarUsuarioSheet({
       body: JSON.stringify({
         nombre: nombre || undefined,
         rol: rol || undefined,
-        ...(telefono ? { telefono } : {}),
-        ...(dni ? { dni } : {}),
-        ...(direccion ? { direccion } : {}),
+        telefono: telefono || null,
+        dni: dni || null,
+        direccion: direccion || null,
       }),
     })
 

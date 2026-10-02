@@ -16,36 +16,43 @@ export default async function HomeAdmin({ instId, slug, instNombre, instTipo }: 
   const supabase = await createClient()
   const admin = createAdminClient()
 
-  const [alumnosActivosRes, docentesRes, añoActivoRes, materiasRes] = await Promise.all([
+  const [alumnosActivosRes, docentesRes, añoActivoRes] = await Promise.all([
     admin.from('alumnos').select('id').eq('institucion_id', instId).eq('activo', true).is('deleted_at', null),
     admin.from('memberships').select('id', { count: 'exact', head: true }).eq('institucion_id', instId).eq('rol', 'docente').eq('activo', true),
     supabase.from('años_lectivos').select('id, nombre').eq('institucion_id', instId).eq('activo', true).is('deleted_at', null).maybeSingle(),
-    admin.from('materias').select('id').eq('institucion_id', instId).is('deleted_at', null),
   ])
 
   const alumnosActivos = alumnosActivosRes.data ?? []
   const docentesCount = docentesRes.count ?? 0
   const añoActivo = añoActivoRes.data
-  const materiaIds = (materiasRes.data ?? []).map(m => m.id)
   const alumnoIds = alumnosActivos.map(a => a.id)
 
-  const [cursosRes, inscripcionesRes, materiasConDocenteRes] = await Promise.all([
+  const [cursosRes, inscripcionesRes] = await Promise.all([
     añoActivo
-      ? supabase.from('cursos').select('id', { count: 'exact', head: true }).eq('año_lectivo_id', añoActivo.id).is('deleted_at', null)
-      : Promise.resolve({ count: 0 } as { count: number }),
+      ? supabase.from('cursos').select('id').eq('año_lectivo_id', añoActivo.id).is('deleted_at', null)
+      : Promise.resolve({ data: [] as { id: string }[] }),
     alumnoIds.length > 0
       ? admin.from('alumno_inscripciones').select('alumno_id').in('alumno_id', alumnoIds).eq('activo', true).is('deleted_at', null)
       : Promise.resolve({ data: [] as { alumno_id: string }[] }),
-    materiaIds.length > 0
-      ? admin.from('materia_docentes').select('materia_id').in('materia_id', materiaIds)
-      : Promise.resolve({ data: [] as { materia_id: string }[] }),
   ])
 
-  const cursosCount = cursosRes.count ?? 0
+  const cursosDelAño = cursosRes.data ?? []
+  const cursosCount = cursosDelAño.length
+  const cursoIds = cursosDelAño.map(c => c.id)
+
+  // Materias del año activo con docentes — una query, evita wave extra
+  type MateriaConDocente = { id: string; materia_docentes: { materia_id: string }[] }
+  const { data: materiasDelAño } = cursoIds.length > 0
+    ? await admin.from('materias')
+        .select('id, materia_docentes(materia_id)')
+        .in('curso_id', cursoIds)
+        .is('deleted_at', null)
+    : { data: [] as MateriaConDocente[] }
+
   const conCurso = new Set((inscripcionesRes.data ?? []).map(i => i.alumno_id))
   const alumnosSinCurso = alumnosActivos.filter(a => !conCurso.has(a.id)).length
-  const conDocente = new Set((materiasConDocenteRes.data ?? []).map(m => m.materia_id))
-  const materiasSinDocente = materiaIds.filter(id => !conDocente.has(id)).length
+  const materiasSinDocente = (materiasDelAño as unknown as MateriaConDocente[])
+    .filter(m => m.materia_docentes.length === 0).length
 
   const alerts = [
     alumnosSinCurso > 0 && {

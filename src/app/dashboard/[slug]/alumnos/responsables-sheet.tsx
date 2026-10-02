@@ -145,9 +145,9 @@ export default function ResponsablesSheet({ alumnoId, alumnoNombre, instId, open
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           nombre: editState.nombre || undefined,
-          telefono: editState.telefono || undefined,
-          dni: editState.dni || undefined,
-          direccion: editState.direccion || undefined,
+          telefono: editState.telefono || null,
+          dni: editState.dni || null,
+          direccion: editState.direccion || null,
         }),
       }),
       fetch(`/api/v1/alumnos/${alumnoId}/responsables/${personaId}`, {
