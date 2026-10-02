@@ -124,7 +124,7 @@ export default async function HomeDocente({ instId, slug, personaId }: Props) {
                   <CardTitle className="text-base">{m.nombre}</CardTitle>
                   <p className="text-sm text-muted-foreground">{m.cursoNombre}</p>
                 </div>
-                <Button variant="ghost" size="sm" className="shrink-0" render={<Link href={`/dashboard/${slug}/notas?materia=${m.id}`} />}>
+                <Button variant="ghost" size="sm" className="shrink-0" render={<Link href={`/dashboard/${slug}/materias/${m.id}/evaluaciones`} />}>
                   Cargar notas
                   <ArrowRight data-icon="inline-end" />
                 </Button>

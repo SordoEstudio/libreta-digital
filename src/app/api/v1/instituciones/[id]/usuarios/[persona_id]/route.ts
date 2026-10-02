@@ -34,7 +34,6 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       .update({ ...(rol !== undefined && { rol }), ...(activo !== undefined && { activo }) })
       .eq('persona_id', persona_id)
       .eq('institucion_id', institucion_id)
-      .eq('activo', true)
     if (error) return Err.server(error.message)
   }
 
