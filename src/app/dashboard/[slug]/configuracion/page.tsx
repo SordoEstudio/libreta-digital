@@ -5,11 +5,9 @@ import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { BookOpen } from 'lucide-react'
+import { BookOpen, Settings } from 'lucide-react'
 import AñoSelector from './año-selector'
 import NuevoAñoSheet from './periodos/nuevo-año-sheet'
-import ActivarAñoButton from './periodos/activar-año-button'
-import EliminarAñoButton from './periodos/eliminar-año-button'
 import NuevoCursoSheet from '../cursos/nuevo-curso-sheet'
 import NuevaMateriaSheet from '../cursos/[curso_id]/nueva-materia-sheet'
 import AsignarDocenteSheet from './asignar-docente-sheet'
@@ -91,13 +89,10 @@ export default async function ConfiguracionPage({ params, searchParams }: Props)
         {añosList.length > 0 && (
           <div className="flex items-center gap-3 flex-wrap">
             <AñoSelector años={añosList} selectedId={selectedAño?.id} slug={slug} />
-            {selectedAño?.activo && <Badge>Activo</Badge>}
-            {selectedAño && !selectedAño.activo && (
-              <>
-                <ActivarAñoButton añoId={selectedAño.id} />
-                <EliminarAñoButton añoId={selectedAño.id} añoNombre={selectedAño.nombre} />
-              </>
-            )}
+            {selectedAño?.activo
+              ? <Badge>Activo</Badge>
+              : selectedAño && <Badge variant="secondary">Inactivo</Badge>
+            }
           </div>
         )}
 
@@ -109,9 +104,11 @@ export default async function ConfiguracionPage({ params, searchParams }: Props)
             ))}
             <Link
               href={`/dashboard/${slug}/configuracion/periodos`}
-              className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
+              className="inline-flex size-6 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              title="Gestionar períodos"
             >
-              gestionar
+              <Settings className="size-3.5" />
+              <span className="sr-only">Gestionar períodos</span>
             </Link>
           </div>
         )}

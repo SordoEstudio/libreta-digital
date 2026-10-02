@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Loader2, Pencil, UserX, UserCheck } from 'lucide-react'
 import { toast } from 'sonner'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 
 const ROLES = [
   { value: 'admin', label: 'Admin' },
@@ -37,6 +38,7 @@ export default function EditarUsuarioSheet({
   const [open, setOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [toggling, setToggling] = useState(false)
+  const [confirmToggle, setConfirmToggle] = useState(false)
 
   const [nombre, setNombre] = useState(propNombre)
   const [rol, setRol] = useState(propRol)
@@ -84,7 +86,6 @@ export default function EditarUsuarioSheet({
 
   async function handleToggleActivo() {
     const accion = propActivo ? 'desactivar' : 'activar'
-    if (!confirm(`¿${propActivo ? 'Desactivar' : 'Activar'} el acceso de "${propNombre}"?`)) return
     setToggling(true)
 
     const res = await fetch(`/api/v1/instituciones/${instId}/usuarios/${personaId}`, {
@@ -192,7 +193,7 @@ export default function EditarUsuarioSheet({
             <Button
               variant={propActivo ? 'destructive' : 'outline'}
               className="w-full"
-              onClick={handleToggleActivo}
+              onClick={() => propActivo ? setConfirmToggle(true) : handleToggleActivo()}
               disabled={toggling}
             >
               {toggling
@@ -204,6 +205,17 @@ export default function EditarUsuarioSheet({
               {propActivo ? 'Desactivar acceso' : 'Activar acceso'}
             </Button>
           </div>
+
+          <ConfirmDialog
+            open={confirmToggle}
+            onOpenChange={setConfirmToggle}
+            title={`¿Desactivar acceso de "${propNombre}"?`}
+            description="El usuario no podrá iniciar sesión hasta que se reactive su acceso."
+            confirmLabel="Desactivar"
+            destructive
+            loading={toggling}
+            onConfirm={() => { setConfirmToggle(false); handleToggleActivo() }}
+          />
         </SheetContent>
       </Sheet>
     </>

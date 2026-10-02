@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Loader2, Trash2, Plus, Pencil, X } from 'lucide-react'
 import { toast } from 'sonner'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 
 interface Responsable {
   persona_id: string
@@ -61,6 +62,7 @@ export default function ResponsablesSheet({ alumnoId, alumnoNombre, instId, open
   const [saving, setSaving] = useState(false)
 
   const [desvinculating, setDesvinculating] = useState<string | null>(null)
+  const [confirmDesvincular, setConfirmDesvincular] = useState<string | null>(null)
 
   async function load() {
     setLoading(true)
@@ -116,7 +118,6 @@ export default function ResponsablesSheet({ alumnoId, alumnoNombre, instId, open
   }
 
   async function handleDesvincular(personaId: string) {
-    if (!confirm('¿Desvincular este responsable?')) return
     setDesvinculating(personaId)
 
     const res = await fetch(`/api/v1/alumnos/${alumnoId}/responsables/${personaId}`, {
@@ -173,6 +174,7 @@ export default function ResponsablesSheet({ alumnoId, alumnoNombre, instId, open
   const disponiblesParaAgregar = disponibles.filter(d => !yaAsignados.has(d.persona_id))
 
   return (
+    <>
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetContent>
         <SheetHeader>
@@ -223,7 +225,7 @@ export default function ResponsablesSheet({ alumnoId, alumnoNombre, instId, open
                         variant="ghost"
                         size="sm"
                         className="size-7 p-0 text-destructive hover:text-destructive"
-                        onClick={() => handleDesvincular(r.persona_id)}
+                        onClick={() => setConfirmDesvincular(r.persona_id)}
                         disabled={desvinculating === r.persona_id}
                         title="Desvincular"
                       >
@@ -345,5 +347,21 @@ export default function ResponsablesSheet({ alumnoId, alumnoNombre, instId, open
         </div>
       </SheetContent>
     </Sheet>
+
+    <ConfirmDialog
+      open={confirmDesvincular !== null}
+      onOpenChange={open => { if (!open) setConfirmDesvincular(null) }}
+      title="¿Desvincular responsable?"
+      description="El responsable dejará de tener acceso a la libreta de este alumno."
+      confirmLabel="Desvincular"
+      destructive
+      loading={desvinculating !== null}
+      onConfirm={() => {
+        const id = confirmDesvincular
+        setConfirmDesvincular(null)
+        if (id) handleDesvincular(id)
+      }}
+    />
+    </>
   )
 }
