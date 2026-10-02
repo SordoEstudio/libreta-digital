@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/table'
 import { Users } from 'lucide-react'
 import NuevoUsuarioSheet from './nuevo-usuario-sheet'
-import DesactivarUsuarioButton from './desactivar-usuario-button'
+import EditarUsuarioSheet from './editar-usuario-sheet'
 
 type Params = { params: Promise<{ slug: string }> }
 
@@ -44,7 +44,7 @@ export default async function UsuariosPage({ params }: Params) {
   const admin = createAdminClient()
   const { data: memberships } = await admin
     .from('memberships')
-    .select('rol, activo, personas(id, nombre, email)')
+    .select('rol, activo, personas(id, nombre, email, telefono, dni, direccion)')
     .eq('institucion_id', inst.id)
     .order('rol')
 
@@ -72,7 +72,7 @@ export default async function UsuariosPage({ params }: Params) {
             </TableHeader>
             <TableBody>
               {memberships.map((m, i) => {
-                const persona = m.personas as { id: string; nombre: string; email: string | null } | null
+                const persona = m.personas as { id: string; nombre: string; email: string | null; telefono: string | null; dni: string | null; direccion: string | null } | null
                 return (
                   <TableRow key={i} className={!m.activo ? 'opacity-60' : ''}>
                     <TableCell className="font-medium">{persona?.nombre ?? '—'}</TableCell>
@@ -89,11 +89,16 @@ export default async function UsuariosPage({ params }: Params) {
                     </TableCell>
                     <TableCell>
                       {persona && m.rol !== 'superadmin' && (
-                        <DesactivarUsuarioButton
+                        <EditarUsuarioSheet
                           instId={inst.id}
                           personaId={persona.id}
                           nombre={persona.nombre}
+                          email={persona.email}
+                          rol={m.rol}
                           activo={m.activo}
+                          telefono={persona.telefono}
+                          dni={persona.dni}
+                          direccion={persona.direccion}
                         />
                       )}
                     </TableCell>
