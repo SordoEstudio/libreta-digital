@@ -19,7 +19,10 @@ export default async function AlumnosPage({ params }: Params) {
     .is('deleted_at', null)
     .single()
 
-  if (!inst) notFound()
+  if (!inst) {
+    if (isSuperadmin(session)) redirect('/dashboard/instituciones')
+    notFound()
+  }
   if (!isSuperadmin(session) && !hasRole(session, inst.id, 'admin')) redirect('/dashboard')
 
   const { data: alumnos } = await supabase

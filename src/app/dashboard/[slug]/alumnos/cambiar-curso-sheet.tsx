@@ -9,6 +9,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
+const SIN_CURSO = '__sin_curso__'
+
 interface Props {
   alumnoId: string
   alumnoNombre: string
@@ -27,11 +29,16 @@ export default function CambiarCursoSheet({ alumnoId, alumnoNombre, cursos, open
     if (!cursoId) return
     setLoading(true)
 
-    const res = await fetch(`/api/v1/alumnos/${alumnoId}/inscripciones`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ curso_id: cursoId }),
-    })
+    let res: Response
+    if (cursoId === SIN_CURSO) {
+      res = await fetch(`/api/v1/alumnos/${alumnoId}/inscripciones`, { method: 'DELETE' })
+    } else {
+      res = await fetch(`/api/v1/alumnos/${alumnoId}/inscripciones`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ curso_id: cursoId }),
+      })
+    }
 
     const json = await res.json()
     setLoading(false)
@@ -41,7 +48,7 @@ export default function CambiarCursoSheet({ alumnoId, alumnoNombre, cursos, open
       return
     }
 
-    toast.success('Curso actualizado')
+    toast.success(cursoId === SIN_CURSO ? 'Curso desasignado' : 'Curso actualizado')
     onOpenChange(false)
     setCursoId('')
     router.refresh()
@@ -58,11 +65,15 @@ export default function CambiarCursoSheet({ alumnoId, alumnoNombre, cursos, open
         </div>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4 mt-6 px-4">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="cc-curso">Nuevo curso *</Label>
+            <Label htmlFor="cc-curso">Nuevo curso</Label>
             <Select value={cursoId} onValueChange={v => setCursoId(v ?? '')}>
               <SelectTrigger id="cc-curso">
                 <SelectValue placeholder="Seleccionar curso...">
-                  {cursoId ? cursos.find(c => c.id === cursoId)?.nombre : undefined}
+                  {cursoId === SIN_CURSO
+                    ? 'Sin curso'
+                    : cursoId
+                      ? cursos.find(c => c.id === cursoId)?.nombre
+                      : undefined}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
@@ -72,12 +83,13 @@ export default function CambiarCursoSheet({ alumnoId, alumnoNombre, cursos, open
                 {cursos.length === 0 && (
                   <div className="px-2 py-1.5 text-sm text-muted-foreground">Sin cursos disponibles</div>
                 )}
+                <SelectItem value={SIN_CURSO} className="text-muted-foreground">Sin curso</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <Button type="submit" disabled={loading || !cursoId} className="mt-2">
             {loading && <Loader2 data-icon="inline-start" className="animate-spin" />}
-            {loading ? 'Cambiando...' : 'Cambiar curso'}
+            {loading ? 'Guardando...' : 'Guardar'}
           </Button>
         </form>
       </SheetContent>

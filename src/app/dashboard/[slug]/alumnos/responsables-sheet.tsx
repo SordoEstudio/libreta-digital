@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { SearchableSelect } from '@/components/ui/searchable-select'
 import { Loader2, Trash2, Plus, Pencil, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
@@ -305,22 +305,17 @@ export default function ResponsablesSheet({ alumnoId, alumnoNombre, instId, open
             <form onSubmit={handleAdd} className="flex flex-col gap-3 pt-3 border-t">
               <p className="text-sm font-medium">Agregar responsable</p>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="add-resp">Responsable *</Label>
-                <Select value={addId} onValueChange={v => setAddId(v ?? '')}>
-                  <SelectTrigger id="add-resp">
-                    <SelectValue placeholder="Seleccionar...">
-                      {addId ? disponibles.find(d => d.persona_id === addId)?.nombre : undefined}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {disponiblesParaAgregar.map(d => (
-                      <SelectItem key={d.persona_id} value={d.persona_id}>
-                        <span>{d.nombre}</span>
-                        {d.email && <span className="text-xs text-muted-foreground ml-2">{d.email}</span>}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label>Responsable *</Label>
+                <SearchableSelect
+                  value={addId}
+                  onValueChange={v => setAddId(v)}
+                  placeholder="Seleccionar..."
+                  options={disponiblesParaAgregar.map(d => ({
+                    value: d.persona_id,
+                    label: d.email ? `${d.nombre} (${d.email})` : d.nombre,
+                  }))}
+                  emptyMessage="Sin responsables disponibles"
+                />
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="add-relacion">Relación</Label>

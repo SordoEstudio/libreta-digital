@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
+import { Tooltip } from '@base-ui/react/tooltip'
 import { Users, X, Link as LinkIcon, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import EditarUsuarioSheet from './editar-usuario-sheet'
@@ -26,6 +27,8 @@ const ROL_VARIANTS: Record<string, 'default' | 'secondary' | 'outline'> = {
   superadmin: 'default',
 }
 
+interface ChipItem { id: string; nombre: string }
+
 interface UsuarioRow {
   personaId: string
   nombre: string
@@ -36,6 +39,42 @@ interface UsuarioRow {
   telefono: string | null
   dni: string | null
   direccion: string | null
+  alumnos: ChipItem[]
+  materias: ChipItem[]
+}
+
+function AssignmentChips({ items, label }: { items: ChipItem[]; label: string }) {
+  if (items.length === 0) return <span className="text-muted-foreground text-xs">—</span>
+  const MAX = 2
+  const shown = items.slice(0, MAX)
+  const rest = items.length - MAX
+  return (
+    <Tooltip.Provider delay={300}>
+      <div className="flex flex-wrap items-center gap-1">
+        {shown.map(item => (
+          <Tooltip.Root key={item.id}>
+            <Tooltip.Trigger render={
+              <Badge variant="outline" className="text-xs font-normal cursor-default" />
+            }>
+              {item.nombre}
+            </Tooltip.Trigger>
+            <Tooltip.Portal>
+              <Tooltip.Positioner sideOffset={4}>
+                <Tooltip.Popup className="z-50 rounded-md border border-border bg-popover px-2 py-1 text-xs shadow-md">
+                  {label}: {item.nombre}
+                </Tooltip.Popup>
+              </Tooltip.Positioner>
+            </Tooltip.Portal>
+          </Tooltip.Root>
+        ))}
+        {rest > 0 && (
+          <Badge variant="outline" className="text-xs font-normal text-muted-foreground">
+            +{rest}
+          </Badge>
+        )}
+      </div>
+    </Tooltip.Provider>
+  )
 }
 
 interface Props {
@@ -166,6 +205,7 @@ export default function UsuariosTabla({ usuarios, instId }: Props) {
                 <TableHead>Nombre</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Rol</TableHead>
+                <TableHead>Asignaciones</TableHead>
                 <TableHead>Estado</TableHead>
                 <TableHead className="w-20" />
               </TableRow>
@@ -179,6 +219,17 @@ export default function UsuariosTabla({ usuarios, instId }: Props) {
                     <Badge variant={ROL_VARIANTS[u.rol] ?? 'outline'}>
                       {ROL_LABELS[u.rol] ?? u.rol}
                     </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {u.rol === 'responsable' && (
+                      <AssignmentChips items={u.alumnos} label="Alumno" />
+                    )}
+                    {u.rol === 'docente' && (
+                      <AssignmentChips items={u.materias} label="Materia" />
+                    )}
+                    {u.rol !== 'responsable' && u.rol !== 'docente' && (
+                      <span className="text-muted-foreground text-xs">—</span>
+                    )}
                   </TableCell>
                   <TableCell>
                     {u.pendiente ? (

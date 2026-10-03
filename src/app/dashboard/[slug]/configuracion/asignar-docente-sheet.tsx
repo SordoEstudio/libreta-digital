@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { SearchableSelect } from '@/components/ui/searchable-select'
 import { Loader2, Pencil } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -87,32 +87,17 @@ export default function AsignarDocenteSheet({ materiaId, materiaNombre, docenteA
           <form onSubmit={handleSubmit} className="flex flex-col gap-4 px-4">
             <div className="flex flex-col gap-1.5">
               <Label>Docente</Label>
-              <Select
+              <SearchableSelect
                 value={docenteId}
-                onValueChange={v => setDocenteId(v ?? NONE)}
+                onValueChange={v => setDocenteId(v)}
                 disabled={loadingDocentes}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={loadingDocentes ? 'Cargando...' : 'Sin docente'}>
-                    {docenteId && docenteId !== NONE
-                      ? (docentes.find(d => d.persona_id === docenteId)?.nombre ?? undefined)
-                      : 'Sin docente'}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={NONE}>Sin docente</SelectItem>
-                  {docentes.map(d => (
-                    <SelectItem key={d.persona_id} value={d.persona_id}>
-                      {d.nombre}
-                    </SelectItem>
-                  ))}
-                  {docentes.length === 0 && !loadingDocentes && (
-                    <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                      Sin docentes registrados
-                    </div>
-                  )}
-                </SelectContent>
-              </Select>
+                placeholder={loadingDocentes ? 'Cargando...' : 'Sin docente'}
+                options={[
+                  { value: NONE, label: 'Sin docente' },
+                  ...docentes.map(d => ({ value: d.persona_id, label: d.nombre })),
+                ]}
+                emptyMessage="Sin docentes registrados"
+              />
             </div>
             <Button type="submit" disabled={loading} className="mt-2">
               {loading && <Loader2 data-icon="inline-start" className="animate-spin" />}

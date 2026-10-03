@@ -11,8 +11,6 @@ import { Loader2, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
 
 const TIPOS = [
-  { value: 'escuela_primaria', label: 'Escuela primaria' },
-  { value: 'escuela_secundaria', label: 'Escuela secundaria' },
   { value: 'academia', label: 'Academia' },
   { value: 'instituto', label: 'Instituto' },
   { value: 'club', label: 'Club' },

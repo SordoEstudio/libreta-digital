@@ -12,15 +12,17 @@ import { toast } from 'sonner'
 
 const PLANTILLAS = [
   { value: 'ninguna', label: 'Sin períodos' },
-  { value: 'trimestral', label: 'Trimestral (1er, 2do, 3er trimestre)' },
-  { value: 'semestral', label: 'Semestral (1er, 2do semestre)' },
   { value: 'bimestral', label: 'Bimestral (1er, 2do, 3er, 4to bimestre)' },
+  { value: 'trimestral', label: 'Trimestral (1er, 2do, 3er trimestre)' },
+  { value: 'cuatrimestral', label: 'Cuatrimestral (1er, 2do, 3er cuatrimestre)' },
+  { value: 'semestral', label: 'Semestral (1er, 2do semestre)' },
 ]
 
 const PERIODOS_PLANTILLA: Record<string, string[]> = {
-  trimestral: ['1er Trimestre', '2do Trimestre', '3er Trimestre'],
-  semestral: ['1er Semestre', '2do Semestre'],
   bimestral: ['1er Bimestre', '2do Bimestre', '3er Bimestre', '4to Bimestre'],
+  trimestral: ['1er Trimestre', '2do Trimestre', '3er Trimestre'],
+  cuatrimestral: ['1er Cuatrimestre', '2do Cuatrimestre', '3er Cuatrimestre'],
+  semestral: ['1er Semestre', '2do Semestre'],
 }
 
 interface Props {

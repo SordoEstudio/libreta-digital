@@ -35,7 +35,10 @@ export default async function ConfiguracionPage({ params, searchParams }: Props)
     .is('deleted_at', null)
     .single()
 
-  if (!inst) notFound()
+  if (!inst) {
+    if (isSuperadmin(session)) redirect('/dashboard/instituciones')
+    notFound()
+  }
   if (!isSuperadmin(session) && !hasRole(session, inst.id, 'admin')) redirect(`/dashboard/${slug}`)
 
   const { data: años } = await supabase

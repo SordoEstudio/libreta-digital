@@ -16,7 +16,10 @@ export default async function NotasPage({ params }: Params) {
     .eq('slug', slug)
     .single()
 
-  if (!inst) notFound()
+  if (!inst) {
+    if (isSuperadmin(session)) redirect('/dashboard/instituciones')
+    notFound()
+  }
   if (!isSuperadmin(session) && !hasAnyRole(session, inst.id, ['admin', 'docente'])) redirect('/dashboard')
 
   const { data: evaluacion } = await supabase
