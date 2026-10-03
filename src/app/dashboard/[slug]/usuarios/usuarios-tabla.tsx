@@ -156,34 +156,40 @@ export default function UsuariosTabla({ usuarios, instId }: Props) {
           onChange={e => setQuery(e.target.value)}
           className="h-8 w-64 text-sm"
         />
-        <Select value={rolFiltro} onValueChange={v => setRolFiltro(v ?? 'todos')}>
-          <SelectTrigger className="h-8 w-40 text-sm">
-            <SelectValue placeholder="Todos los roles">
-              {rolFiltro === 'todos' ? 'Todos los roles' : ROL_LABELS[rolFiltro] ?? rolFiltro}
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todos">Todos los roles</SelectItem>
-            {ROLES_FILTRO.map(r => (
-              <SelectItem key={r} value={r}>{ROL_LABELS[r]}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={estadoFiltro} onValueChange={v => setEstadoFiltro(v ?? 'todos')}>
-          <SelectTrigger className="h-8 w-36 text-sm">
-            <SelectValue placeholder="Estado">
-              {estadoFiltro === 'todos' ? 'Todos' :
-               estadoFiltro === 'activo' ? 'Activo' :
-               estadoFiltro === 'inactivo' ? 'Inactivo' : 'Pendiente'}
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todos">Todos</SelectItem>
-            <SelectItem value="activo">Activo</SelectItem>
-            <SelectItem value="inactivo">Inactivo</SelectItem>
-            <SelectItem value="pendiente">Pendiente</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs font-medium text-muted-foreground">Rol</span>
+          <Select value={rolFiltro} onValueChange={v => setRolFiltro(v ?? 'todos')}>
+            <SelectTrigger className="h-8 w-40 text-sm" aria-label="Filtrar por rol">
+              <SelectValue placeholder="Todos los roles">
+                {rolFiltro === 'todos' ? 'Todos los roles' : ROL_LABELS[rolFiltro] ?? rolFiltro}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos los roles</SelectItem>
+              {ROLES_FILTRO.map(r => (
+                <SelectItem key={r} value={r}>{ROL_LABELS[r]}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs font-medium text-muted-foreground">Estado</span>
+          <Select value={estadoFiltro} onValueChange={v => setEstadoFiltro(v ?? 'todos')}>
+            <SelectTrigger className="h-8 w-36 text-sm" aria-label="Filtrar por estado">
+              <SelectValue placeholder="Estado">
+                {estadoFiltro === 'todos' ? 'Todos' :
+                 estadoFiltro === 'activo' ? 'Activo' :
+                 estadoFiltro === 'inactivo' ? 'Inactivo' : 'Pendiente'}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos</SelectItem>
+              <SelectItem value="activo">Activo</SelectItem>
+              <SelectItem value="inactivo">Inactivo</SelectItem>
+              <SelectItem value="pendiente">Pendiente</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         {filtersActive && (
           <Button variant="ghost" size="sm" className="h-8 gap-1 text-xs text-muted-foreground" onClick={clearFilters}>
             <X className="size-3" />

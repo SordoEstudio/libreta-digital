@@ -40,6 +40,7 @@ export default function EliminarMateriaButton({ materiaId, materiaNombre }: Prop
     <AlertDialog>
       <AlertDialogTrigger render={<Button variant="ghost" size="icon" className="size-7 text-destructive/60 hover:text-destructive" />}>
         <Trash2 className="size-3.5" />
+        <span className="sr-only">Eliminar {materiaNombre}</span>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>

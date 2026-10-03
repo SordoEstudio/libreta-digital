@@ -54,6 +54,7 @@ export default async function InstitucionesPage() {
                 <p className="text-xs text-muted-foreground truncate">{inst.email}</p>
               )}
               <Button
+                variant="secondary"
                 size="sm"
                 className="mt-auto"
                 render={<Link href={`/dashboard/${inst.slug}`} />}

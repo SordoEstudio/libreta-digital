@@ -22,7 +22,7 @@ export default function AñoSelector({ años, selectedId, slug }: Props) {
       value={selectedId}
       onValueChange={id => router.push(`/dashboard/${slug}/configuracion?año=${id}`)}
     >
-      <SelectTrigger className="w-44">
+      <SelectTrigger className="w-44" aria-label="Año lectivo">
         <SelectValue placeholder="Seleccionar año...">
           {(() => {
             const a = años.find(x => x.id === selectedId)

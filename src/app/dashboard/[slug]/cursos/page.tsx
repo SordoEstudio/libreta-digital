@@ -100,7 +100,7 @@ export default async function CursosPage({ params }: Params) {
               </CardHeader>
               <CardContent>
                 <Button
-                  variant="outline"
+                  variant="secondary"
                   size="sm"
                   className="w-full"
                   render={<Link href={`/dashboard/${slug}/cursos/${curso.id}`} />}

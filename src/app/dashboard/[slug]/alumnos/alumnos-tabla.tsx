@@ -76,35 +76,41 @@ export default function AlumnosTabla({ alumnos, instId, slug, cursos }: Props) {
           onChange={e => setQuery(e.target.value)}
           className="h-8 w-56 text-sm"
         />
-        <Select value={cursoFiltro} onValueChange={v => setCursoFiltro(v ?? 'todos')}>
-          <SelectTrigger className="h-8 w-44 text-sm">
-            <SelectValue placeholder="Todos los cursos">
-              {cursoFiltro === 'todos' ? 'Todos los cursos' :
-               cursoFiltro === 'sin-curso' ? 'Sin curso' :
-               cursosEnDatos.find(([id]) => id === cursoFiltro)?.[1] ?? 'Curso'}
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todos">Todos los cursos</SelectItem>
-            {cursosEnDatos.map(([id, nombre]) => (
-              <SelectItem key={id} value={id}>{nombre}</SelectItem>
-            ))}
-            <SelectItem value="sin-curso">Sin curso</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={estadoFiltro} onValueChange={v => setEstadoFiltro(v ?? 'todos')}>
-          <SelectTrigger className="h-8 w-32 text-sm">
-            <SelectValue placeholder="Estado">
-              {estadoFiltro === 'todos' ? 'Todos' :
-               estadoFiltro === 'activo' ? 'Activo' : 'Inactivo'}
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todos">Todos</SelectItem>
-            <SelectItem value="activo">Activo</SelectItem>
-            <SelectItem value="inactivo">Inactivo</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs font-medium text-muted-foreground">Curso</span>
+          <Select value={cursoFiltro} onValueChange={v => setCursoFiltro(v ?? 'todos')}>
+            <SelectTrigger className="h-8 w-44 text-sm" aria-label="Filtrar por curso">
+              <SelectValue placeholder="Todos los cursos">
+                {cursoFiltro === 'todos' ? 'Todos los cursos' :
+                 cursoFiltro === 'sin-curso' ? 'Sin curso' :
+                 cursosEnDatos.find(([id]) => id === cursoFiltro)?.[1] ?? 'Curso'}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos los cursos</SelectItem>
+              {cursosEnDatos.map(([id, nombre]) => (
+                <SelectItem key={id} value={id}>{nombre}</SelectItem>
+              ))}
+              <SelectItem value="sin-curso">Sin curso</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs font-medium text-muted-foreground">Estado</span>
+          <Select value={estadoFiltro} onValueChange={v => setEstadoFiltro(v ?? 'todos')}>
+            <SelectTrigger className="h-8 w-32 text-sm" aria-label="Filtrar por estado">
+              <SelectValue placeholder="Estado">
+                {estadoFiltro === 'todos' ? 'Todos' :
+                 estadoFiltro === 'activo' ? 'Activo' : 'Inactivo'}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos</SelectItem>
+              <SelectItem value="activo">Activo</SelectItem>
+              <SelectItem value="inactivo">Inactivo</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         {filtersActive && (
           <Button variant="ghost" size="sm" className="h-8 gap-1 text-xs text-muted-foreground" onClick={clearFilters}>
             <X className="size-3" />

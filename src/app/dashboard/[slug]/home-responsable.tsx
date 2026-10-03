@@ -152,7 +152,7 @@ export default async function HomeResponsable({ instId, slug, personaId }: Props
                   {inscripcion?.cursos?.nombre ?? 'Sin curso asignado'}
                 </p>
               </div>
-              <Button variant="ghost" size="sm" className="shrink-0" render={<Link href={`/dashboard/${slug}/libreta/${alumno.id}`} />}>
+              <Button variant="secondary" size="sm" className="shrink-0" render={<Link href={`/dashboard/${slug}/libreta/${alumno.id}`} />}>
                 Ver libreta
                 <ArrowRight data-icon="inline-end" />
               </Button>

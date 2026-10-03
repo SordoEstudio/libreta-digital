@@ -99,7 +99,7 @@ export default async function MisAlumnosPage({ params }: Params) {
                     </Badge>
                   </div>
                   <Button
-                    variant="outline"
+                    variant="secondary"
                     size="sm"
                     render={<Link href={`/dashboard/${slug}/libreta/${alumno.id}`} />}
                   >

@@ -133,15 +133,15 @@ export default async function HomeAdmin({ instId, slug, instNombre, instTipo }: 
       <div className="flex flex-col gap-2">
         <p className="text-sm font-medium">Accesos rápidos</p>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" render={<Link href={`/dashboard/${slug}/alumnos`} />}>
+          <Button variant="secondary" size="sm" render={<Link href={`/dashboard/${slug}/alumnos`} />}>
             <GraduationCap data-icon="inline-start" />
             Alumnos
           </Button>
-          <Button variant="outline" size="sm" render={<Link href={`/dashboard/${slug}/usuarios`} />}>
+          <Button variant="secondary" size="sm" render={<Link href={`/dashboard/${slug}/usuarios`} />}>
             <Users data-icon="inline-start" />
             Usuarios
           </Button>
-          <Button variant="outline" size="sm" render={<Link href={`/dashboard/${slug}/configuracion`} />}>
+          <Button variant="secondary" size="sm" render={<Link href={`/dashboard/${slug}/configuracion`} />}>
             <Settings data-icon="inline-start" />
             Configuración
           </Button>

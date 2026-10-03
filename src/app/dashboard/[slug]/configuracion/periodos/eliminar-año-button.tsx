@@ -38,8 +38,9 @@ export default function EliminarAñoButton({ añoId, añoNombre }: Props) {
 
   return (
     <AlertDialog>
-      <AlertDialogTrigger render={<Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" />}>
+      <AlertDialogTrigger render={<Button variant="ghost" size="icon-sm" className="text-destructive hover:text-destructive" />}>
         <Trash2 className="size-4" />
+        <span className="sr-only">Eliminar {añoNombre}</span>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>

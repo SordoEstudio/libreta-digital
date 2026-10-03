@@ -43,6 +43,7 @@ export default function EliminarCursoButton({ cursoId, cursoNombre, slug, añoId
     <AlertDialog>
       <AlertDialogTrigger render={<Button variant="ghost" size="icon" className="size-6 text-destructive/60 hover:text-destructive" />}>
         <Trash2 className="size-3" />
+        <span className="sr-only">Eliminar {cursoNombre}</span>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
