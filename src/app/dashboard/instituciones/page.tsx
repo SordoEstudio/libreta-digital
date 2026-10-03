@@ -35,8 +35,8 @@ export default async function InstitucionesPage() {
         {instituciones?.map(inst => (
           <Card key={inst.id} className="flex flex-col">
             <CardHeader className="flex flex-row items-start gap-3 pb-2">
-              <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10">
-                <Building2 className="size-5 text-primary" />
+              <div className="flex size-10 items-center justify-center rounded-lg bg-primary/15">
+                <Building2 className="size-5 text-harvi-dark" />
               </div>
               <div className="flex flex-col flex-1 min-w-0">
                 <CardTitle className="text-base truncate">{inst.nombre}</CardTitle>
@@ -54,7 +54,6 @@ export default async function InstitucionesPage() {
                 <p className="text-xs text-muted-foreground truncate">{inst.email}</p>
               )}
               <Button
-                variant="outline"
                 size="sm"
                 className="mt-auto"
                 render={<Link href={`/dashboard/${inst.slug}`} />}

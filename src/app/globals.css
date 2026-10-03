@@ -74,8 +74,8 @@
   --accent:                color-mix(in srgb, #cbdf4a 12%, white); /* subtle lime hover */
   --accent-foreground:     #203143;
   --destructive:           #dc2626;
-  --border:                #e2e8f0;
-  --input:                 #e2e8f0;
+  --border:                #c4d0da;   /* más visible sobre blanco (contraste UI 2.4:1) */
+  --input:                 #c4d0da;
   --ring:                  #cbdf4a;   /* lime focus ring (harvi brand) */
   --radius:                0.75rem;
   /* ── Charts ── */

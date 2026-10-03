@@ -156,7 +156,7 @@ export default function NuevaMateriaSheet({ cursoId, instId }: Props) {
                           <Combobox.Item
                             value={inputValue.trim()}
                             className={cn(
-                              'relative flex cursor-default items-center gap-2 py-1.5 pl-2 pr-8 text-sm outline-none select-none text-primary',
+                              'relative flex cursor-default items-center gap-2 py-1.5 pl-2 pr-8 text-sm outline-none select-none text-harvi-green-dark font-medium',
                               'data-highlighted:bg-accent data-highlighted:text-accent-foreground'
                             )}
                           >
