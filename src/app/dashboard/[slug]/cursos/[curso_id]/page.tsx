@@ -36,7 +36,7 @@ export default async function CursoDetallePage({ params }: Params) {
 
   const { data: materias } = await supabase
     .from('materias')
-    .select('id, materias_catalogo(nombre), materia_docentes(personas(nombre))')
+    .select('id, materias_catalogo(nombre), materia_docentes(persona_id, personas(nombre))')
     .eq('curso_id', curso_id)
     .is('deleted_at', null)
     .order('materias_catalogo(nombre)')
@@ -65,8 +65,10 @@ export default async function CursoDetallePage({ params }: Params) {
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {materias?.map(materia => {
-            const docentes = (materia.materia_docentes ?? []) as Array<{ personas: { nombre: string } | null }>
+            const docentes = (materia.materia_docentes ?? []) as Array<{ persona_id: string; personas: { nombre: string } | null }>
             const nombre = (materia.materias_catalogo as { nombre: string } | null)?.nombre ?? ''
+            const isAdminLevel = isSuperadmin(session) || hasRole(session, inst.id, 'admin')
+            const isAssigned = isAdminLevel || docentes.some(d => d.persona_id === session.persona_id)
             return (
               <Card key={materia.id}>
                 <CardHeader className="pb-2">
@@ -79,14 +81,18 @@ export default async function CursoDetallePage({ params }: Params) {
                       {docentes.map(d => d.personas?.nombre).filter(Boolean).join(', ')}
                     </div>
                   )}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    render={<Link href={`/dashboard/${slug}/materias/${materia.id}/evaluaciones`} />}
-                  >
-                    <BookOpen data-icon="inline-start" />
-                    Evaluaciones
-                  </Button>
+                  {isAssigned ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      render={<Link href={`/dashboard/${slug}/materias/${materia.id}/evaluaciones`} />}
+                    >
+                      <BookOpen data-icon="inline-start" />
+                      Evaluaciones
+                    </Button>
+                  ) : (
+                    <p className="text-xs text-muted-foreground italic">No asignado</p>
+                  )}
                 </CardContent>
               </Card>
             )

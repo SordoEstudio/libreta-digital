@@ -1,4 +1,4 @@
-import { requireSession, isSuperadmin, hasAnyRole } from '@/lib/auth'
+import { requireSession, isSuperadmin, hasAnyRole, hasRole } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
 import { Badge } from '@/components/ui/badge'
@@ -35,6 +35,19 @@ export default async function EvaluacionesPage({ params }: Params) {
   if (!inst) notFound()
   if (!isSuperadmin(session) && !hasAnyRole(session, inst.id, ['admin', 'docente']))
     redirect(`/dashboard/${slug}`)
+
+  const isAdminLevel = isSuperadmin(session) || hasRole(session, inst.id, 'admin')
+
+  if (!isAdminLevel) {
+    if (!session.persona_id) redirect(`/dashboard/${slug}`)
+    const { data: assignment } = await supabase
+      .from('materia_docentes')
+      .select('persona_id')
+      .eq('materia_id', materia_id)
+      .eq('persona_id', session.persona_id)
+      .maybeSingle()
+    if (!assignment) redirect(`/dashboard/${slug}`)
+  }
 
   const { data: materia } = await supabase
     .from('materias')
