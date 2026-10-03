@@ -21,7 +21,17 @@ export default async function HomeDocente({ instId, slug, personaId }: Props) {
 
   const materiaIds = (docenteMaterias ?? []).map(dm => dm.materia_id)
 
-  if (materiaIds.length === 0) {
+  // Filtrar materias por institución desde el inicio — evita edge case con docentes en múltiples instituciones
+  const { data: materias } = materiaIds.length > 0
+    ? await admin
+        .from('materias')
+        .select('id, curso_id, cursos(id, nombre), materias_catalogo(nombre), evaluaciones(id, nombre)')
+        .in('id', materiaIds)
+        .eq('institucion_id', instId)
+        .is('deleted_at', null)
+    : { data: [] }
+
+  if (!materias || materias.length === 0) {
     return (
       <div className="flex flex-col gap-6">
         <h1 className="text-2xl font-semibold">Inicio</h1>
@@ -32,13 +42,6 @@ export default async function HomeDocente({ instId, slug, personaId }: Props) {
       </div>
     )
   }
-
-  const { data: materias } = await admin
-    .from('materias')
-    .select('id, curso_id, cursos(id, nombre), materias_catalogo(nombre), evaluaciones(id, nombre)')
-    .in('id', materiaIds)
-    .eq('institucion_id', instId)
-    .is('deleted_at', null)
 
   type CursoRaw = { id: string; nombre: string }
   type CatalogoRaw = { nombre: string }
