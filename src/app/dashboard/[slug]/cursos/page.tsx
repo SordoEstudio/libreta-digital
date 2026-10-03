@@ -1,5 +1,6 @@
 import { requireSession, isSuperadmin, hasAnyRole, hasRole } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect, notFound } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -45,6 +46,23 @@ export default async function CursosPage({ params }: Params) {
         .order('nombre')
     : { data: [] }
 
+  const isAdminLevel = isSuperadmin(session) || hasRole(session, inst.id, 'admin')
+
+  let visibleCursos = cursos ?? []
+  if (!isAdminLevel && session.persona_id) {
+    const admin = createAdminClient()
+    const { data: assignedMaterias } = await admin
+      .from('materia_docentes')
+      .select('materias(curso_id)')
+      .eq('persona_id', session.persona_id)
+    const assignedCursoIds = new Set(
+      (assignedMaterias ?? [])
+        .map(am => (am.materias as { curso_id: string } | null)?.curso_id)
+        .filter(Boolean) as string[]
+    )
+    visibleCursos = visibleCursos.filter(c => assignedCursoIds.has(c.id))
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
@@ -68,7 +86,7 @@ export default async function CursosPage({ params }: Params) {
 
       {añoActivo && (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {cursos?.map(curso => (
+          {visibleCursos.map(curso => (
             <Card key={curso.id} className="flex flex-col hover:shadow-md transition-shadow">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base">{curso.nombre}</CardTitle>
@@ -91,10 +109,12 @@ export default async function CursosPage({ params }: Params) {
             </Card>
           ))}
 
-          {(!cursos || cursos.length === 0) && (
+          {visibleCursos.length === 0 && (
             <div className="col-span-full flex flex-col items-center justify-center gap-3 py-16 text-center">
               <BookOpen className="size-12 text-muted-foreground/40" />
-              <p className="text-muted-foreground">Sin cursos para este año lectivo.</p>
+              <p className="text-muted-foreground">
+                {isAdminLevel ? 'Sin cursos para este año lectivo.' : 'Sin materias asignadas.'}
+              </p>
             </div>
           )}
         </div>

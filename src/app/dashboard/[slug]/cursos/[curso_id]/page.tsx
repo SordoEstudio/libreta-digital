@@ -41,6 +41,19 @@ export default async function CursoDetallePage({ params }: Params) {
     .is('deleted_at', null)
     .order('materias_catalogo(nombre)')
 
+  const isAdminLevel = isSuperadmin(session) || hasRole(session, inst.id, 'admin')
+
+  type MateriaRow = {
+    id: string
+    materias_catalogo: { nombre: string } | null
+    materia_docentes: Array<{ persona_id: string; personas: { nombre: string } | null }>
+  }
+
+  const allMaterias = (materias ?? []) as unknown as MateriaRow[]
+  const visibleMaterias = isAdminLevel
+    ? allMaterias
+    : allMaterias.filter(m => m.materia_docentes.some(md => md.persona_id === session.persona_id))
+
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -59,49 +72,44 @@ export default async function CursoDetallePage({ params }: Params) {
       <div>
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-medium">Materias</h2>
-          {(isSuperadmin(session) || hasRole(session, inst.id, 'admin')) && (
+          {isAdminLevel && (
             <NuevaMateriaSheet cursoId={curso_id} instId={inst.id} />
           )}
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {materias?.map(materia => {
-            const docentes = (materia.materia_docentes ?? []) as Array<{ persona_id: string; personas: { nombre: string } | null }>
-            const nombre = (materia.materias_catalogo as { nombre: string } | null)?.nombre ?? ''
-            const isAdminLevel = isSuperadmin(session) || hasRole(session, inst.id, 'admin')
-            const isAssigned = isAdminLevel || docentes.some(d => d.persona_id === session.persona_id)
+          {visibleMaterias.map(materia => {
+            const nombre = materia.materias_catalogo?.nombre ?? ''
             return (
               <Card key={materia.id}>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base">{nombre}</CardTitle>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-3">
-                  {docentes.length > 0 && (
+                  {isAdminLevel && materia.materia_docentes.length > 0 && (
                     <div className="flex items-center gap-1 text-xs text-muted-foreground">
                       <Users className="size-3" />
-                      {docentes.map(d => d.personas?.nombre).filter(Boolean).join(', ')}
+                      {materia.materia_docentes.map(d => d.personas?.nombre).filter(Boolean).join(', ')}
                     </div>
                   )}
-                  {isAssigned ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      render={<Link href={`/dashboard/${slug}/materias/${materia.id}/evaluaciones`} />}
-                    >
-                      <BookOpen data-icon="inline-start" />
-                      Evaluaciones
-                    </Button>
-                  ) : (
-                    <p className="text-xs text-muted-foreground italic">No asignado</p>
-                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    render={<Link href={`/dashboard/${slug}/materias/${materia.id}/evaluaciones`} />}
+                  >
+                    <BookOpen data-icon="inline-start" />
+                    Evaluaciones
+                  </Button>
                 </CardContent>
               </Card>
             )
           })}
 
-          {(!materias || materias.length === 0) && (
+          {visibleMaterias.length === 0 && (
             <div className="col-span-full flex flex-col items-center justify-center gap-3 py-8 text-center">
               <BookOpen className="size-12 text-muted-foreground/40" />
-              <p className="text-muted-foreground">Sin materias en este curso.</p>
+              <p className="text-muted-foreground">
+                {isAdminLevel ? 'Sin materias en este curso.' : 'Sin materias asignadas en este curso.'}
+              </p>
             </div>
           )}
         </div>
