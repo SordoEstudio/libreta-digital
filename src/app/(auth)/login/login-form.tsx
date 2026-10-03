@@ -55,11 +55,16 @@ export default function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="w-full max-w-sm flex flex-col gap-6 p-8">
-        <div className="flex flex-col gap-1 text-center">
-          <h1 className="text-2xl font-semibold">Libreta Digital</h1>
-          <p className="text-sm text-muted-foreground">Harvi Digital</p>
+    <div className="min-h-screen flex items-center justify-center bg-harvi-grey px-4">
+      <div className="w-full max-w-sm flex flex-col gap-6 rounded-2xl bg-white p-8 shadow-md">
+        <div className="flex flex-col items-center gap-3 text-center">
+          <div className="flex size-12 items-center justify-center rounded-xl bg-harvi-green-lime shadow-sm">
+            <span className="text-base font-black text-harvi-dark leading-none">LD</span>
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-harvi-dark">Libreta.digital</h1>
+            <p className="text-xs text-muted-foreground mt-0.5">by Harvi</p>
+          </div>
         </div>
 
         {error && (

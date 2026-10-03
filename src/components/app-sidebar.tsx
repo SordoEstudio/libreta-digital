@@ -49,10 +49,13 @@ export function AppSidebar({ session }: AppSidebarProps) {
   return (
     <Sidebar>
       <SidebarHeader>
-        <div className="flex items-center gap-2 px-2 py-1">
-          <div className="flex flex-col">
-            <span className="text-sm font-semibold leading-tight">Libreta Digital</span>
-            <span className="text-xs text-sidebar-foreground/60">Harvi Digital</span>
+        <div className="flex items-center gap-2.5 px-2 py-2">
+          <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-harvi-green-lime">
+            <span className="text-[11px] font-black text-harvi-dark leading-none">LD</span>
+          </div>
+          <div className="flex flex-col min-w-0">
+            <span className="text-sm font-bold leading-tight text-sidebar-foreground truncate">Libreta.digital</span>
+            <span className="text-[10px] text-sidebar-foreground/50 leading-tight">by Harvi</span>
           </div>
         </div>
       </SidebarHeader>
@@ -188,7 +191,7 @@ export function AppSidebar({ session }: AppSidebarProps) {
           <SidebarMenuItem>
             <div className="flex items-center gap-2 px-2 py-1">
               <Avatar className="size-7">
-                <AvatarFallback className="text-xs">{initials}</AvatarFallback>
+                <AvatarFallback className="text-xs bg-harvi-green-lime text-harvi-dark font-semibold">{initials}</AvatarFallback>
               </Avatar>
               <div className="flex flex-col flex-1 min-w-0">
                 <span className="text-xs font-medium truncate">{session.nombre ?? session.email}</span>
