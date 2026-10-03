@@ -928,6 +928,13 @@ export type Database = {
     }
     Functions: {
       get_persona_id: { Args: never; Returns: string }
+      get_personas_login_status: {
+        Args: { p_ids: string[] }
+        Returns: {
+          has_logged_in: boolean
+          persona_id: string
+        }[]
+      }
       has_any_role: {
         Args: { inst_id: string; roles: string[] }
         Returns: boolean
