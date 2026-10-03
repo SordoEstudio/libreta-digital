@@ -320,8 +320,8 @@ Script secuencial para probar el producto sobre una institución nueva. Cubre to
 | `6d400ae` | `PATCH /usuarios/[id]`: `.eq('activo', true)` bloqueaba reactivación de usuarios | Removido filtro |
 | `3d04719` | `home-admin`: alertas materias sin docente incluían historial de todos los años | Filtrado al año lectivo activo |
 | `3d04719` | `EditarUsuarioSheet` / `ResponsablesSheet`: no se podían vaciar campos opcionales | Schema acepta `null`; frontend envía `null` para campos vacíos |
-| (pendiente) | `/materias/[id]/evaluaciones`: cualquier docente podía acceder a cualquier materia | Guard verifica que el docente esté asignado a esa materia específica |
-| (pendiente) | `/cursos/[id]`: docentes veían botón "Evaluaciones" en materias no asignadas | Muestra "No asignado" en lugar del botón para materias fuera de su asignación |
+| `6b5db57` | `/materias/[id]/evaluaciones`: cualquier docente podía acceder a cualquier materia | Guard verifica que el docente esté asignado a esa materia específica |
+| `6b5db57` | `/cursos/[id]`: docentes veían botón "Evaluaciones" en materias no asignadas | Muestra "No asignado" en lugar del botón para materias fuera de su asignación |
 
 ---
 
