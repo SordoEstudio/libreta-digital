@@ -54,8 +54,8 @@ export function AppSidebar({ session }: AppSidebarProps) {
             <span className="text-[11px] font-black text-harvi-dark leading-none">LD</span>
           </div>
           <div className="flex flex-col min-w-0">
-            <span className="text-sm font-bold leading-tight text-sidebar-foreground truncate">Libreta.digital</span>
-            <span className="text-[10px] text-sidebar-foreground/50 leading-tight">by Harvi</span>
+            <span className="text-sm font-bold leading-tight text-white truncate">Libreta.digital</span>
+            <span className="text-[10px] text-white/50 leading-tight">by Harvi</span>
           </div>
         </div>
       </SidebarHeader>
@@ -194,8 +194,8 @@ export function AppSidebar({ session }: AppSidebarProps) {
                 <AvatarFallback className="text-xs bg-harvi-green-lime text-harvi-dark font-semibold">{initials}</AvatarFallback>
               </Avatar>
               <div className="flex flex-col flex-1 min-w-0">
-                <span className="text-xs font-medium truncate">{session.nombre ?? session.email}</span>
-                <span className="text-xs text-sidebar-foreground/60 truncate">{session.email}</span>
+                <span className="text-xs font-medium text-white truncate">{session.nombre ?? session.email}</span>
+                <span className="text-xs text-white/60 truncate">{session.email}</span>
               </div>
             </div>
           </SidebarMenuItem>
