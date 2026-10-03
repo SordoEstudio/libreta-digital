@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { getSession, isSuperadmin, hasRole } from '@/lib/auth'
 import { ok, Err } from '@/lib/api'
 
@@ -27,6 +28,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 
   const { rol, activo, ...personaData } = parsed.data
   const supabase = await createClient()
+  const admin = createAdminClient()
 
   if (rol !== undefined || activo !== undefined) {
     const { error } = await supabase
@@ -38,14 +40,14 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   }
 
   if (Object.keys(personaData).length > 0) {
-    const { error } = await supabase
+    const { error } = await admin
       .from('personas')
       .update(personaData)
       .eq('id', persona_id)
     if (error) return Err.server(error.message)
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await admin
     .from('memberships')
     .select('rol, personas(id, nombre, email)')
     .eq('persona_id', persona_id)
