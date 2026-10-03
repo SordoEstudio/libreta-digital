@@ -1,7 +1,8 @@
 import { requireSession, isSuperadmin } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { EmptyState } from '@/components/ui/empty-state'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
@@ -45,7 +46,7 @@ export default async function InstitucionesPage() {
             </CardHeader>
             <CardContent className="flex flex-col gap-3">
               <div className="flex items-center gap-2">
-                <Badge variant={inst.activa ? 'default' : 'secondary'}>
+                <Badge variant={inst.activa ? 'default' : 'outline'}>
                   {inst.activa ? 'Activa' : 'Inactiva'}
                 </Badge>
                 {inst.tipo && <Badge variant="outline">{inst.tipo}</Badge>}
@@ -53,28 +54,32 @@ export default async function InstitucionesPage() {
               {inst.email && (
                 <p className="text-xs text-muted-foreground truncate">{inst.email}</p>
               )}
+            </CardContent>
+            <CardFooter>
               <Button
                 variant="secondary"
                 size="sm"
-                className="mt-auto"
+                className="w-full"
                 render={<Link href={`/dashboard/${inst.slug}`} />}
               >
                 Ver institución
               </Button>
-            </CardContent>
+            </CardFooter>
           </Card>
         ))}
       </div>
 
       {(!instituciones || instituciones.length === 0) && (
-        <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-          <Building2 className="size-12 text-muted-foreground/40" />
-          <p className="text-muted-foreground">No hay instituciones registradas.</p>
-          <Button render={<Link href="/dashboard/instituciones/nueva" />}>
-            <Plus data-icon="inline-start" />
-            Crear primera institución
-          </Button>
-        </div>
+        <EmptyState
+          icon={Building2}
+          title="No hay instituciones registradas."
+          action={
+            <Button render={<Link href="/dashboard/instituciones/nueva" />}>
+              <Plus data-icon="inline-start" />
+              Crear primera institución
+            </Button>
+          }
+        />
       )}
     </div>
   )

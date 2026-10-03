@@ -2,7 +2,8 @@ import { requireSession, isSuperadmin, hasAnyRole, hasRole } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect, notFound } from 'next/navigation'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Card, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { EmptyState } from '@/components/ui/empty-state'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
@@ -81,10 +82,7 @@ export default async function CursosPage({ params }: Params) {
       </div>
 
       {!añoActivo && (
-        <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-          <BookOpen className="size-12 text-muted-foreground/40" />
-          <p className="text-muted-foreground">No hay año lectivo activo.</p>
-        </div>
+        <EmptyState icon={BookOpen} title="No hay año lectivo activo." />
       )}
 
       {añoActivo && (
@@ -98,7 +96,7 @@ export default async function CursosPage({ params }: Params) {
                   {curso.turno && <Badge variant="secondary">{curso.turno}</Badge>}
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardFooter>
                 <Button
                   variant="secondary"
                   size="sm"
@@ -108,16 +106,16 @@ export default async function CursosPage({ params }: Params) {
                   <BookOpen data-icon="inline-start" />
                   Ver materias
                 </Button>
-              </CardContent>
+              </CardFooter>
             </Card>
           ))}
 
           {visibleCursos.length === 0 && (
-            <div className="col-span-full flex flex-col items-center justify-center gap-3 py-16 text-center">
-              <BookOpen className="size-12 text-muted-foreground/40" />
-              <p className="text-muted-foreground">
-                {isAdminLevel ? 'Sin cursos para este año lectivo.' : 'Sin materias asignadas.'}
-              </p>
+            <div className="col-span-full">
+              <EmptyState
+                icon={BookOpen}
+                title={isAdminLevel ? 'Sin cursos para este año lectivo.' : 'Sin materias asignadas.'}
+              />
             </div>
           )}
         </div>

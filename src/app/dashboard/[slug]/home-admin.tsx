@@ -111,9 +111,9 @@ export default async function HomeAdmin({ instId, slug, instNombre, instTipo }: 
           <p className="text-sm font-medium">Requiere atención</p>
           <div className="flex flex-col gap-2">
             {alerts.map(alert => (
-              <div key={alert.href} className="flex items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-900/50 dark:bg-amber-950/20">
+              <div key={alert.href} className="flex items-center justify-between gap-3 rounded-lg border border-warning-border bg-warning-muted px-4 py-3">
                 <div className="flex items-center gap-2">
-                  <AlertTriangle className="size-4 shrink-0 text-amber-600 dark:text-amber-500" />
+                  <AlertTriangle className="size-4 shrink-0 text-warning" />
                   <span className="text-sm">{alert.label}</span>
                 </div>
                 <Button variant="ghost" size="sm" className="h-7 shrink-0 text-xs" render={<Link href={alert.href} />}>

@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Input } from '@/components/ui/input'
+import { SearchInput } from '@/components/ui/search-input'
+import { EmptyState } from '@/components/ui/empty-state'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -150,7 +151,7 @@ export default function UsuariosTabla({ usuarios, instId }: Props) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-2 flex-wrap">
-        <Input
+        <SearchInput
           placeholder="Buscar por nombre o email..."
           value={query}
           onChange={e => setQuery(e.target.value)}
@@ -239,11 +240,9 @@ export default function UsuariosTabla({ usuarios, instId }: Props) {
                   </TableCell>
                   <TableCell>
                     {u.pendiente ? (
-                      <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50">
-                        Pendiente
-                      </Badge>
+                      <Badge variant="warning">Pendiente</Badge>
                     ) : (
-                      <Badge variant={u.activo ? 'default' : 'secondary'}>
+                      <Badge variant={u.activo ? 'default' : 'outline'}>
                         {u.activo ? 'Activo' : 'Inactivo'}
                       </Badge>
                     )}
@@ -274,10 +273,7 @@ export default function UsuariosTabla({ usuarios, instId }: Props) {
           </Table>
         </div>
       ) : usuarios.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-          <Users className="size-12 text-muted-foreground/40" />
-          <p className="text-muted-foreground">Sin usuarios registrados.</p>
-        </div>
+        <EmptyState icon={Users} title="Sin usuarios registrados." />
       ) : (
         <div className="flex flex-col items-center justify-center gap-3 py-10 text-center">
           <p className="text-sm text-muted-foreground">Sin resultados. <button className="underline" onClick={clearFilters}>Limpiar filtros</button></p>

@@ -3,7 +3,8 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { EmptyState } from '@/components/ui/empty-state'
 import { GraduationCap, BookOpen } from 'lucide-react'
 import Link from 'next/link'
 
@@ -73,13 +74,11 @@ export default async function MisAlumnosPage({ params }: Params) {
       </div>
 
       {alumnos.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-          <GraduationCap className="size-12 text-muted-foreground/40" />
-          <p className="text-muted-foreground">
-            No tenés alumnos vinculados. Contactá al administrador para que asigne tu cuenta
-            a los alumnos correspondientes.
-          </p>
-        </div>
+        <EmptyState
+          icon={GraduationCap}
+          title="Sin alumnos vinculados."
+          description="Contactá al administrador para que asigne tu cuenta a los alumnos correspondientes."
+        />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {alumnos.map(alumno => {
@@ -89,24 +88,27 @@ export default async function MisAlumnosPage({ params }: Params) {
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base">{alumno.nombre}</CardTitle>
                 </CardHeader>
-                <CardContent className="flex flex-col gap-3">
+                <CardContent>
                   <div className="flex items-center gap-2">
                     {cursoNombre && (
                       <Badge variant="outline">{cursoNombre}</Badge>
                     )}
-                    <Badge variant={alumno.activo ? 'default' : 'secondary'}>
+                    <Badge variant={alumno.activo ? 'default' : 'outline'}>
                       {alumno.activo ? 'Activo' : 'Inactivo'}
                     </Badge>
                   </div>
+                </CardContent>
+                <CardFooter>
                   <Button
                     variant="secondary"
                     size="sm"
+                    className="w-full"
                     render={<Link href={`/dashboard/${slug}/libreta/${alumno.id}`} />}
                   >
                     <BookOpen data-icon="inline-start" />
                     Ver libreta
                   </Button>
-                </CardContent>
+                </CardFooter>
               </Card>
             )
           })}

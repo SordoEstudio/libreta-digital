@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Input } from '@/components/ui/input'
+import { SearchInput } from '@/components/ui/search-input'
+import { EmptyState } from '@/components/ui/empty-state'
 import { Button } from '@/components/ui/button'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -31,7 +32,7 @@ export default function MateriasTabla({ materias }: Props) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-2">
-        <Input
+        <SearchInput
           placeholder="Buscar por nombre..."
           value={query}
           onChange={e => setQuery(e.target.value)}
@@ -82,10 +83,11 @@ export default function MateriasTabla({ materias }: Props) {
           </Table>
         </div>
       ) : materias.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-          <BookOpen className="size-12 text-muted-foreground/40" />
-          <p className="text-muted-foreground">Sin materias en el catálogo. Las materias se crean automáticamente al asignarlas a un curso, o podés agregarlas manualmente.</p>
-        </div>
+        <EmptyState
+          icon={BookOpen}
+          title="Sin materias en el catálogo."
+          description="Las materias se crean automáticamente al asignarlas a un curso, o podés agregarlas manualmente."
+        />
       ) : (
         <div className="flex flex-col items-center justify-center gap-3 py-10 text-center">
           <p className="text-sm text-muted-foreground">Sin resultados para &quot;{query}&quot;.</p>

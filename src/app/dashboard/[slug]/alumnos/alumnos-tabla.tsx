@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Input } from '@/components/ui/input'
+import { SearchInput } from '@/components/ui/search-input'
+import { EmptyState } from '@/components/ui/empty-state'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -70,7 +71,7 @@ export default function AlumnosTabla({ alumnos, instId, slug, cursos }: Props) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-2 flex-wrap">
-        <Input
+        <SearchInput
           placeholder="Buscar por nombre..."
           value={query}
           onChange={e => setQuery(e.target.value)}
@@ -149,7 +150,7 @@ export default function AlumnosTabla({ alumnos, instId, slug, cursos }: Props) {
                     <ResponsablesChips responsables={alumno.responsables} />
                   </TableCell>
                   <TableCell>
-                    <Badge variant={alumno.activo ? 'default' : 'secondary'}>
+                    <Badge variant={alumno.activo ? 'default' : 'outline'}>
                       {alumno.activo ? 'Activo' : 'Inactivo'}
                     </Badge>
                   </TableCell>
@@ -169,10 +170,7 @@ export default function AlumnosTabla({ alumnos, instId, slug, cursos }: Props) {
           </Table>
         </div>
       ) : alumnos.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-          <GraduationCap className="size-12 text-muted-foreground/40" />
-          <p className="text-muted-foreground">Sin alumnos registrados.</p>
-        </div>
+        <EmptyState icon={GraduationCap} title="Sin alumnos registrados." />
       ) : (
         <div className="flex flex-col items-center justify-center gap-3 py-10 text-center">
           <p className="text-sm text-muted-foreground">Sin resultados. <button className="underline" onClick={clearFilters}>Limpiar filtros</button></p>
