@@ -30,6 +30,17 @@ export default async function UsuariosPage({ params }: Params) {
     .eq('institucion_id', inst.id)
     .order('rol')
 
+  type PersonaCol = { id: string; nombre: string; email: string | null; telefono: string | null; dni: string | null; direccion: string | null } | null
+  const personaIds = (memberships ?? []).map(m => (m.personas as PersonaCol)?.id).filter(Boolean) as string[]
+
+  let pendienteSet = new Set<string>()
+  if (personaIds.length > 0) {
+    const { data: loginStatus } = await admin.rpc('get_personas_login_status', { p_ids: personaIds })
+    for (const row of loginStatus ?? []) {
+      if (!row.has_logged_in) pendienteSet.add(row.persona_id)
+    }
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
@@ -43,13 +54,14 @@ export default async function UsuariosPage({ params }: Params) {
       <UsuariosTabla
         instId={inst.id}
         usuarios={(memberships ?? []).map(m => {
-          const persona = m.personas as { id: string; nombre: string; email: string | null; telefono: string | null; dni: string | null; direccion: string | null } | null
+          const persona = m.personas as PersonaCol
           return {
             personaId: persona?.id ?? '',
             nombre: persona?.nombre ?? '—',
             email: persona?.email ?? null,
             rol: m.rol,
             activo: m.activo,
+            pendiente: pendienteSet.has(persona?.id ?? ''),
             telefono: persona?.telefono ?? null,
             dni: persona?.dni ?? null,
             direccion: persona?.direccion ?? null,

@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
-import { Users, X } from 'lucide-react'
+import { Users, X, Link as LinkIcon, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 import EditarUsuarioSheet from './editar-usuario-sheet'
 
 const ROL_LABELS: Record<string, string> = {
@@ -31,6 +32,7 @@ interface UsuarioRow {
   email: string | null
   rol: string
   activo: boolean
+  pendiente: boolean
   telefono: string | null
   dni: string | null
   direccion: string | null
@@ -42,6 +44,42 @@ interface Props {
 }
 
 const ROLES_FILTRO = ['admin', 'docente', 'responsable']
+
+function CopiarLinkButton({ instId, personaId }: { instId: string; personaId: string }) {
+  const [loading, setLoading] = useState(false)
+
+  async function handleCopiar() {
+    setLoading(true)
+    const res = await fetch(`/api/v1/instituciones/${instId}/usuarios/${personaId}/invite`, { method: 'POST' })
+    const json = await res.json()
+    setLoading(false)
+
+    if (!res.ok) {
+      toast.error(json.error?.message ?? 'Error al generar link')
+      return
+    }
+
+    await navigator.clipboard.writeText(json.data?.link ?? '')
+    toast.success('Link de invitación copiado')
+  }
+
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      className="size-8 p-0"
+      onClick={handleCopiar}
+      disabled={loading}
+      title="Copiar link de invitación"
+    >
+      {loading
+        ? <Loader2 className="size-3.5 animate-spin" />
+        : <LinkIcon className="size-3.5" />
+      }
+      <span className="sr-only">Copiar link</span>
+    </Button>
+  )
+}
 
 export default function UsuariosTabla({ usuarios, instId }: Props) {
   const [query, setQuery] = useState('')
@@ -55,8 +93,9 @@ export default function UsuariosTabla({ usuarios, instId }: Props) {
         if (!u.nombre.toLowerCase().includes(q) && !(u.email ?? '').toLowerCase().includes(q)) return false
       }
       if (rolFiltro !== 'todos' && u.rol !== rolFiltro) return false
-      if (estadoFiltro === 'activo' && !u.activo) return false
-      if (estadoFiltro === 'inactivo' && u.activo) return false
+      if (estadoFiltro === 'activo' && (u.pendiente || !u.activo)) return false
+      if (estadoFiltro === 'inactivo' && (u.pendiente || u.activo)) return false
+      if (estadoFiltro === 'pendiente' && !u.pendiente) return false
       return true
     })
   }, [usuarios, query, rolFiltro, estadoFiltro])
@@ -92,16 +131,18 @@ export default function UsuariosTabla({ usuarios, instId }: Props) {
           </SelectContent>
         </Select>
         <Select value={estadoFiltro} onValueChange={v => setEstadoFiltro(v ?? 'todos')}>
-          <SelectTrigger className="h-8 w-32 text-sm">
+          <SelectTrigger className="h-8 w-36 text-sm">
             <SelectValue placeholder="Estado">
               {estadoFiltro === 'todos' ? 'Todos' :
-               estadoFiltro === 'activo' ? 'Activo' : 'Inactivo'}
+               estadoFiltro === 'activo' ? 'Activo' :
+               estadoFiltro === 'inactivo' ? 'Inactivo' : 'Pendiente'}
             </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="todos">Todos</SelectItem>
             <SelectItem value="activo">Activo</SelectItem>
             <SelectItem value="inactivo">Inactivo</SelectItem>
+            <SelectItem value="pendiente">Pendiente</SelectItem>
           </SelectContent>
         </Select>
         {filtersActive && (
@@ -126,12 +167,12 @@ export default function UsuariosTabla({ usuarios, instId }: Props) {
                 <TableHead>Email</TableHead>
                 <TableHead>Rol</TableHead>
                 <TableHead>Estado</TableHead>
-                <TableHead className="w-12" />
+                <TableHead className="w-20" />
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtered.map(u => (
-                <TableRow key={u.personaId} className={!u.activo ? 'opacity-60' : ''}>
+                <TableRow key={u.personaId} className={!u.activo && !u.pendiente ? 'opacity-60' : ''}>
                   <TableCell className="font-medium">{u.nombre}</TableCell>
                   <TableCell className="text-muted-foreground text-sm">{u.email ?? '—'}</TableCell>
                   <TableCell>
@@ -140,24 +181,35 @@ export default function UsuariosTabla({ usuarios, instId }: Props) {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={u.activo ? 'default' : 'secondary'}>
-                      {u.activo ? 'Activo' : 'Inactivo'}
-                    </Badge>
+                    {u.pendiente ? (
+                      <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50">
+                        Pendiente
+                      </Badge>
+                    ) : (
+                      <Badge variant={u.activo ? 'default' : 'secondary'}>
+                        {u.activo ? 'Activo' : 'Inactivo'}
+                      </Badge>
+                    )}
                   </TableCell>
                   <TableCell>
-                    {u.rol !== 'superadmin' && (
-                      <EditarUsuarioSheet
-                        instId={instId}
-                        personaId={u.personaId}
-                        nombre={u.nombre}
-                        email={u.email}
-                        rol={u.rol}
-                        activo={u.activo}
-                        telefono={u.telefono}
-                        dni={u.dni}
-                        direccion={u.direccion}
-                      />
-                    )}
+                    <div className="flex items-center gap-1">
+                      {u.pendiente && (
+                        <CopiarLinkButton instId={instId} personaId={u.personaId} />
+                      )}
+                      {u.rol !== 'superadmin' && (
+                        <EditarUsuarioSheet
+                          instId={instId}
+                          personaId={u.personaId}
+                          nombre={u.nombre}
+                          email={u.email}
+                          rol={u.rol}
+                          activo={u.activo}
+                          telefono={u.telefono}
+                          dni={u.dni}
+                          direccion={u.direccion}
+                        />
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
