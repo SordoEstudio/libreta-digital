@@ -42,7 +42,7 @@ export default function HorarioSemanal({ horarios }: Props) {
   const minHour = Math.max(START_HOUR, Math.floor(Math.min(...allStartMins) / 60) - 0)
   const maxHour = Math.min(END_HOUR, Math.ceil(Math.max(...allEndMins) / 60))
   const totalMinutes = (maxHour - minHour) * 60
-  const PX_PER_MINUTE = 1.2
+  const PX_PER_MINUTE = 2
   const bodyHeight = totalMinutes * PX_PER_MINUTE
 
   // Conflict detection: group horarios by day, check overlaps
@@ -68,13 +68,13 @@ export default function HorarioSemanal({ horarios }: Props) {
   const hourMarks = Array.from({ length: maxHour - minHour + 1 }, (_, i) => minHour + i)
 
   return (
-    <div className="rounded-lg border overflow-hidden">
+    <div className="rounded-lg border">
       {conflictIds.size > 0 && (
         <div className="px-4 py-2 bg-amber-50 dark:bg-amber-950/40 border-b text-xs text-amber-700 dark:text-amber-300">
           Se detectaron {conflictIds.size} conflicto{conflictIds.size !== 1 ? 's' : ''} de horario (bloques superpuestos).
         </div>
       )}
-      <div className="overflow-x-auto">
+      <div className="w-full" style={{ overflowX: 'auto' }}>
         <div className="min-w-[480px]">
           {/* Day headers */}
           <div className="flex border-b bg-muted/30" style={{ paddingLeft: 52 }}>
