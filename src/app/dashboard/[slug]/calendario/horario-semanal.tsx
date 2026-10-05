@@ -63,7 +63,7 @@ export default function HorarioSemanal({ horarios, showConflicts = true }: Props
     }
   }
 
-  const hourMarks = Array.from({ length: maxHour - minHour + 1 }, (_, i) => minHour + i)
+  const hourMarks = Array.from({ length: maxHour - minHour }, (_, i) => minHour + i)
 
   return (
     <div className="rounded-lg border">
@@ -77,7 +77,7 @@ export default function HorarioSemanal({ horarios, showConflicts = true }: Props
           Sin horarios cargados. Asigná horarios a las materias en Configuración.
         </div>
       )}
-      <div className="w-full" style={{ overflowX: 'auto' }}>
+      <div className="w-full" style={{ overflowX: 'auto', overflowY: 'hidden' }}>
         <div className="min-w-[560px]">
           {/* Day headers */}
           <div className="flex border-b bg-muted/30" style={{ paddingLeft: 52 }}>
@@ -89,7 +89,7 @@ export default function HorarioSemanal({ horarios, showConflicts = true }: Props
           </div>
 
           {/* Body */}
-          <div className="flex relative" style={{ height: bodyHeight }}>
+          <div className="flex relative" style={{ height: bodyHeight, overflow: 'hidden' }}>
             {/* Time column */}
             <div className="w-[52px] shrink-0 relative border-r bg-muted/10">
               {hourMarks.map(hour => (
