@@ -9,9 +9,10 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
 import Link from 'next/link'
-import { BookOpen, GraduationCap, Users } from 'lucide-react'
+import { BookOpen, GraduationCap } from 'lucide-react'
 import NuevaMateriaSheet from './nueva-materia-sheet'
 import HorariosSheet, { type HorarioSlot } from './horarios-materia-sheet'
+import ExportAlumnosButton from './export-alumnos-button'
 
 type Params = { params: Promise<{ slug: string; curso_id: string }> }
 
@@ -108,10 +109,18 @@ export default async function CursoDetallePage({ params }: Params) {
                   <CardTitle className="text-base">{nombre}</CardTitle>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-2">
-                  {isAdminLevel && materia.materia_docentes.length > 0 && (
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Users className="size-3 shrink-0" />
+                  {materia.materia_docentes.length > 0 && (
+                    <p className="text-xs text-muted-foreground">
                       {materia.materia_docentes.map(d => d.personas?.nombre).filter(Boolean).join(', ')}
+                    </p>
+                  )}
+                  {horarios.length > 0 && (
+                    <div className="flex flex-col gap-0.5">
+                      {horarios.map(h => (
+                        <span key={h.id} className="text-xs text-muted-foreground">
+                          {['', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'][h.dia_semana]} {h.hora_inicio.slice(0, 5)}–{h.hora_fin.slice(0, 5)}{h.aula ? ` · ${h.aula}` : ''}
+                        </span>
+                      ))}
                     </div>
                   )}
                   {isAdminLevel && (
@@ -120,15 +129,6 @@ export default async function CursoDetallePage({ params }: Params) {
                       materiaNombre={nombre}
                       slots={horarios as HorarioSlot[]}
                     />
-                  )}
-                  {!isAdminLevel && horarios.length > 0 && (
-                    <div className="flex flex-col gap-0.5">
-                      {horarios.map(h => (
-                        <span key={h.id} className="text-xs text-muted-foreground">
-                          {['', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'][h.dia_semana]} {h.hora_inicio.slice(0, 5)}–{h.hora_fin.slice(0, 5)}{h.aula ? ` · ${h.aula}` : ''}
-                        </span>
-                      ))}
-                    </div>
                   )}
                 </CardContent>
                 <CardFooter>
@@ -161,7 +161,10 @@ export default async function CursoDetallePage({ params }: Params) {
         <div>
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-medium">Alumnos inscriptos</h2>
-            <p className="text-sm text-muted-foreground">{alumnos.length} alumno{alumnos.length !== 1 ? 's' : ''}</p>
+            <div className="flex items-center gap-3">
+              <p className="text-sm text-muted-foreground">{alumnos.length} alumno{alumnos.length !== 1 ? 's' : ''}</p>
+              {alumnos.length > 0 && <ExportAlumnosButton alumnos={alumnos} cursoNombre={curso.nombre} />}
+            </div>
           </div>
           {alumnos.length === 0 ? (
             <EmptyState

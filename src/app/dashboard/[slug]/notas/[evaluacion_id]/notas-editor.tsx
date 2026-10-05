@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
-import { Save, Loader2 } from 'lucide-react'
+import { Save, Loader2, Download } from 'lucide-react'
+import * as XLSX from 'xlsx'
 
 interface Alumno {
   id: string
@@ -24,12 +25,13 @@ interface NotaExistente {
 
 interface NotasEditorProps {
   evaluacionId: string
+  evaluacionNombre: string
   alumnos: Alumno[]
   notasExistentes: NotaExistente[]
   slug: string
 }
 
-export function NotasEditor({ evaluacionId, alumnos, notasExistentes, slug }: NotasEditorProps) {
+export function NotasEditor({ evaluacionId, evaluacionNombre, alumnos, notasExistentes, slug }: NotasEditorProps) {
   const notaMap = new Map(notasExistentes.map(n => [n.alumno_id, n]))
 
   const [valores, setValores] = useState<Record<string, string>>(() => {
@@ -78,6 +80,18 @@ export function NotasEditor({ evaluacionId, alumnos, notasExistentes, slug }: No
 
   function handleObservacion(alumnoId: string, value: string) {
     setObservaciones(prev => ({ ...prev, [alumnoId]: value }))
+  }
+
+  function handleExport() {
+    const rows = alumnos.map(a => ({
+      Alumno: a.nombre,
+      Nota: ausentes[a.id] ? 'Ausente' : (valores[a.id] || '—'),
+      Observación: ausentes[a.id] ? '' : (observaciones[a.id] ?? ''),
+    }))
+    const ws = XLSX.utils.json_to_sheet(rows)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Notas')
+    XLSX.writeFile(wb, `${evaluacionNombre}.xlsx`)
   }
 
   async function handleSave() {
@@ -161,7 +175,11 @@ export function NotasEditor({ evaluacionId, alumnos, notasExistentes, slug }: No
         </Table>
       </div>
 
-      <div className="flex justify-end">
+      <div className="flex justify-between">
+        <Button variant="outline" onClick={handleExport}>
+          <Download data-icon="inline-start" />
+          Exportar Excel
+        </Button>
         <Button onClick={handleSave} disabled={isPending}>
           {isPending ? <Loader2 data-icon="inline-start" className="animate-spin" /> : <Save data-icon="inline-start" />}
           {isPending ? 'Guardando...' : 'Guardar notas'}

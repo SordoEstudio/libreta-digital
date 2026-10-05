@@ -80,6 +80,7 @@ export default async function NotasPage({ params }: Params) {
 
       <NotasEditor
         evaluacionId={evaluacion_id}
+        evaluacionNombre={evaluacion.nombre}
         alumnos={alumnos ?? []}
         notasExistentes={notasExistentes ?? []}
         slug={slug}

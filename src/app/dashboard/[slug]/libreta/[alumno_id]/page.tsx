@@ -3,11 +3,12 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
 import Link from 'next/link'
-import { BookOpen } from 'lucide-react'
+import { BookOpen, Printer } from 'lucide-react'
 
 type Params = { params: Promise<{ slug: string; alumno_id: string }> }
 
@@ -80,12 +81,20 @@ export default async function LibretaPage({ params }: Params) {
           <Link href={`/dashboard/${slug}/alumnos`} className="hover:text-foreground">Alumnos</Link>
           {' / Libreta'}
         </div>
-        <h1 className="text-2xl font-semibold">{alumno.nombre}</h1>
-        <div className="flex items-center gap-2 mt-1">
-          {cursoNombre && <Badge variant="outline">{cursoNombre}</Badge>}
-          <Badge variant={alumno.activo ? 'default' : 'secondary'}>
-            {alumno.activo ? 'Activo' : 'Inactivo'}
-          </Badge>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold">{alumno.nombre}</h1>
+            <div className="flex items-center gap-2 mt-1">
+              {cursoNombre && <Badge variant="outline">{cursoNombre}</Badge>}
+              <Badge variant={alumno.activo ? 'default' : 'secondary'}>
+                {alumno.activo ? 'Activo' : 'Inactivo'}
+              </Badge>
+            </div>
+          </div>
+          <Button variant="outline" size="sm" render={<Link href={`/dashboard/${slug}/libreta/${alumno_id}/boletin`} />}>
+            <Printer data-icon="inline-start" />
+            Boletín
+          </Button>
         </div>
       </div>
 
