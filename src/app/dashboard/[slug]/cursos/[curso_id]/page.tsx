@@ -11,7 +11,7 @@ import {
 import Link from 'next/link'
 import { BookOpen, GraduationCap } from 'lucide-react'
 import NuevaMateriaSheet from './nueva-materia-sheet'
-import HorariosSheet, { type HorarioSlot } from './horarios-materia-sheet'
+import EditarMateriaSheet, { type HorarioSlot } from './editar-materia-sheet'
 import ExportAlumnosButton from './export-alumnos-button'
 
 type Params = { params: Promise<{ slug: string; curso_id: string }> }
@@ -99,21 +99,38 @@ export default async function CursoDetallePage({ params }: Params) {
             <NuevaMateriaSheet cursoId={curso_id} instId={inst.id} />
           )}
         </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {visibleMaterias.map(materia => {
             const nombre = materia.materias_catalogo?.nombre ?? ''
             const horarios = (materia.materia_horarios ?? []).filter(h => !h.deleted_at)
+            const docenteNames = materia.materia_docentes
+              .map(d => (d.personas as { nombre: string } | null)?.nombre)
+              .filter(Boolean) as string[]
+            const docenteActual = materia.materia_docentes[0]
+              ? { persona_id: materia.materia_docentes[0].persona_id, nombre: (materia.materia_docentes[0].personas as { nombre: string } | null)?.nombre ?? '' }
+              : null
             return (
-              <Card key={materia.id}>
+              <Card key={materia.id} className="flex flex-col">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-base">{nombre}</CardTitle>
+                  <div className="flex items-start justify-between gap-2">
+                    <CardTitle className="text-base leading-snug">{nombre}</CardTitle>
+                    {isAdminLevel && (
+                      <EditarMateriaSheet
+                        materiaId={materia.id}
+                        materiaNombre={nombre}
+                        docenteActual={docenteActual}
+                        horariosActuales={horarios as HorarioSlot[]}
+                        instId={inst.id}
+                      />
+                    )}
+                  </div>
                 </CardHeader>
-                <CardContent className="flex flex-col gap-2">
-                  {materia.materia_docentes.length > 0 && (
-                    <p className="text-xs text-muted-foreground">
-                      {materia.materia_docentes.map(d => d.personas?.nombre).filter(Boolean).join(', ')}
-                    </p>
-                  )}
+                <CardContent className="flex flex-col gap-2 flex-1">
+                  {docenteNames.length > 0 ? (
+                    <p className="text-xs text-muted-foreground">{docenteNames.join(', ')}</p>
+                  ) : isAdminLevel ? (
+                    <Badge variant="warning" className="w-fit text-xs">Sin docente</Badge>
+                  ) : null}
                   {horarios.length > 0 && (
                     <div className="flex flex-col gap-0.5">
                       {horarios.map(h => (
@@ -123,15 +140,8 @@ export default async function CursoDetallePage({ params }: Params) {
                       ))}
                     </div>
                   )}
-                  {isAdminLevel && (
-                    <HorariosSheet
-                      materiaId={materia.id}
-                      materiaNombre={nombre}
-                      slots={horarios as HorarioSlot[]}
-                    />
-                  )}
                 </CardContent>
-                <CardFooter>
+                <CardFooter className="mt-auto">
                   <Button
                     variant="secondary"
                     size="sm"
@@ -177,7 +187,7 @@ export default async function CursoDetallePage({ params }: Params) {
               }
             />
           ) : (
-            <div className="rounded-md border">
+            <div className="rounded-md border max-h-[480px] overflow-y-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
