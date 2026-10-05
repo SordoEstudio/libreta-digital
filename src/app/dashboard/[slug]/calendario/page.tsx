@@ -5,6 +5,7 @@ import { redirect, notFound } from 'next/navigation'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Calendar, Clock } from 'lucide-react'
 import HorarioSemanal from './horario-semanal'
+import CalendarioFiltros from './calendario-filtros'
 import CalendarioEvaluaciones from './calendario-evaluaciones'
 import IcalButton from './ical-button'
 import type { HorarioEvento, EvaluacionEvento } from '@/lib/horario-conflicts'
@@ -308,7 +309,9 @@ export default async function CalendarioPage({ params }: Params) {
         </TabsList>
 
         <TabsContent value="horario" className="mt-4">
-          <HorarioSemanal horarios={horarios} slug={slug} showConflicts={!isResponsable} />
+          {isAdminLevel
+            ? <CalendarioFiltros horarios={horarios} slug={slug} />
+            : <HorarioSemanal horarios={horarios} slug={slug} showConflicts={!isResponsable} />}
         </TabsContent>
 
         <TabsContent value="evaluaciones" className="mt-4">
