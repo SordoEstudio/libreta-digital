@@ -3,7 +3,8 @@
 import type { HorarioEvento } from './page'
 
 const DIAS = ['', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
-const ALL_DAYS = [1, 2, 3, 4, 5, 6, 7]
+const WEEKDAYS = [1, 2, 3, 4, 5]
+const WEEKEND = [6, 7]
 const START_HOUR = 7
 const END_HOUR = 21
 
@@ -38,9 +39,12 @@ export default function HorarioSemanal({ horarios, showConflicts = true }: Props
   const PX_PER_MINUTE = 1
   const bodyHeight = (maxHour - minHour) * 60 * PX_PER_MINUTE
 
+  const hasWeekend = WEEKEND.some(d => horarios.some(h => h.dia_semana === d))
+  const visibleDays = hasWeekend ? [...WEEKDAYS, ...WEEKEND] : WEEKDAYS
+
   const conflictIds = new Set<string>()
   if (showConflicts) {
-    for (const dia of ALL_DAYS) {
+    for (const dia of visibleDays) {
       const dayHorarios = horarios.filter(h => h.dia_semana === dia)
       for (let i = 0; i < dayHorarios.length; i++) {
         for (let j = i + 1; j < dayHorarios.length; j++) {
@@ -77,7 +81,7 @@ export default function HorarioSemanal({ horarios, showConflicts = true }: Props
         <div className="min-w-[560px]">
           {/* Day headers */}
           <div className="flex border-b bg-muted/30" style={{ paddingLeft: 52 }}>
-            {ALL_DAYS.map(dia => (
+            {visibleDays.map(dia => (
               <div key={dia} className="flex-1 text-center text-xs font-semibold py-2.5">
                 {DIAS[dia]}
               </div>
@@ -100,7 +104,7 @@ export default function HorarioSemanal({ horarios, showConflicts = true }: Props
             </div>
 
             {/* Day columns — all 7, always */}
-            {ALL_DAYS.map(dia => (
+            {visibleDays.map(dia => (
               <div key={dia} className="flex-1 relative border-r last:border-r-0">
                 {/* Hour lines */}
                 {hourMarks.map(hour => (
