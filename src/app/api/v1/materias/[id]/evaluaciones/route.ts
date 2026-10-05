@@ -10,6 +10,7 @@ const CreateSchema = z.object({
   peso: z.number().positive().default(1),
   orden: z.number().int().positive().default(1),
   periodo_id: z.string().uuid(),
+  fecha: z.string().date().optional().nullable(),
 })
 
 type Params = { params: Promise<{ id: string }> }
@@ -73,8 +74,9 @@ export async function POST(request: NextRequest, { params }: Params) {
       peso: parsed.data.peso,
       orden: parsed.data.orden,
       periodo_id: parsed.data.periodo_id,
+      ...(parsed.data.fecha ? { fecha: parsed.data.fecha } : {}),
     })
-    .select('id, nombre, tipo, peso, orden, periodo_id, created_at')
+    .select('id, nombre, tipo, peso, orden, periodo_id, fecha, created_at')
     .single()
 
   if (error) return Err.server(error.message)

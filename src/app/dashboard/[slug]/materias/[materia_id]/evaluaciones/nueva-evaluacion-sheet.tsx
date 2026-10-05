@@ -30,6 +30,7 @@ export default function NuevaEvaluacionSheet({ materiaId, periodos }: Props) {
   const [nombre, setNombre] = useState('')
   const [tipo, setTipo] = useState('')
   const [periodoId, setPeriodoId] = useState('')
+  const [fecha, setFecha] = useState('')
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -38,7 +39,7 @@ export default function NuevaEvaluacionSheet({ materiaId, periodos }: Props) {
     const res = await fetch(`/api/v1/materias/${materiaId}/evaluaciones`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre, tipo, periodo_id: periodoId }),
+      body: JSON.stringify({ nombre, tipo, periodo_id: periodoId, ...(fecha ? { fecha } : {}) }),
     })
 
     const json = await res.json()
@@ -54,6 +55,7 @@ export default function NuevaEvaluacionSheet({ materiaId, periodos }: Props) {
     setNombre('')
     setTipo('')
     setPeriodoId('')
+    setFecha('')
     router.refresh()
   }
 
@@ -109,6 +111,17 @@ export default function NuevaEvaluacionSheet({ materiaId, periodos }: Props) {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="ev-fecha">Fecha (opcional)</Label>
+              <input
+                id="ev-fecha"
+                type="date"
+                value={fecha}
+                onChange={e => setFecha(e.target.value)}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              />
             </div>
 
             <Button

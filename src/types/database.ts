@@ -363,6 +363,7 @@ export type Database = {
         Row: {
           created_at: string
           deleted_at: string | null
+          fecha: string | null
           id: string
           institucion_id: string
           materia_id: string
@@ -376,6 +377,7 @@ export type Database = {
         Insert: {
           created_at?: string
           deleted_at?: string | null
+          fecha?: string | null
           id?: string
           institucion_id: string
           materia_id: string
@@ -389,6 +391,7 @@ export type Database = {
         Update: {
           created_at?: string
           deleted_at?: string | null
+          fecha?: string | null
           id?: string
           institucion_id?: string
           materia_id?: string

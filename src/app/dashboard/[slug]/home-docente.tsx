@@ -126,6 +126,22 @@ export default async function HomeDocente({ instId, slug, personaId }: Props) {
                 <div className="min-w-0">
                   <CardTitle className="text-base">{m.nombre}</CardTitle>
                   <p className="text-sm text-muted-foreground">{m.cursoNombre}</p>
+                  {m.evaluaciones.length > 0 && (() => {
+                    const total = m.evaluaciones.reduce((s, e) => s + e.totalAlumnos, 0)
+                    const cargadas = m.evaluaciones.reduce((s, e) => s + Math.min(e.notasCount, e.totalAlumnos), 0)
+                    const pct = total > 0 ? Math.round(cargadas / total * 100) : 0
+                    return (
+                      <div className="flex items-center gap-2 mt-1.5">
+                        <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all ${pct === 100 ? 'bg-emerald-500' : 'bg-primary/60'}`}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                        <span className="text-xs text-muted-foreground shrink-0">{pct}%</span>
+                      </div>
+                    )
+                  })()}
                 </div>
                 <Button variant="secondary" size="sm" className="shrink-0" render={<Link href={`/dashboard/${slug}/materias/${m.id}/evaluaciones`} />}>
                   Cargar notas
