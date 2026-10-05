@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { GraduationCap, Users, BookOpen, AlertTriangle, CheckCircle2, Settings } from 'lucide-react'
+import { GraduationCap, Users, BookOpen, AlertTriangle, CheckCircle2, LayoutGrid } from 'lucide-react'
 import Link from 'next/link'
 
 interface Props {
@@ -62,8 +62,8 @@ export default async function HomeAdmin({ instId, slug, instNombre, instTipo }: 
     },
     materiasSinDocente > 0 && {
       label: `${materiasSinDocente} materia${materiasSinDocente !== 1 ? 's' : ''} sin docente asignado`,
-      href: `/dashboard/${slug}/configuracion`,
-      linkLabel: 'Ver configuración',
+      href: `/dashboard/${slug}/cursos`,
+      linkLabel: 'Ver cursos',
     },
   ].filter(Boolean) as Array<{ label: string; href: string; linkLabel: string }>
 
@@ -133,6 +133,10 @@ export default async function HomeAdmin({ instId, slug, instNombre, instTipo }: 
       <div className="flex flex-col gap-2">
         <p className="text-sm font-medium">Accesos rápidos</p>
         <div className="flex flex-wrap gap-2">
+          <Button variant="secondary" size="sm" render={<Link href={`/dashboard/${slug}/cursos`} />}>
+            <LayoutGrid data-icon="inline-start" />
+            Cursos
+          </Button>
           <Button variant="secondary" size="sm" render={<Link href={`/dashboard/${slug}/alumnos`} />}>
             <GraduationCap data-icon="inline-start" />
             Alumnos
@@ -140,10 +144,6 @@ export default async function HomeAdmin({ instId, slug, instNombre, instTipo }: 
           <Button variant="secondary" size="sm" render={<Link href={`/dashboard/${slug}/usuarios`} />}>
             <Users data-icon="inline-start" />
             Usuarios
-          </Button>
-          <Button variant="secondary" size="sm" render={<Link href={`/dashboard/${slug}/configuracion`} />}>
-            <Settings data-icon="inline-start" />
-            Configuración
           </Button>
         </div>
       </div>

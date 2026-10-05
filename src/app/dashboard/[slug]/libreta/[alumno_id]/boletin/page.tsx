@@ -98,7 +98,7 @@ export default async function BoletinPage({ params }: Params) {
       <div className="flex items-center justify-between mb-6 print:hidden">
         <Button variant="ghost" size="sm" render={<Link href={`/dashboard/${slug}/libreta/${alumno_id}`} />}>
           <ArrowLeft data-icon="inline-start" />
-          Volver a libreta
+          Volver a notas
         </Button>
         <PrintButton />
       </div>
@@ -108,7 +108,7 @@ export default async function BoletinPage({ params }: Params) {
         {/* Header */}
         <div className="text-center mb-6 pb-4 border-b">
           <p className="text-sm text-muted-foreground print:text-gray-600">{inst.nombre}</p>
-          <h1 className="text-2xl font-bold mt-1">Boletín de Calificaciones</h1>
+          <h1 className="text-2xl font-bold mt-1">Libreta de Calificaciones</h1>
           <div className="flex justify-center gap-6 mt-3 text-sm">
             <span><strong>Alumno:</strong> {alumno.nombre}</span>
             {cursoNombre && <span><strong>Curso:</strong> {cursoNombre}</span>}

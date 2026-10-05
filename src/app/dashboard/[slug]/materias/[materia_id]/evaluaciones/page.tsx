@@ -54,7 +54,7 @@ export default async function EvaluacionesPage({ params }: Params) {
 
   const { data: materia } = await supabase
     .from('materias')
-    .select('id, materias_catalogo(nombre), cursos(nombre)')
+    .select('id, materias_catalogo(nombre), cursos(id, nombre)')
     .eq('id', materia_id)
     .eq('institucion_id', inst.id)
     .is('deleted_at', null)
@@ -63,7 +63,9 @@ export default async function EvaluacionesPage({ params }: Params) {
   if (!materia) notFound()
 
   const materiaNombre = (materia.materias_catalogo as { nombre: string } | null)?.nombre ?? ''
-  const cursoNombre = (materia.cursos as { nombre: string } | null)?.nombre ?? ''
+  const cursoRaw = materia.cursos as { id: string; nombre: string } | null
+  const cursoNombre = cursoRaw?.nombre ?? ''
+  const cursoId = cursoRaw?.id ?? ''
 
   const { data: evaluaciones } = await supabase
     .from('evaluaciones')
@@ -86,7 +88,7 @@ export default async function EvaluacionesPage({ params }: Params) {
           <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
             <Link href={`/dashboard/${slug}/cursos`} className="hover:text-foreground">Cursos</Link>
             <span>/</span>
-            <span className="hover:text-foreground cursor-pointer">{cursoNombre}</span>
+            <Link href={`/dashboard/${slug}/cursos/${cursoId}`} className="hover:text-foreground">{cursoNombre}</Link>
             <span>/</span>
             <span>{materiaNombre}</span>
           </div>

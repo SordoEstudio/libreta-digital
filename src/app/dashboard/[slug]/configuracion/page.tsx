@@ -10,7 +10,7 @@ import AñoSelector from './año-selector'
 import NuevoAñoSheet from './periodos/nuevo-año-sheet'
 import NuevoCursoSheet from '../cursos/nuevo-curso-sheet'
 import NuevaMateriaSheet from '../cursos/[curso_id]/nueva-materia-sheet'
-import AsignarDocenteSheet from './asignar-docente-sheet'
+import EditarMateriaSheet, { type HorarioSlot } from '../cursos/[curso_id]/editar-materia-sheet'
 import EditarCursoSheet from './editar-curso-sheet'
 import EliminarCursoButton from './eliminar-curso-button'
 import EliminarMateriaButton from './eliminar-materia-button'
@@ -69,7 +69,7 @@ export default async function ConfiguracionPage({ params, searchParams }: Props)
   const { data: materias } = selectedCurso
     ? await admin
         .from('materias')
-        .select('id, catalogo_id, materias_catalogo(id, nombre), materia_docentes(personas(id, nombre))')
+        .select('id, catalogo_id, materias_catalogo(id, nombre), materia_docentes(personas(id, nombre)), materia_horarios(id, dia_semana, hora_inicio, hora_fin, aula, deleted_at)')
         .eq('curso_id', selectedCurso.id)
         .is('deleted_at', null)
         .order('materias_catalogo(nombre)')
@@ -214,9 +214,12 @@ export default async function ConfiguracionPage({ params, searchParams }: Props)
                       <TableBody>
                         {materias.map(m => {
                           type MateriaDocente = { personas: { id: string; nombre: string } | null }
+                          type HorarioRaw = { id: string; dia_semana: number; hora_inicio: string; hora_fin: string; aula: string | null; deleted_at: string | null }
                           const docente = ((m.materia_docentes ?? []) as MateriaDocente[])[0]?.personas
                           const catalogo = m.materias_catalogo as { id: string; nombre: string } | null
                           const materiaNombre = catalogo?.nombre ?? ''
+                          const docenteActual = docente ? { persona_id: docente.id, nombre: docente.nombre } : null
+                          const horariosActuales = ((m.materia_horarios ?? []) as HorarioRaw[]).filter(h => !h.deleted_at) as HorarioSlot[]
                           return (
                             <TableRow key={m.id}>
                               <TableCell className="font-medium">{materiaNombre}</TableCell>
@@ -225,10 +228,11 @@ export default async function ConfiguracionPage({ params, searchParams }: Props)
                               </TableCell>
                               <TableCell>
                                 <div className="flex items-center gap-0.5">
-                                  <AsignarDocenteSheet
+                                  <EditarMateriaSheet
                                     materiaId={m.id}
                                     materiaNombre={materiaNombre}
-                                    docenteActualId={docente?.id}
+                                    docenteActual={docenteActual}
+                                    horariosActuales={horariosActuales}
                                     instId={inst.id}
                                   />
                                   <EliminarMateriaButton

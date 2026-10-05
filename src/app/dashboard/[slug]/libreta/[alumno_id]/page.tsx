@@ -93,7 +93,7 @@ export default async function LibretaPage({ params }: Params) {
           </div>
           <Button variant="outline" size="sm" render={<Link href={`/dashboard/${slug}/libreta/${alumno_id}/boletin`} />}>
             <Printer data-icon="inline-start" />
-            Boletín
+            Libreta
           </Button>
         </div>
       </div>
@@ -130,7 +130,7 @@ export default async function LibretaPage({ params }: Params) {
                           </TableCell>
                           <TableCell className="font-semibold">
                             <div className="flex flex-col gap-0.5">
-                              <span>{nota.valor_numerico ?? nota.valor_literal ?? '—'}</span>
+                              <span>{nota.valor_literal === 'A' ? 'Ausente' : (nota.valor_numerico ?? nota.valor_literal ?? '—')}</span>
                               {nota.observacion && (
                                 <span className="text-xs font-normal text-muted-foreground italic">
                                   {nota.observacion}

@@ -112,7 +112,7 @@ export default async function HomeDocente({ instId, slug, personaId }: Props) {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Mis materias</h1>
         {totalPendientes > 0 && (
-          <Badge variant="destructive">
+          <Badge variant="warning">
             {totalPendientes} nota{totalPendientes !== 1 ? 's' : ''} pendiente{totalPendientes !== 1 ? 's' : ''}
           </Badge>
         )}
@@ -146,9 +146,9 @@ export default async function HomeDocente({ instId, slug, personaId }: Props) {
                         {e.totalAlumnos === 0 ? (
                           <span className="text-xs text-muted-foreground">Sin alumnos</span>
                         ) : falta === 0 ? (
-                          <span className="text-xs text-green-600">Completo</span>
+                          <span className="text-xs text-emerald-600 dark:text-emerald-400">Completo</span>
                         ) : (
-                          <span className="text-xs text-amber-600">{falta} sin nota</span>
+                          <span className="text-xs text-amber-600 dark:text-amber-400">{falta} sin nota</span>
                         )}
                       </div>
                     )

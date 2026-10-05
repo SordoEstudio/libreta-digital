@@ -124,7 +124,7 @@ export function NotasEditor({ evaluacionId, evaluacionNombre, alumnos, notasExis
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="rounded-md border">
+      <div className="overflow-x-auto rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>
