@@ -312,7 +312,7 @@ export default async function CalendarioPage({ params }: Params) {
         </TabsList>
 
         <TabsContent value="horario" className="mt-4">
-          <HorarioSemanal horarios={horarios} />
+          <HorarioSemanal horarios={horarios} showConflicts={!isResponsable} />
         </TabsContent>
 
         <TabsContent value="evaluaciones" className="mt-4">

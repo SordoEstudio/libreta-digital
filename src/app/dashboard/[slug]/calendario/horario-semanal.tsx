@@ -3,6 +3,7 @@
 import type { HorarioEvento } from './page'
 
 const DIAS = ['', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
+const ALL_DAYS = [1, 2, 3, 4, 5, 6, 7]
 const START_HOUR = 7
 const END_HOUR = 21
 
@@ -24,42 +25,35 @@ function timeToMinutes(time: string): number {
 
 interface Props {
   horarios: HorarioEvento[]
+  showConflicts?: boolean
 }
 
-export default function HorarioSemanal({ horarios }: Props) {
-  if (horarios.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center gap-3 py-16 text-center rounded-lg border bg-muted/20">
-        <p className="text-sm text-muted-foreground">Sin horarios cargados. Asigná horarios a las materias en Configuración.</p>
-      </div>
-    )
-  }
-
-  const usedDays = [...new Set(horarios.map(h => h.dia_semana))].sort()
-
-  const allStartMins = horarios.map(h => timeToMinutes(h.hora_inicio))
-  const allEndMins = horarios.map(h => timeToMinutes(h.hora_fin))
-  const minHour = Math.max(START_HOUR, Math.floor(Math.min(...allStartMins) / 60) - 0)
-  const maxHour = Math.min(END_HOUR, Math.ceil(Math.max(...allEndMins) / 60))
-  const totalMinutes = (maxHour - minHour) * 60
+export default function HorarioSemanal({ horarios, showConflicts = true }: Props) {
+  const minHour = horarios.length > 0
+    ? Math.max(START_HOUR, Math.floor(Math.min(...horarios.map(h => timeToMinutes(h.hora_inicio))) / 60))
+    : 8
+  const maxHour = horarios.length > 0
+    ? Math.min(END_HOUR, Math.ceil(Math.max(...horarios.map(h => timeToMinutes(h.hora_fin))) / 60) + 1)
+    : 18
   const PX_PER_MINUTE = 2
-  const bodyHeight = totalMinutes * PX_PER_MINUTE
+  const bodyHeight = (maxHour - minHour) * 60 * PX_PER_MINUTE
 
-  // Conflict detection: group horarios by day, check overlaps
   const conflictIds = new Set<string>()
-  for (const dia of usedDays) {
-    const dayHorarios = horarios.filter(h => h.dia_semana === dia)
-    for (let i = 0; i < dayHorarios.length; i++) {
-      for (let j = i + 1; j < dayHorarios.length; j++) {
-        const a = dayHorarios[i]
-        const b = dayHorarios[j]
-        const aStart = timeToMinutes(a.hora_inicio)
-        const aEnd = timeToMinutes(a.hora_fin)
-        const bStart = timeToMinutes(b.hora_inicio)
-        const bEnd = timeToMinutes(b.hora_fin)
-        if (aStart < bEnd && bStart < aEnd) {
-          conflictIds.add(a.id)
-          conflictIds.add(b.id)
+  if (showConflicts) {
+    for (const dia of ALL_DAYS) {
+      const dayHorarios = horarios.filter(h => h.dia_semana === dia)
+      for (let i = 0; i < dayHorarios.length; i++) {
+        for (let j = i + 1; j < dayHorarios.length; j++) {
+          const a = dayHorarios[i]
+          const b = dayHorarios[j]
+          const aStart = timeToMinutes(a.hora_inicio)
+          const aEnd = timeToMinutes(a.hora_fin)
+          const bStart = timeToMinutes(b.hora_inicio)
+          const bEnd = timeToMinutes(b.hora_fin)
+          if (aStart < bEnd && bStart < aEnd) {
+            conflictIds.add(a.id)
+            conflictIds.add(b.id)
+          }
         }
       }
     }
@@ -69,16 +63,21 @@ export default function HorarioSemanal({ horarios }: Props) {
 
   return (
     <div className="rounded-lg border">
-      {conflictIds.size > 0 && (
+      {showConflicts && conflictIds.size > 0 && (
         <div className="px-4 py-2 bg-amber-50 dark:bg-amber-950/40 border-b text-xs text-amber-700 dark:text-amber-300">
           Se detectaron {conflictIds.size} conflicto{conflictIds.size !== 1 ? 's' : ''} de horario (bloques superpuestos).
         </div>
       )}
+      {horarios.length === 0 && (
+        <div className="px-4 py-2 border-b bg-muted/20 text-xs text-muted-foreground">
+          Sin horarios cargados. Asigná horarios a las materias en Configuración.
+        </div>
+      )}
       <div className="w-full" style={{ overflowX: 'auto' }}>
-        <div className="min-w-[480px]">
+        <div className="min-w-[560px]">
           {/* Day headers */}
           <div className="flex border-b bg-muted/30" style={{ paddingLeft: 52 }}>
-            {usedDays.map(dia => (
+            {ALL_DAYS.map(dia => (
               <div key={dia} className="flex-1 text-center text-xs font-semibold py-2.5">
                 {DIAS[dia]}
               </div>
@@ -100,8 +99,8 @@ export default function HorarioSemanal({ horarios }: Props) {
               ))}
             </div>
 
-            {/* Day columns */}
-            {usedDays.map(dia => (
+            {/* Day columns — all 7, always */}
+            {ALL_DAYS.map(dia => (
               <div key={dia} className="flex-1 relative border-r last:border-r-0">
                 {/* Hour lines */}
                 {hourMarks.map(hour => (
@@ -112,7 +111,7 @@ export default function HorarioSemanal({ horarios }: Props) {
                   />
                 ))}
 
-                {/* Events */}
+                {/* Events for this day */}
                 {horarios.filter(h => h.dia_semana === dia).map(h => {
                   const top = (timeToMinutes(h.hora_inicio) - minHour * 60) * PX_PER_MINUTE
                   const height = (timeToMinutes(h.hora_fin) - timeToMinutes(h.hora_inicio)) * PX_PER_MINUTE
