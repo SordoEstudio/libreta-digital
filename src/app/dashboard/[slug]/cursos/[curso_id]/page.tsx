@@ -45,10 +45,24 @@ export default async function CursoDetallePage({ params }: Params) {
 
   const { data: materias } = await supabase
     .from('materias')
-    .select('id, materias_catalogo(nombre), materia_docentes(persona_id, personas(nombre)), materia_horarios(id, dia_semana, hora_inicio, hora_fin, aula, deleted_at)')
+    .select('id, materias_catalogo(nombre), materia_docentes(persona_id), materia_horarios(id, dia_semana, hora_inicio, hora_fin, aula, deleted_at)')
     .eq('curso_id', curso_id)
     .is('deleted_at', null)
     .order('materias_catalogo(nombre)')
+
+  // Collect all persona_ids from materia_docentes, then query names in one shot
+  type RawMateria = { id: string; materias_catalogo: unknown; materia_docentes: Array<{ persona_id: string }>; materia_horarios: unknown[] }
+  const rawMaterias = (materias ?? []) as unknown as RawMateria[]
+  const allPersonaIds = [...new Set(rawMaterias.flatMap(m => m.materia_docentes.map(d => d.persona_id)))]
+
+  const personaMap = new Map<string, string>()
+  if (allPersonaIds.length > 0) {
+    const { data: docentePersonas } = await supabase
+      .from('personas')
+      .select('id, nombre')
+      .in('id', allPersonaIds)
+    for (const p of docentePersonas ?? []) personaMap.set(p.id, p.nombre)
+  }
 
   const { data: inscripciones } = await supabase
     .from('alumno_inscripciones')
@@ -62,7 +76,7 @@ export default async function CursoDetallePage({ params }: Params) {
   type MateriaRow = {
     id: string
     materias_catalogo: { nombre: string } | null
-    materia_docentes: Array<{ persona_id: string; personas: { nombre: string } | null }>
+    materia_docentes: Array<{ persona_id: string }>
     materia_horarios: Array<{ id: string; dia_semana: number; hora_inicio: string; hora_fin: string; aula: string | null; deleted_at: string | null }>
   }
 
@@ -72,13 +86,7 @@ export default async function CursoDetallePage({ params }: Params) {
     .filter((a): a is AlumnoInscripto => a !== null)
     .sort((a, b) => a.nombre.localeCompare(b.nombre))
 
-  function resolvePersonaNombre(personas: unknown): string | undefined {
-    if (!personas) return undefined
-    if (Array.isArray(personas)) return (personas[0] as { nombre?: string })?.nombre
-    return (personas as { nombre?: string })?.nombre
-  }
-
-  const allMaterias = (materias ?? []) as unknown as MateriaRow[]
+  const allMaterias = rawMaterias as unknown as MateriaRow[]
   const visibleMaterias = isAdminLevel
     ? allMaterias
     : allMaterias.filter(m => m.materia_docentes.some(md => md.persona_id === session.persona_id))
@@ -110,10 +118,10 @@ export default async function CursoDetallePage({ params }: Params) {
             const nombre = materia.materias_catalogo?.nombre ?? ''
             const horarios = (materia.materia_horarios ?? []).filter(h => !h.deleted_at)
             const docenteNames = materia.materia_docentes
-              .map(d => resolvePersonaNombre(d.personas))
+              .map(d => personaMap.get(d.persona_id))
               .filter(Boolean) as string[]
             const docenteActual = materia.materia_docentes[0]
-              ? { persona_id: materia.materia_docentes[0].persona_id, nombre: resolvePersonaNombre(materia.materia_docentes[0].personas) ?? '' }
+              ? { persona_id: materia.materia_docentes[0].persona_id, nombre: personaMap.get(materia.materia_docentes[0].persona_id) ?? '' }
               : null
             return (
               <Card key={materia.id} className="flex flex-col">
