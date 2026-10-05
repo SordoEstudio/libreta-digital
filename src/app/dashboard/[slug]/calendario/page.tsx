@@ -7,33 +7,10 @@ import { Calendar, Clock } from 'lucide-react'
 import HorarioSemanal from './horario-semanal'
 import CalendarioEvaluaciones from './calendario-evaluaciones'
 import IcalButton from './ical-button'
+import type { HorarioEvento, EvaluacionEvento } from '@/lib/horario-conflicts'
+import { colorIndex } from '@/lib/horario-conflicts'
 
-export type HorarioEvento = {
-  id: string
-  materiaNombre: string
-  cursoNombre: string
-  dia_semana: number
-  hora_inicio: string
-  hora_fin: string
-  aula: string | null
-  colorIndex: number
-}
-
-export type EvaluacionEvento = {
-  id: string
-  nombre: string
-  tipo: string
-  materiaNombre: string
-  cursoNombre: string
-  fecha: string
-  colorIndex: number
-}
-
-function colorIndex(id: string): number {
-  let hash = 0
-  for (const c of id) hash = (hash << 5) - hash + c.charCodeAt(0)
-  return Math.abs(hash) % 8
-}
+export type { HorarioEvento, EvaluacionEvento }
 
 type Params = { params: Promise<{ slug: string }> }
 
@@ -86,17 +63,23 @@ export default async function CalendarioPage({ params }: Params) {
       if (cursoIds.length > 0) {
         const { data: materias } = await admin
           .from('materias')
-          .select('id, curso_id, materias_catalogo(nombre)')
+          .select('id, curso_id, materias_catalogo(nombre), materia_docentes(persona_id, personas(nombre))')
           .in('curso_id', cursoIds)
           .is('deleted_at', null)
 
         type MatCatalogo = { nombre: string }
+        type DocenteEntry = { persona_id: string; personas: { nombre: string } | null }
         const materiaIds = (materias ?? []).map(m => m.id)
         const materiaNombreMap = new Map(
-          (materias ?? []).map(m => [m.id, {
-            nombre: (m.materias_catalogo as MatCatalogo | null)?.nombre ?? '',
-            cursoId: m.curso_id,
-          }])
+          (materias ?? []).map(m => {
+            const docente = ((m.materia_docentes as unknown as DocenteEntry[]) ?? [])[0] ?? null
+            return [m.id, {
+              nombre: (m.materias_catalogo as MatCatalogo | null)?.nombre ?? '',
+              cursoId: m.curso_id,
+              docenteId: docente?.persona_id ?? null,
+              docenteNombre: (docente?.personas as { nombre: string } | null)?.nombre ?? null,
+            }]
+          })
         )
 
         if (materiaIds.length > 0) {
@@ -114,8 +97,12 @@ export default async function CalendarioPage({ params }: Params) {
             if (!mat) continue
             horarios.push({
               id: h.id,
+              materiaId: h.materia_id,
               materiaNombre: mat.nombre,
+              cursoId: mat.cursoId,
               cursoNombre: cursoNombreMap.get(mat.cursoId) ?? '',
+              docenteId: mat.docenteId,
+              docenteNombre: mat.docenteNombre,
               dia_semana: h.dia_semana,
               hora_inicio: h.hora_inicio,
               hora_fin: h.hora_fin,
@@ -149,11 +136,11 @@ export default async function CalendarioPage({ params }: Params) {
     const materiaIds = (docenteMaterias ?? []).map(dm => dm.materia_id)
 
     if (materiaIds.length > 0) {
-      type CursoRaw = { nombre: string }
+      type CursoRaw = { id: string; nombre: string }
       type CatalogoRaw = { nombre: string }
       const { data: materias } = await admin
         .from('materias')
-        .select('id, materias_catalogo(nombre), cursos(nombre)')
+        .select('id, materias_catalogo(nombre), cursos(id, nombre)')
         .in('id', materiaIds)
         .eq('institucion_id', inst.id)
         .is('deleted_at', null)
@@ -161,6 +148,7 @@ export default async function CalendarioPage({ params }: Params) {
       const materiaNombreMap = new Map(
         (materias ?? []).map(m => [m.id, {
           nombre: (m.materias_catalogo as CatalogoRaw | null)?.nombre ?? '',
+          cursoId: (m.cursos as CursoRaw | null)?.id ?? '',
           cursoNombre: (m.cursos as CursoRaw | null)?.nombre ?? '',
         }])
       )
@@ -179,8 +167,12 @@ export default async function CalendarioPage({ params }: Params) {
         if (!mat) continue
         horarios.push({
           id: h.id,
+          materiaId: h.materia_id,
           materiaNombre: mat.nombre,
+          cursoId: mat.cursoId,
           cursoNombre: mat.cursoNombre,
+          docenteId: session.persona_id ?? null,
+          docenteNombre: session.nombre ?? null,
           dia_semana: h.dia_semana,
           hora_inicio: h.hora_inicio,
           hora_fin: h.hora_fin,
@@ -259,8 +251,12 @@ export default async function CalendarioPage({ params }: Params) {
             if (!mat) continue
             horarios.push({
               id: h.id,
+              materiaId: h.materia_id,
               materiaNombre: mat.nombre,
+              cursoId: mat.cursoId,
               cursoNombre: cursoNombreMap.get(mat.cursoId) ?? '',
+              docenteId: null,
+              docenteNombre: null,
               dia_semana: h.dia_semana,
               hora_inicio: h.hora_inicio,
               hora_fin: h.hora_fin,
@@ -312,7 +308,7 @@ export default async function CalendarioPage({ params }: Params) {
         </TabsList>
 
         <TabsContent value="horario" className="mt-4">
-          <HorarioSemanal horarios={horarios} showConflicts={!isResponsable} />
+          <HorarioSemanal horarios={horarios} slug={slug} showConflicts={!isResponsable} />
         </TabsContent>
 
         <TabsContent value="evaluaciones" className="mt-4">

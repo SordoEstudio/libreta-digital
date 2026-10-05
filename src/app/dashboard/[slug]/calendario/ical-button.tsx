@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 import { Download } from 'lucide-react'
-import type { HorarioEvento } from './page'
+import type { HorarioEvento } from '@/lib/horario-conflicts'
 
 const BYDAY = ['', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU']
 

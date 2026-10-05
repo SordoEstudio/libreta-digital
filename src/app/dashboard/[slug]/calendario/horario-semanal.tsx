@@ -1,12 +1,14 @@
 'use client'
 
-import type { HorarioEvento } from './page'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { ChevronDown, ChevronUp } from 'lucide-react'
+import type { HorarioEvento } from '@/lib/horario-conflicts'
+import { detectConflicts, conflictIdsSet } from '@/lib/horario-conflicts'
 
 const DIAS = ['', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
 const WEEKDAYS = [1, 2, 3, 4, 5]
 const WEEKEND = [6, 7]
-const START_HOUR = 7
-const END_HOUR = 21
 
 const EVENT_COLORS = [
   'bg-blue-100 border-l-2 border-blue-400 text-blue-800 dark:bg-blue-950/60 dark:text-blue-200',
@@ -24,62 +26,97 @@ function timeToMinutes(time: string): number {
   return parseInt(parts[0]) * 60 + parseInt(parts[1])
 }
 
+const START_HOUR = 7
+const END_HOUR = 21
+
 interface Props {
   horarios: HorarioEvento[]
+  slug: string
   showConflicts?: boolean
 }
 
-export default function HorarioSemanal({ horarios, showConflicts = true }: Props) {
+export default function HorarioSemanal({ horarios, slug, showConflicts = true }: Props) {
+  const router = useRouter()
+  const [conflictDetailOpen, setConflictDetailOpen] = useState(false)
+
   const minHour = horarios.length > 0
     ? Math.max(START_HOUR, Math.floor(Math.min(...horarios.map(h => timeToMinutes(h.hora_inicio))) / 60))
     : 8
   const maxHour = horarios.length > 0
     ? Math.min(END_HOUR, Math.ceil(Math.max(...horarios.map(h => timeToMinutes(h.hora_fin))) / 60) + 1)
     : 18
+
   const PX_PER_MINUTE = 1
   const bodyHeight = (maxHour - minHour) * 60 * PX_PER_MINUTE
 
+  const conflictos = showConflicts ? detectConflicts(horarios) : []
+  const conflictIds = conflictIdsSet(conflictos)
+
   const hasWeekend = WEEKEND.some(d => horarios.some(h => h.dia_semana === d))
   const visibleDays = hasWeekend ? [...WEEKDAYS, ...WEEKEND] : WEEKDAYS
-
-  const conflictIds = new Set<string>()
-  if (showConflicts) {
-    for (const dia of visibleDays) {
-      const dayHorarios = horarios.filter(h => h.dia_semana === dia)
-      for (let i = 0; i < dayHorarios.length; i++) {
-        for (let j = i + 1; j < dayHorarios.length; j++) {
-          const a = dayHorarios[i]
-          const b = dayHorarios[j]
-          const aStart = timeToMinutes(a.hora_inicio)
-          const aEnd = timeToMinutes(a.hora_fin)
-          const bStart = timeToMinutes(b.hora_inicio)
-          const bEnd = timeToMinutes(b.hora_fin)
-          if (aStart < bEnd && bStart < aEnd) {
-            conflictIds.add(a.id)
-            conflictIds.add(b.id)
-          }
-        }
-      }
-    }
-  }
 
   const hourMarks = Array.from({ length: maxHour - minHour }, (_, i) => minHour + i)
 
   return (
     <div className="rounded-lg border">
-      {showConflicts && conflictIds.size > 0 && (
-        <div className="px-4 py-2 bg-amber-50 dark:bg-amber-950/40 border-b text-xs text-amber-700 dark:text-amber-300">
-          Se detectaron {conflictIds.size} conflicto{conflictIds.size !== 1 ? 's' : ''} de horario (bloques superpuestos).
+      {showConflicts && conflictos.length > 0 && (
+        <div className="border-b bg-amber-50 dark:bg-amber-950/40">
+          <button
+            onClick={() => setConflictDetailOpen(v => !v)}
+            className="w-full flex items-center justify-between gap-3 px-4 py-2.5 text-left"
+          >
+            <span className="flex items-center gap-2 text-xs text-amber-700 dark:text-amber-300">
+              <span className="inline-flex size-4 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white shrink-0">
+                {conflictos.length}
+              </span>
+              {conflictos.length === 1
+                ? '1 conflicto de horario detectado'
+                : `${conflictos.length} conflictos de horario detectados`}
+            </span>
+            {conflictDetailOpen
+              ? <ChevronUp className="size-3.5 text-amber-600 shrink-0" />
+              : <ChevronDown className="size-3.5 text-amber-600 shrink-0" />}
+          </button>
+          {conflictDetailOpen && (
+            <div className="border-t border-amber-200 dark:border-amber-800 px-4 py-3 flex flex-col gap-3">
+              {conflictos.map((c, i) => (
+                <div key={i} className="flex flex-col gap-0.5">
+                  <span className="text-xs font-semibold text-amber-800 dark:text-amber-200">
+                    {c.tipo === 'docente' ? 'Docente' : 'Curso'}: {c.nombreRecurso} — {c.diaLabel}
+                  </span>
+                  <span className="text-xs text-amber-700/80 dark:text-amber-300/80">
+                    <button
+                      className="underline underline-offset-2 hover:no-underline"
+                      onClick={() => router.push(`/dashboard/${slug}/materias/${c.horarioA.materiaId}`)}
+                    >
+                      {c.horarioA.materiaNombre}
+                    </button>
+                    {' '}({c.horarioA.hora_inicio.slice(0, 5)}–{c.horarioA.hora_fin.slice(0, 5)})
+                    {' '}se solapa con{' '}
+                    <button
+                      className="underline underline-offset-2 hover:no-underline"
+                      onClick={() => router.push(`/dashboard/${slug}/materias/${c.horarioB.materiaId}`)}
+                    >
+                      {c.horarioB.materiaNombre}
+                    </button>
+                    {' '}({c.horarioB.hora_inicio.slice(0, 5)}–{c.horarioB.hora_fin.slice(0, 5)})
+                    {c.tipo === 'curso' ? ` · ${c.horarioA.cursoNombre}` : ` · ${c.horarioA.cursoNombre} / ${c.horarioB.cursoNombre}`}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
+
       {horarios.length === 0 && (
         <div className="px-4 py-2 border-b bg-muted/20 text-xs text-muted-foreground">
           Sin horarios cargados. Asigná horarios a las materias en Configuración.
         </div>
       )}
+
       <div className="w-full" style={{ overflowX: 'auto', overflowY: 'hidden' }}>
         <div className="min-w-[560px]">
-          {/* Day headers */}
           <div className="flex border-b bg-muted/30" style={{ paddingLeft: 52 }}>
             {visibleDays.map(dia => (
               <div key={dia} className="flex-1 text-center text-xs font-semibold py-2.5">
@@ -88,9 +125,7 @@ export default function HorarioSemanal({ horarios, showConflicts = true }: Props
             ))}
           </div>
 
-          {/* Body */}
           <div className="flex relative" style={{ height: bodyHeight, overflow: 'hidden' }}>
-            {/* Time column */}
             <div className="w-[52px] shrink-0 relative border-r bg-muted/10">
               {hourMarks.map(hour => (
                 <div
@@ -103,10 +138,8 @@ export default function HorarioSemanal({ horarios, showConflicts = true }: Props
               ))}
             </div>
 
-            {/* Day columns — all 7, always */}
             {visibleDays.map(dia => (
               <div key={dia} className="flex-1 relative border-r last:border-r-0">
-                {/* Hour lines */}
                 {hourMarks.map(hour => (
                   <div
                     key={hour}
@@ -115,16 +148,16 @@ export default function HorarioSemanal({ horarios, showConflicts = true }: Props
                   />
                 ))}
 
-                {/* Events for this day */}
                 {horarios.filter(h => h.dia_semana === dia).map(h => {
                   const top = (timeToMinutes(h.hora_inicio) - minHour * 60) * PX_PER_MINUTE
                   const height = (timeToMinutes(h.hora_fin) - timeToMinutes(h.hora_inicio)) * PX_PER_MINUTE
                   const isConflict = conflictIds.has(h.id)
                   return (
-                    <div
+                    <button
                       key={h.id}
-                      className={`absolute inset-x-0.5 rounded overflow-hidden px-1.5 py-1 ${EVENT_COLORS[h.colorIndex]} ${isConflict ? 'ring-1 ring-amber-500' : ''}`}
+                      className={`absolute inset-x-0.5 rounded overflow-hidden px-1.5 py-1 text-left w-auto ${EVENT_COLORS[h.colorIndex]} ${isConflict ? 'ring-1 ring-amber-500' : ''}`}
                       style={{ top: top + 1, height: height - 2, zIndex: 10 }}
+                      onClick={() => router.push(`/dashboard/${slug}/materias/${h.materiaId}`)}
                     >
                       <p className="text-[11px] font-semibold leading-tight truncate">{h.materiaNombre}</p>
                       {height > 20 && (
@@ -138,7 +171,7 @@ export default function HorarioSemanal({ horarios, showConflicts = true }: Props
                       {height > 50 && h.aula && (
                         <p className="text-[10px] opacity-60 leading-tight truncate">{h.aula}</p>
                       )}
-                    </div>
+                    </button>
                   )
                 })}
               </div>
