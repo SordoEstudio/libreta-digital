@@ -46,7 +46,7 @@ export function ConflictosAlert({ conflictos, slug }: Props) {
               <p className="text-xs text-muted-foreground">
                 <button
                   className="underline underline-offset-2 hover:no-underline"
-                  onClick={() => router.push(`/dashboard/${slug}/materias/${c.horarioA.materiaId}`)}
+                  onClick={() => router.push(`/dashboard/${slug}/materias/${c.horarioA.materiaId}/evaluaciones`)}
                 >
                   {c.horarioA.materiaNombre}
                 </button>
@@ -54,7 +54,7 @@ export function ConflictosAlert({ conflictos, slug }: Props) {
                 {' '}se solapa con{' '}
                 <button
                   className="underline underline-offset-2 hover:no-underline"
-                  onClick={() => router.push(`/dashboard/${slug}/materias/${c.horarioB.materiaId}`)}
+                  onClick={() => router.push(`/dashboard/${slug}/materias/${c.horarioB.materiaId}/evaluaciones`)}
                 >
                   {c.horarioB.materiaNombre}
                 </button>

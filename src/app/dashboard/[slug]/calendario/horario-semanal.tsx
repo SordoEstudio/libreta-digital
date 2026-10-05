@@ -87,7 +87,7 @@ export default function HorarioSemanal({ horarios, slug, showConflicts = true }:
                   <span className="text-xs text-amber-700/80 dark:text-amber-300/80">
                     <button
                       className="underline underline-offset-2 hover:no-underline"
-                      onClick={() => router.push(`/dashboard/${slug}/materias/${c.horarioA.materiaId}`)}
+                      onClick={() => router.push(`/dashboard/${slug}/materias/${c.horarioA.materiaId}/evaluaciones`)}
                     >
                       {c.horarioA.materiaNombre}
                     </button>
@@ -95,7 +95,7 @@ export default function HorarioSemanal({ horarios, slug, showConflicts = true }:
                     {' '}se solapa con{' '}
                     <button
                       className="underline underline-offset-2 hover:no-underline"
-                      onClick={() => router.push(`/dashboard/${slug}/materias/${c.horarioB.materiaId}`)}
+                      onClick={() => router.push(`/dashboard/${slug}/materias/${c.horarioB.materiaId}/evaluaciones`)}
                     >
                       {c.horarioB.materiaNombre}
                     </button>
@@ -157,7 +157,7 @@ export default function HorarioSemanal({ horarios, slug, showConflicts = true }:
                       key={h.id}
                       className={`absolute inset-x-0.5 rounded overflow-hidden px-1.5 py-1 text-left w-auto ${EVENT_COLORS[h.colorIndex]} ${isConflict ? 'ring-1 ring-amber-500' : ''}`}
                       style={{ top: top + 1, height: height - 2, zIndex: 10 }}
-                      onClick={() => router.push(`/dashboard/${slug}/materias/${h.materiaId}`)}
+                      onClick={() => router.push(`/dashboard/${slug}/materias/${h.materiaId}/evaluaciones`)}
                     >
                       <p className="text-[11px] font-semibold leading-tight truncate">{h.materiaNombre}</p>
                       {height > 20 && (
