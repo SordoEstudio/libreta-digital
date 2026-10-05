@@ -120,7 +120,14 @@ export default async function LibretaPage({ params }: Params) {
                             <Badge variant="outline">{ev?.tipo}</Badge>
                           </TableCell>
                           <TableCell className="font-semibold">
-                            {nota.valor_numerico ?? nota.valor_literal ?? '—'}
+                            <div className="flex flex-col gap-0.5">
+                              <span>{nota.valor_numerico ?? nota.valor_literal ?? '—'}</span>
+                              {nota.observacion && (
+                                <span className="text-xs font-normal text-muted-foreground italic">
+                                  {nota.observacion}
+                                </span>
+                              )}
+                            </div>
                           </TableCell>
                         </TableRow>
                       )

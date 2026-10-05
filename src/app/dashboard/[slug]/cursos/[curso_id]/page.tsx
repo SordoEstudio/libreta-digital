@@ -1,12 +1,17 @@
 import { requireSession, isSuperadmin, hasAnyRole, hasRole } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { EmptyState } from '@/components/ui/empty-state'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from '@/components/ui/table'
 import Link from 'next/link'
-import { BookOpen, Users } from 'lucide-react'
+import { BookOpen, GraduationCap, Users } from 'lucide-react'
 import NuevaMateriaSheet from './nueva-materia-sheet'
+import HorariosSheet, { type HorarioSlot } from './horarios-materia-sheet'
 
 type Params = { params: Promise<{ slug: string; curso_id: string }> }
 
@@ -39,10 +44,17 @@ export default async function CursoDetallePage({ params }: Params) {
 
   const { data: materias } = await supabase
     .from('materias')
-    .select('id, materias_catalogo(nombre), materia_docentes(persona_id, personas(nombre))')
+    .select('id, materias_catalogo(nombre), materia_docentes(persona_id, personas(nombre)), materia_horarios(id, dia_semana, hora_inicio, hora_fin, aula, deleted_at)')
     .eq('curso_id', curso_id)
     .is('deleted_at', null)
     .order('materias_catalogo(nombre)')
+
+  const { data: inscripciones } = await supabase
+    .from('alumno_inscripciones')
+    .select('alumnos(id, nombre, activo)')
+    .eq('curso_id', curso_id)
+    .eq('activo', true)
+    .is('deleted_at', null)
 
   const isAdminLevel = isSuperadmin(session) || hasRole(session, inst.id, 'admin')
 
@@ -50,7 +62,14 @@ export default async function CursoDetallePage({ params }: Params) {
     id: string
     materias_catalogo: { nombre: string } | null
     materia_docentes: Array<{ persona_id: string; personas: { nombre: string } | null }>
+    materia_horarios: Array<{ id: string; dia_semana: number; hora_inicio: string; hora_fin: string; aula: string | null; deleted_at: string | null }>
   }
+
+  type AlumnoInscripto = { id: string; nombre: string; activo: boolean }
+  const alumnos = ((inscripciones ?? []) as unknown as Array<{ alumnos: AlumnoInscripto | null }>)
+    .map(i => i.alumnos)
+    .filter((a): a is AlumnoInscripto => a !== null)
+    .sort((a, b) => a.nombre.localeCompare(b.nombre))
 
   const allMaterias = (materias ?? []) as unknown as MateriaRow[]
   const visibleMaterias = isAdminLevel
@@ -82,41 +101,114 @@ export default async function CursoDetallePage({ params }: Params) {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {visibleMaterias.map(materia => {
             const nombre = materia.materias_catalogo?.nombre ?? ''
+            const horarios = (materia.materia_horarios ?? []).filter(h => !h.deleted_at)
             return (
               <Card key={materia.id}>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base">{nombre}</CardTitle>
                 </CardHeader>
-                <CardContent className="flex flex-col gap-3">
+                <CardContent className="flex flex-col gap-2">
                   {isAdminLevel && materia.materia_docentes.length > 0 && (
                     <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Users className="size-3" />
+                      <Users className="size-3 shrink-0" />
                       {materia.materia_docentes.map(d => d.personas?.nombre).filter(Boolean).join(', ')}
                     </div>
                   )}
+                  {isAdminLevel && (
+                    <HorariosSheet
+                      materiaId={materia.id}
+                      materiaNombre={nombre}
+                      slots={horarios as HorarioSlot[]}
+                    />
+                  )}
+                  {!isAdminLevel && horarios.length > 0 && (
+                    <div className="flex flex-col gap-0.5">
+                      {horarios.map(h => (
+                        <span key={h.id} className="text-xs text-muted-foreground">
+                          {['', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'][h.dia_semana]} {h.hora_inicio.slice(0, 5)}–{h.hora_fin.slice(0, 5)}{h.aula ? ` · ${h.aula}` : ''}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+                <CardFooter>
                   <Button
-                    variant="outline"
+                    variant="secondary"
                     size="sm"
+                    className="w-full"
                     render={<Link href={`/dashboard/${slug}/materias/${materia.id}/evaluaciones`} />}
                   >
                     <BookOpen data-icon="inline-start" />
                     Evaluaciones
                   </Button>
-                </CardContent>
+                </CardFooter>
               </Card>
             )
           })}
 
           {visibleMaterias.length === 0 && (
-            <div className="col-span-full flex flex-col items-center justify-center gap-3 py-8 text-center">
-              <BookOpen className="size-12 text-muted-foreground/40" />
-              <p className="text-muted-foreground">
-                {isAdminLevel ? 'Sin materias en este curso.' : 'Sin materias asignadas en este curso.'}
-              </p>
+            <div className="col-span-full">
+              <EmptyState
+                icon={BookOpen}
+                title={isAdminLevel ? 'Sin materias en este curso.' : 'Sin materias asignadas en este curso.'}
+              />
             </div>
           )}
         </div>
       </div>
+
+      {isAdminLevel && (
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-medium">Alumnos inscriptos</h2>
+            <p className="text-sm text-muted-foreground">{alumnos.length} alumno{alumnos.length !== 1 ? 's' : ''}</p>
+          </div>
+          {alumnos.length === 0 ? (
+            <EmptyState
+              icon={GraduationCap}
+              title="Sin alumnos inscriptos en este curso."
+              action={
+                <Button variant="secondary" size="sm" render={<Link href={`/dashboard/${slug}/alumnos`} />}>
+                  Gestionar alumnos
+                </Button>
+              }
+            />
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nombre</TableHead>
+                    <TableHead>Estado</TableHead>
+                    <TableHead className="w-28" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {alumnos.map(a => (
+                    <TableRow key={a.id} className={!a.activo ? 'opacity-60' : ''}>
+                      <TableCell className="font-medium">{a.nombre}</TableCell>
+                      <TableCell>
+                        <Badge variant={a.activo ? 'default' : 'outline'}>
+                          {a.activo ? 'Activo' : 'Inactivo'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          render={<Link href={`/dashboard/${slug}/libreta/${a.id}`} />}
+                        >
+                          Ver libreta
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

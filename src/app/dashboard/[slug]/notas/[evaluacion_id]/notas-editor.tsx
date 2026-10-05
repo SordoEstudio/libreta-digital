@@ -54,6 +54,14 @@ export function NotasEditor({ evaluacionId, alumnos, notasExistentes, slug }: No
     return init
   })
 
+  const [observaciones, setObservaciones] = useState<Record<string, string>>(() => {
+    const init: Record<string, string> = {}
+    for (const alumno of alumnos) {
+      init[alumno.id] = notaMap.get(alumno.id)?.observacion ?? ''
+    }
+    return init
+  })
+
   const [isPending, startTransition] = useTransition()
 
   function handleChange(alumnoId: string, value: string) {
@@ -62,7 +70,14 @@ export function NotasEditor({ evaluacionId, alumnos, notasExistentes, slug }: No
 
   function handleAusente(alumnoId: string, checked: boolean) {
     setAusentes(prev => ({ ...prev, [alumnoId]: checked }))
-    if (checked) setValores(prev => ({ ...prev, [alumnoId]: '' }))
+    if (checked) {
+      setValores(prev => ({ ...prev, [alumnoId]: '' }))
+      setObservaciones(prev => ({ ...prev, [alumnoId]: '' }))
+    }
+  }
+
+  function handleObservacion(alumnoId: string, value: string) {
+    setObservaciones(prev => ({ ...prev, [alumnoId]: value }))
   }
 
   async function handleSave() {
@@ -72,7 +87,8 @@ export function NotasEditor({ evaluacionId, alumnos, notasExistentes, slug }: No
       }
       const raw = valores[a.id]
       const num = raw !== '' ? parseFloat(raw) : null
-      return { alumno_id: a.id, valor_numerico: num, valor_literal: null }
+      const obs = observaciones[a.id]?.trim()
+      return { alumno_id: a.id, valor_numerico: num, valor_literal: null, ...(obs ? { observacion: obs } : {}) }
     })
 
     startTransition(async () => {
@@ -101,6 +117,7 @@ export function NotasEditor({ evaluacionId, alumnos, notasExistentes, slug }: No
               <TableHead>Alumno</TableHead>
               <TableHead className="w-32">Nota</TableHead>
               <TableHead className="w-24 text-center">Ausente</TableHead>
+              <TableHead>Observación</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -126,6 +143,16 @@ export function NotasEditor({ evaluacionId, alumnos, notasExistentes, slug }: No
                     checked={ausentes[alumno.id] ?? false}
                     onChange={e => handleAusente(alumno.id, e.target.checked)}
                     className="size-4 cursor-pointer accent-primary"
+                  />
+                </TableCell>
+                <TableCell>
+                  <Input
+                    type="text"
+                    placeholder="—"
+                    value={observaciones[alumno.id] ?? ''}
+                    onChange={e => handleObservacion(alumno.id, e.target.value)}
+                    disabled={ausentes[alumno.id]}
+                    className="min-w-40"
                   />
                 </TableCell>
               </TableRow>

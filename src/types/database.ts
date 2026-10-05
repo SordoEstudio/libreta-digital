@@ -511,6 +511,57 @@ export type Database = {
           },
         ]
       }
+      materia_horarios: {
+        Row: {
+          aula: string | null
+          created_at: string
+          deleted_at: string | null
+          dia_semana: number
+          hora_fin: string
+          hora_inicio: string
+          id: string
+          institucion_id: string
+          materia_id: string
+        }
+        Insert: {
+          aula?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          dia_semana: number
+          hora_fin: string
+          hora_inicio: string
+          id?: string
+          institucion_id: string
+          materia_id: string
+        }
+        Update: {
+          aula?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          dia_semana?: number
+          hora_fin?: string
+          hora_inicio?: string
+          id?: string
+          institucion_id?: string
+          materia_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "materia_horarios_institucion_id_fkey"
+            columns: ["institucion_id"]
+            isOneToOne: false
+            referencedRelation: "instituciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materia_horarios_materia_id_fkey"
+            columns: ["materia_id"]
+            isOneToOne: false
+            referencedRelation: "materias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       materias: {
         Row: {
           catalogo_id: string
