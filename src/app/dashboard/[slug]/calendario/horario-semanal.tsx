@@ -35,7 +35,7 @@ export default function HorarioSemanal({ horarios, showConflicts = true }: Props
   const maxHour = horarios.length > 0
     ? Math.min(END_HOUR, Math.ceil(Math.max(...horarios.map(h => timeToMinutes(h.hora_fin))) / 60) + 1)
     : 18
-  const PX_PER_MINUTE = 2
+  const PX_PER_MINUTE = 1
   const bodyHeight = (maxHour - minHour) * 60 * PX_PER_MINUTE
 
   const conflictIds = new Set<string>()
@@ -123,16 +123,16 @@ export default function HorarioSemanal({ horarios, showConflicts = true }: Props
                       style={{ top: top + 1, height: height - 2, zIndex: 10 }}
                     >
                       <p className="text-[11px] font-semibold leading-tight truncate">{h.materiaNombre}</p>
-                      {height > 38 && h.cursoNombre && (
-                        <p className="text-[10px] opacity-70 leading-tight truncate">{h.cursoNombre}</p>
-                      )}
-                      {height > 52 && h.aula && (
-                        <p className="text-[10px] opacity-60 leading-tight truncate">{h.aula}</p>
-                      )}
-                      {height > 38 && (
+                      {height > 20 && (
                         <p className="text-[10px] opacity-60 leading-tight mt-0.5">
                           {h.hora_inicio.slice(0, 5)}–{h.hora_fin.slice(0, 5)}
                         </p>
+                      )}
+                      {height > 36 && h.cursoNombre && (
+                        <p className="text-[10px] opacity-70 leading-tight truncate">{h.cursoNombre}</p>
+                      )}
+                      {height > 50 && h.aula && (
+                        <p className="text-[10px] opacity-60 leading-tight truncate">{h.aula}</p>
                       )}
                     </div>
                   )
