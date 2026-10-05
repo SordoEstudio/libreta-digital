@@ -72,6 +72,12 @@ export default async function CursoDetallePage({ params }: Params) {
     .filter((a): a is AlumnoInscripto => a !== null)
     .sort((a, b) => a.nombre.localeCompare(b.nombre))
 
+  function resolvePersonaNombre(personas: unknown): string | undefined {
+    if (!personas) return undefined
+    if (Array.isArray(personas)) return (personas[0] as { nombre?: string })?.nombre
+    return (personas as { nombre?: string })?.nombre
+  }
+
   const allMaterias = (materias ?? []) as unknown as MateriaRow[]
   const visibleMaterias = isAdminLevel
     ? allMaterias
@@ -104,10 +110,10 @@ export default async function CursoDetallePage({ params }: Params) {
             const nombre = materia.materias_catalogo?.nombre ?? ''
             const horarios = (materia.materia_horarios ?? []).filter(h => !h.deleted_at)
             const docenteNames = materia.materia_docentes
-              .map(d => (d.personas as { nombre: string } | null)?.nombre)
+              .map(d => resolvePersonaNombre(d.personas))
               .filter(Boolean) as string[]
             const docenteActual = materia.materia_docentes[0]
-              ? { persona_id: materia.materia_docentes[0].persona_id, nombre: (materia.materia_docentes[0].personas as { nombre: string } | null)?.nombre ?? '' }
+              ? { persona_id: materia.materia_docentes[0].persona_id, nombre: resolvePersonaNombre(materia.materia_docentes[0].personas) ?? '' }
               : null
             return (
               <Card key={materia.id} className="flex flex-col">

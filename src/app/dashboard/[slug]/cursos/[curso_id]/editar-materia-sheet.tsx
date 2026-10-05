@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
-import { Pencil, Save, Plus, Trash2, Loader2 } from 'lucide-react'
+import { Pencil, Save, Plus, Trash2, Loader2, X } from 'lucide-react'
 import { toast } from 'sonner'
 
 const DIAS = ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
@@ -44,13 +44,16 @@ export default function EditarMateriaSheet({
   const [open, setOpen] = useState(false)
 
   // Docente
-  const [docenteId, setDocenteId] = useState(docenteActual?.persona_id ?? '')
-  const [docentes, setDocentes] = useState<Docente[]>(docenteActual ? [docenteActual] : [])
+  const originalDocenteId = docenteActual?.persona_id ?? ''
+  const [docenteId, setDocenteId] = useState(originalDocenteId)
+  const [docentes, setDocentes] = useState<Docente[]>(docenteActual?.nombre ? [docenteActual] : [])
   const [loadingDocentes, setLoadingDocentes] = useState(false)
   const [savingDocente, setSavingDocente] = useState(false)
+  const docenteChanged = docenteId !== originalDocenteId
 
   // Horarios
   const [horarios, setHorarios] = useState<HorarioSlot[]>(horariosActuales)
+  const [showForm, setShowForm] = useState(false)
   const [dia, setDia] = useState('1')
   const [horaInicio, setHoraInicio] = useState('08:00')
   const [horaFin, setHoraFin] = useState('09:00')
@@ -111,6 +114,10 @@ export default function EditarMateriaSheet({
       )
     )
     setAula('')
+    setDia('1')
+    setHoraInicio('08:00')
+    setHoraFin('09:00')
+    setShowForm(false)
     router.refresh()
   }
 
@@ -124,6 +131,14 @@ export default function EditarMateriaSheet({
     }
     setHorarios(prev => prev.filter(h => h.id !== horarioId))
     router.refresh()
+  }
+
+  function handleCancelForm() {
+    setShowForm(false)
+    setDia('1')
+    setHoraInicio('08:00')
+    setHoraFin('09:00')
+    setAula('')
   }
 
   return (
@@ -174,23 +189,21 @@ export default function EditarMateriaSheet({
                   )}
                 </SelectContent>
               </Select>
-              <Button
-                size="sm"
-                onClick={handleSaveDocente}
-                disabled={savingDocente}
-              >
-                {savingDocente
-                  ? <Loader2 data-icon="inline-start" className="animate-spin" />
-                  : <Save data-icon="inline-start" />}
-                {savingDocente ? 'Guardando...' : 'Guardar docente'}
-              </Button>
+              {docenteChanged && (
+                <Button size="sm" onClick={handleSaveDocente} disabled={savingDocente}>
+                  {savingDocente
+                    ? <Loader2 data-icon="inline-start" className="animate-spin" />
+                    : <Save data-icon="inline-start" />}
+                  {savingDocente ? 'Guardando...' : 'Guardar docente'}
+                </Button>
+              )}
             </div>
 
             {/* Horarios */}
             <div className="flex flex-col gap-3 border-t pt-5">
               <p className="text-sm font-semibold">Horarios</p>
 
-              {horarios.length > 0 ? (
+              {horarios.length > 0 && (
                 <div className="flex flex-col gap-1">
                   {horarios.map(horario => (
                     <div key={horario.id} className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm">
@@ -214,65 +227,85 @@ export default function EditarMateriaSheet({
                     </div>
                   ))}
                 </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">Sin horarios cargados.</p>
               )}
 
-              <div className="flex flex-col gap-3 border-t pt-3">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Agregar horario</p>
-
-                <div className="flex flex-col gap-1.5">
-                  <Label>Día</Label>
-                  <Select value={dia} onValueChange={v => setDia(v ?? '1')}>
-                    <SelectTrigger className="h-8 text-sm">
-                      <SelectValue>{DIAS[parseInt(dia)]}</SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {DIAS.slice(1).map((d, i) => (
-                        <SelectItem key={i + 1} value={String(i + 1)}>{d}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="flex flex-col gap-1.5">
-                    <Label>Hora inicio</Label>
-                    <Input
-                      type="time"
-                      value={horaInicio}
-                      onChange={e => setHoraInicio(e.target.value)}
-                      className="h-8 text-sm"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <Label>Hora fin</Label>
-                    <Input
-                      type="time"
-                      value={horaFin}
-                      onChange={e => setHoraFin(e.target.value)}
-                      className="h-8 text-sm"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <Label>Aula <span className="text-muted-foreground font-normal">(opcional)</span></Label>
-                  <Input
-                    placeholder="Ej: Aula 3B"
-                    value={aula}
-                    onChange={e => setAula(e.target.value)}
-                    className="h-8 text-sm"
-                  />
-                </div>
-
-                <Button onClick={handleAddHorario} disabled={adding} className="mt-1">
-                  {adding
-                    ? <Loader2 data-icon="inline-start" className="animate-spin" />
-                    : <Plus data-icon="inline-start" />}
-                  {adding ? 'Agregando...' : 'Agregar horario'}
+              {!showForm ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => setShowForm(true)}
+                >
+                  <Plus data-icon="inline-start" />
+                  Agregar horario
                 </Button>
-              </div>
+              ) : (
+                <div className="flex flex-col gap-3 rounded-lg border p-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium">Nuevo horario</p>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="size-7 p-0 text-muted-foreground"
+                      onClick={handleCancelForm}
+                    >
+                      <X className="size-3.5" />
+                    </Button>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <Label>Día</Label>
+                    <Select value={dia} onValueChange={v => setDia(v ?? '1')}>
+                      <SelectTrigger className="h-8 text-sm">
+                        <SelectValue>{DIAS[parseInt(dia)]}</SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {DIAS.slice(1).map((d, i) => (
+                          <SelectItem key={i + 1} value={String(i + 1)}>{d}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="flex flex-col gap-1.5">
+                      <Label>Hora inicio</Label>
+                      <Input
+                        type="time"
+                        value={horaInicio}
+                        onChange={e => setHoraInicio(e.target.value)}
+                        className="h-8 text-sm"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <Label>Hora fin</Label>
+                      <Input
+                        type="time"
+                        value={horaFin}
+                        onChange={e => setHoraFin(e.target.value)}
+                        className="h-8 text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <Label>Aula <span className="text-muted-foreground font-normal">(opcional)</span></Label>
+                    <Input
+                      placeholder="Ej: Aula 3B"
+                      value={aula}
+                      onChange={e => setAula(e.target.value)}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+
+                  <Button onClick={handleAddHorario} disabled={adding}>
+                    {adding
+                      ? <Loader2 data-icon="inline-start" className="animate-spin" />
+                      : <Save data-icon="inline-start" />}
+                    {adding ? 'Guardando...' : 'Confirmar horario'}
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         </SheetContent>
