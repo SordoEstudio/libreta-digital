@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react'
 import type { HorarioEvento } from '@/lib/horario-conflicts'
 import HorarioSemanal from './horario-semanal'
+import { CalendarX } from 'lucide-react'
 
 interface Props {
   horarios: HorarioEvento[]
@@ -36,7 +37,7 @@ export default function CalendarioFiltros({ horarios, slug }: Props) {
   const filtered = useMemo(() => {
     if (cursoId) return horarios.filter(h => h.cursoId === cursoId)
     if (docenteId) return horarios.filter(h => h.docenteId === docenteId)
-    return horarios
+    return []
   }, [horarios, cursoId, docenteId])
 
   const isFiltered = !!cursoId || !!docenteId
@@ -50,7 +51,7 @@ export default function CalendarioFiltros({ horarios, slug }: Props) {
           className={SELECT_CLASS}
           aria-label="Filtrar por curso"
         >
-          <option value="">Todos los cursos</option>
+          <option value="">Seleccionar curso...</option>
           {cursos.map(([id, nombre]) => (
             <option key={id} value={id}>{nombre}</option>
           ))}
@@ -62,7 +63,7 @@ export default function CalendarioFiltros({ horarios, slug }: Props) {
           className={SELECT_CLASS}
           aria-label="Filtrar por docente"
         >
-          <option value="">Todos los docentes</option>
+          <option value="">Seleccionar docente...</option>
           {docentes.map(([id, nombre]) => (
             <option key={id} value={id}>{nombre}</option>
           ))}
@@ -76,15 +77,16 @@ export default function CalendarioFiltros({ horarios, slug }: Props) {
             Limpiar ×
           </button>
         )}
-
-        {!isFiltered && horarios.length > 0 && (
-          <span className="text-xs text-muted-foreground">
-            Seleccioná un curso o docente para una vista más clara
-          </span>
-        )}
       </div>
 
-      <HorarioSemanal horarios={filtered} slug={slug} showConflicts={true} />
+      {isFiltered ? (
+        <HorarioSemanal horarios={filtered} slug={slug} showConflicts={true} />
+      ) : (
+        <div className="flex flex-col items-center justify-center gap-3 py-16 text-center text-muted-foreground">
+          <CalendarX className="size-8 opacity-40" />
+          <p className="text-sm">Seleccioná un curso o docente para ver el horario.</p>
+        </div>
+      )}
     </div>
   )
 }

@@ -27,9 +27,10 @@ export default async function AlumnosPage({ params }: Params) {
 
   const { data: alumnos } = await supabase
     .from('alumnos')
-    .select('id, nombre, activo, alumno_inscripciones(curso_id, activo, deleted_at, cursos(nombre))')
+    .select('id, nombre, apellido, activo, alumno_inscripciones(curso_id, activo, deleted_at, cursos(nombre))')
     .eq('institucion_id', inst.id)
     .is('deleted_at', null)
+    .order('apellido', { nullsFirst: false })
     .order('nombre')
 
   const alumnoIds = (alumnos ?? []).map(a => a.id)
@@ -37,6 +38,7 @@ export default async function AlumnosPage({ params }: Params) {
   type RespRow = {
     persona_id: string
     nombre: string
+    apellido: string | null
     email: string | null
     relacion: string | null
   }
@@ -46,15 +48,16 @@ export default async function AlumnosPage({ params }: Params) {
     const admin = createAdminClient()
     const { data: allResp } = await admin
       .from('alumno_responsables')
-      .select('alumno_id, persona_id, relacion, personas(nombre, email)')
+      .select('alumno_id, persona_id, relacion, personas(nombre, apellido, email)')
       .in('alumno_id', alumnoIds)
 
     for (const r of (allResp ?? [])) {
-      const personas = r.personas as { nombre: string; email: string | null } | null
+      const personas = r.personas as { nombre: string; apellido?: string | null; email: string | null } | null
       const entry: RespRow = {
         persona_id: r.persona_id,
         relacion: r.relacion ?? null,
         nombre: personas?.nombre ?? '',
+        apellido: personas?.apellido ?? null,
         email: personas?.email ?? null,
       }
       const existing = responsablesMap.get(r.alumno_id) ?? []
@@ -89,6 +92,7 @@ export default async function AlumnosPage({ params }: Params) {
     return {
       id: alumno.id,
       nombre: alumno.nombre,
+      apellido: alumno.apellido ?? null,
       activo: alumno.activo,
       cursoId: inscripcion?.curso_id ?? null,
       cursoNombre: inscripcion?.cursos?.nombre ?? null,

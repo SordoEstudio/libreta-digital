@@ -30,6 +30,7 @@ export default function NuevoUsuarioSheet({ instId }: Props) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [nombre, setNombre] = useState('')
+  const [apellido, setApellido] = useState('')
   const [email, setEmail] = useState('')
   const [rol, setRol] = useState('')
   const [telefono, setTelefono] = useState('')
@@ -61,6 +62,7 @@ export default function NuevoUsuarioSheet({ instId }: Props) {
     setOpen(v)
     if (!v) {
       setNombre('')
+      setApellido('')
       setEmail('')
       setRol('')
       setTelefono('')
@@ -87,6 +89,7 @@ export default function NuevoUsuarioSheet({ instId }: Props) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         nombre, email, rol, send_invite: true,
+        ...(apellido && { apellido }),
         ...(telefono && { telefono }),
         ...(dni && { dni }),
         ...(direccion && { direccion }),
@@ -260,12 +263,23 @@ export default function NuevoUsuarioSheet({ instId }: Props) {
           ) : (
             <form onSubmit={handleSubmit} className="flex flex-col gap-4 mt-6 px-4">
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="us-nombre">Nombre *</Label>
+                <Label htmlFor="us-apellido">Apellido *</Label>
+                <Input
+                  id="us-apellido"
+                  value={apellido}
+                  onChange={e => setApellido(e.target.value)}
+                  placeholder="Ej: González"
+                  required
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="us-nombre">Nombre(s) *</Label>
                 <Input
                   id="us-nombre"
                   value={nombre}
                   onChange={e => setNombre(e.target.value)}
-                  placeholder="Ej: María González"
+                  placeholder="Ej: María"
                   required
                 />
               </div>
@@ -332,7 +346,7 @@ export default function NuevoUsuarioSheet({ instId }: Props) {
                 Se creará una cuenta y se enviará un email de bienvenida con link de acceso.
               </p>
 
-              <Button type="submit" disabled={loading || !nombre || !email || !rol} className="mt-2">
+              <Button type="submit" disabled={loading || !nombre || !apellido || !email || !rol} className="mt-2">
                 {loading && <Loader2 data-icon="inline-start" className="animate-spin" />}
                 {loading ? 'Creando...' : 'Crear usuario'}
               </Button>

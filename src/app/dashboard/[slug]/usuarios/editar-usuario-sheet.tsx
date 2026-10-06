@@ -21,6 +21,7 @@ interface Props {
   instId: string
   personaId: string
   nombre: string
+  apellido: string | null
   email: string | null
   rol: string
   activo: boolean
@@ -31,7 +32,7 @@ interface Props {
 
 export default function EditarUsuarioSheet({
   instId, personaId,
-  nombre: propNombre, email, rol: propRol, activo: propActivo,
+  nombre: propNombre, apellido: propApellido, email, rol: propRol, activo: propActivo,
   telefono: propTelefono, dni: propDni, direccion: propDireccion,
 }: Props) {
   const router = useRouter()
@@ -41,6 +42,7 @@ export default function EditarUsuarioSheet({
   const [confirmToggle, setConfirmToggle] = useState(false)
 
   const [nombre, setNombre] = useState(propNombre)
+  const [apellido, setApellido] = useState(propApellido ?? '')
   const [rol, setRol] = useState(propRol)
   const [telefono, setTelefono] = useState(propTelefono ?? '')
   const [dni, setDni] = useState(propDni ?? '')
@@ -48,6 +50,7 @@ export default function EditarUsuarioSheet({
 
   function handleOpen() {
     setNombre(propNombre)
+    setApellido(propApellido ?? '')
     setRol(propRol)
     setTelefono(propTelefono ?? '')
     setDni(propDni ?? '')
@@ -64,6 +67,7 @@ export default function EditarUsuarioSheet({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         nombre: nombre || undefined,
+        apellido: apellido || null,
         rol: rol || undefined,
         telefono: telefono || null,
         dni: dni || null,
@@ -102,7 +106,8 @@ export default function EditarUsuarioSheet({
       return
     }
 
-    toast.success(propActivo ? `Acceso de "${propNombre}" desactivado` : `Acceso de "${propNombre}" activado`)
+    const displayName = propApellido ? `${propApellido}, ${propNombre}` : propNombre
+    toast.success(propActivo ? `Acceso de "${displayName}" desactivado` : `Acceso de "${displayName}" activado`)
     setOpen(false)
     router.refresh()
   }
@@ -122,13 +127,22 @@ export default function EditarUsuarioSheet({
 
           <form onSubmit={handleSave} className="flex flex-col gap-4 mt-6 px-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="eu-nombre">Nombre *</Label>
+              <Label htmlFor="eu-apellido">Apellido</Label>
+              <Input
+                id="eu-apellido"
+                value={apellido}
+                onChange={e => setApellido(e.target.value)}
+                autoFocus
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="eu-nombre">Nombre(s) *</Label>
               <Input
                 id="eu-nombre"
                 value={nombre}
                 onChange={e => setNombre(e.target.value)}
                 required
-                autoFocus
               />
             </div>
 
@@ -209,7 +223,7 @@ export default function EditarUsuarioSheet({
           <ConfirmDialog
             open={confirmToggle}
             onOpenChange={setConfirmToggle}
-            title={`¿Desactivar acceso de "${propNombre}"?`}
+            title={`¿Desactivar acceso de "${propApellido ? `${propApellido}, ` : ''}${propNombre}"?`}
             description="El usuario no podrá iniciar sesión hasta que se reactive su acceso."
             confirmLabel="Desactivar"
             destructive

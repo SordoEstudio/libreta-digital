@@ -64,21 +64,23 @@ export default async function CalendarioPage({ params }: Params) {
       if (cursoIds.length > 0) {
         const { data: materias } = await admin
           .from('materias')
-          .select('id, curso_id, materias_catalogo(nombre), materia_docentes(persona_id, personas(nombre))')
+          .select('id, curso_id, materias_catalogo(nombre), materia_docentes(persona_id, personas(nombre, apellido))')
           .in('curso_id', cursoIds)
           .is('deleted_at', null)
 
         type MatCatalogo = { nombre: string }
-        type DocenteEntry = { persona_id: string; personas: { nombre: string } | null }
+        type DocenteEntry = { persona_id: string; personas: { nombre: string; apellido?: string | null } | null }
         const materiaIds = (materias ?? []).map(m => m.id)
         const materiaNombreMap = new Map(
           (materias ?? []).map(m => {
             const docente = ((m.materia_docentes as unknown as DocenteEntry[]) ?? [])[0] ?? null
+            const p = docente?.personas as { nombre: string; apellido?: string | null } | null
+            const docenteNombre = p ? (p.apellido ? `${p.apellido}, ${p.nombre}` : p.nombre) : null
             return [m.id, {
               nombre: (m.materias_catalogo as MatCatalogo | null)?.nombre ?? '',
               cursoId: m.curso_id,
               docenteId: docente?.persona_id ?? null,
-              docenteNombre: (docente?.personas as { nombre: string } | null)?.nombre ?? null,
+              docenteNombre,
             }]
           })
         )

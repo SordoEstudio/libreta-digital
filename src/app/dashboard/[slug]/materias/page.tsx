@@ -31,16 +31,19 @@ export default async function MateriasCatalogoPage({ params }: Params) {
     .is('deleted_at', null)
     .order('nombre')
 
-  // Count active instances per catalog entry
+  // Count active instances per catalog entry, with course names for tooltip
   const { data: instancias } = await supabase
     .from('materias')
-    .select('catalogo_id')
+    .select('catalogo_id, cursos(nombre)')
     .eq('institucion_id', inst.id)
     .is('deleted_at', null)
 
-  const instanciasPorCatalogo = new Map<string, number>()
+  const instanciasPorCatalogo = new Map<string, string[]>()
   for (const m of instancias ?? []) {
-    instanciasPorCatalogo.set(m.catalogo_id, (instanciasPorCatalogo.get(m.catalogo_id) ?? 0) + 1)
+    const cursoNombre = (m.cursos as { nombre: string } | null)?.nombre ?? 'Curso sin nombre'
+    const existing = instanciasPorCatalogo.get(m.catalogo_id) ?? []
+    existing.push(cursoNombre)
+    instanciasPorCatalogo.set(m.catalogo_id, existing)
   }
 
   return (
@@ -57,7 +60,7 @@ export default async function MateriasCatalogoPage({ params }: Params) {
         materias={(catalogo ?? []).map(entry => ({
           id: entry.id,
           nombre: entry.nombre,
-          instancias: instanciasPorCatalogo.get(entry.id) ?? 0,
+          cursos: (instanciasPorCatalogo.get(entry.id) ?? []).sort((a, b) => a.localeCompare(b, 'es')),
         }))}
       />
     </div>

@@ -7,6 +7,7 @@ import { ok, created, Err } from '@/lib/api'
 const CreateSchema = z.object({
   persona_id: z.string().uuid().optional(),
   nombre: z.string().min(1),
+  apellido: z.string().optional(),
   email: z.string().email().optional(),
   fecha_nacimiento: z.string().date().optional(),
   dni: z.string().optional(),
@@ -32,13 +33,14 @@ export async function GET(request: NextRequest, { params }: Params) {
   const supabase = await createClient()
   const query = supabase
     .from('alumnos')
-    .select('id, nombre, email, fecha_nacimiento, dni, telefono, direccion, activo, persona_id, alumno_inscripciones(curso_id, activo, deleted_at)')
+    .select('id, nombre, apellido, email, fecha_nacimiento, dni, telefono, direccion, activo, persona_id, alumno_inscripciones(curso_id, activo, deleted_at)')
     .eq('institucion_id', institucion_id)
     .is('deleted_at', null)
+    .order('apellido', { nullsFirst: false })
     .order('nombre')
 
   if (activo !== null && activo !== undefined) query.eq('activo', activo === 'true')
-  if (q) query.or(`nombre.ilike.%${q}%,email.ilike.%${q}%`)
+  if (q) query.or(`nombre.ilike.%${q}%,apellido.ilike.%${q}%,email.ilike.%${q}%`)
 
   const { data, error } = await query
   if (error) return Err.server(error.message)
@@ -47,6 +49,7 @@ export async function GET(request: NextRequest, { params }: Params) {
   let result = (data ?? []).map(a => ({
     id: a.id,
     nombre: a.nombre,
+    apellido: a.apellido ?? null,
     email: a.email,
     fecha_nacimiento: a.fecha_nacimiento,
     dni: a.dni,

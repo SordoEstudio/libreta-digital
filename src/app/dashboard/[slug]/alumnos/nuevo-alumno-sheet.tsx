@@ -20,6 +20,7 @@ export default function NuevoAlumnoSheet({ instId, cursos }: Props) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [nombre, setNombre] = useState('')
+  const [apellido, setApellido] = useState('')
   const [cursoId, setCursoId] = useState('')
   const [fechaNacimiento, setFechaNacimiento] = useState('')
   const [dni, setDni] = useState('')
@@ -31,6 +32,7 @@ export default function NuevoAlumnoSheet({ instId, cursos }: Props) {
     setLoading(true)
 
     const body: Record<string, string> = { nombre }
+    if (apellido) body.apellido = apellido
     if (cursoId) body.curso_id = cursoId
     if (fechaNacimiento) body.fecha_nacimiento = fechaNacimiento
     if (dni) body.dni = dni
@@ -51,9 +53,10 @@ export default function NuevoAlumnoSheet({ instId, cursos }: Props) {
       return
     }
 
-    toast.success(`Alumno "${nombre}" registrado`)
+    toast.success(`Alumno "${apellido ? `${apellido}, ` : ''}${nombre}" registrado`)
     setOpen(false)
     setNombre('')
+    setApellido('')
     setCursoId('')
     setFechaNacimiento('')
     setDni('')
@@ -76,12 +79,23 @@ export default function NuevoAlumnoSheet({ instId, cursos }: Props) {
           </SheetHeader>
           <form onSubmit={handleSubmit} className="flex flex-col gap-4 mt-6 px-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="al-nombre">Nombre completo *</Label>
+              <Label htmlFor="al-apellido">Apellido *</Label>
+              <Input
+                id="al-apellido"
+                value={apellido}
+                onChange={e => setApellido(e.target.value)}
+                placeholder="Ej: García"
+                required
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="al-nombre">Nombre(s) *</Label>
               <Input
                 id="al-nombre"
                 value={nombre}
                 onChange={e => setNombre(e.target.value)}
-                placeholder="Ej: Juan García"
+                placeholder="Ej: Juan"
                 required
               />
             </div>
@@ -142,7 +156,7 @@ export default function NuevoAlumnoSheet({ instId, cursos }: Props) {
               />
             </div>
 
-            <Button type="submit" disabled={loading || !nombre} className="mt-2">
+            <Button type="submit" disabled={loading || !nombre || !apellido} className="mt-2">
               {loading && <Loader2 data-icon="inline-start" className="animate-spin" />}
               {loading ? 'Registrando...' : 'Registrar alumno'}
             </Button>

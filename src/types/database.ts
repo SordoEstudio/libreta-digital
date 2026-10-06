@@ -115,6 +115,7 @@ export type Database = {
       alumnos: {
         Row: {
           activo: boolean
+          apellido: string | null
           created_at: string
           deleted_at: string | null
           direccion: string | null
@@ -130,6 +131,7 @@ export type Database = {
         }
         Insert: {
           activo?: boolean
+          apellido?: string | null
           created_at?: string
           deleted_at?: string | null
           direccion?: string | null
@@ -145,6 +147,7 @@ export type Database = {
         }
         Update: {
           activo?: boolean
+          apellido?: string | null
           created_at?: string
           deleted_at?: string | null
           direccion?: string | null
@@ -936,6 +939,7 @@ export type Database = {
       }
       personas: {
         Row: {
+          apellido: string | null
           auth_id: string | null
           avatar_url: string | null
           created_at: string
@@ -949,6 +953,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          apellido?: string | null
           auth_id?: string | null
           avatar_url?: string | null
           created_at?: string
@@ -962,6 +967,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          apellido?: string | null
           auth_id?: string | null
           avatar_url?: string | null
           created_at?: string
