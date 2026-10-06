@@ -12,6 +12,7 @@ import { toast } from 'sonner'
 interface Docente {
   persona_id: string
   nombre: string
+  apellido: string | null
 }
 
 interface Props {
@@ -94,7 +95,7 @@ export default function AsignarDocenteSheet({ materiaId, materiaNombre, docenteA
                 placeholder={loadingDocentes ? 'Cargando...' : 'Sin docente'}
                 options={[
                   { value: NONE, label: 'Sin docente' },
-                  ...docentes.map(d => ({ value: d.persona_id, label: d.nombre })),
+                  ...docentes.map(d => ({ value: d.persona_id, label: d.apellido ? `${d.apellido}, ${d.nombre}` : d.nombre })),
                 ]}
                 emptyMessage="Sin docentes registrados"
               />

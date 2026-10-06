@@ -221,7 +221,7 @@ export default async function ConfiguracionPage({ params, searchParams }: Props)
                           const docenteNombreDisplay = docente
                             ? (docente.apellido ? `${docente.apellido}, ${docente.nombre}` : docente.nombre)
                             : null
-                          const docenteActual = docente ? { persona_id: docente.id, nombre: docente.nombre } : null
+                          const docenteActual = docente ? { persona_id: docente.id, nombre: docente.nombre, apellido: docente.apellido ?? null } : null
                           const horariosActuales = ((m.materia_horarios ?? []) as HorarioRaw[]).filter(h => !h.deleted_at) as HorarioSlot[]
                           return (
                             <TableRow key={m.id}>

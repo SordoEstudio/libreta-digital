@@ -23,6 +23,11 @@ export interface HorarioSlot {
 interface Docente {
   persona_id: string
   nombre: string
+  apellido?: string | null
+}
+
+function displayNombre(d: Docente) {
+  return d.apellido ? `${d.apellido}, ${d.nombre}` : d.nombre
 }
 
 interface Props {
@@ -171,7 +176,7 @@ export default function EditarMateriaSheet({
                 <SelectTrigger className="h-9 text-sm">
                   <SelectValue placeholder={loadingDocentes ? 'Cargando...' : 'Sin docente asignado'}>
                     {docenteId
-                      ? (docentes.find(d => d.persona_id === docenteId)?.nombre ?? 'Docente')
+                      ? ((() => { const found = docentes.find(d => d.persona_id === docenteId); return found ? displayNombre(found) : 'Docente' })())
                       : undefined}
                   </SelectValue>
                 </SelectTrigger>
@@ -179,7 +184,7 @@ export default function EditarMateriaSheet({
                   <SelectItem value="">Sin docente</SelectItem>
                   {docentes.map(d => (
                     <SelectItem key={d.persona_id} value={d.persona_id}>
-                      {d.nombre}
+                      {displayNombre(d)}
                     </SelectItem>
                   ))}
                   {docentes.length === 0 && !loadingDocentes && (

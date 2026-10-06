@@ -53,13 +53,13 @@ export default async function CursoDetallePage({ params }: Params) {
   const rawMaterias = (materias ?? []) as unknown as RawMateria[]
   const allPersonaIds = [...new Set(rawMaterias.flatMap(m => m.materia_docentes.map(d => d.persona_id)))]
 
-  const personaMap = new Map<string, string>()
+  const personaMap = new Map<string, { nombre: string; apellido: string | null }>()
   if (allPersonaIds.length > 0) {
     const { data: docentePersonas } = await supabase
       .from('personas')
-      .select('id, nombre')
+      .select('id, nombre, apellido')
       .in('id', allPersonaIds)
-    for (const p of docentePersonas ?? []) personaMap.set(p.id, p.nombre)
+    for (const p of docentePersonas ?? []) personaMap.set(p.id, { nombre: p.nombre, apellido: p.apellido ?? null })
   }
 
   const { data: inscripciones } = await supabase
@@ -120,11 +120,17 @@ export default async function CursoDetallePage({ params }: Params) {
             const nombre = materia.materias_catalogo?.nombre ?? ''
             const horarios = (materia.materia_horarios ?? []).filter(h => !h.deleted_at)
             const docenteNames = materia.materia_docentes
-              .map(d => personaMap.get(d.persona_id))
+              .map(d => {
+                const p = personaMap.get(d.persona_id)
+                return p ? (p.apellido ? `${p.apellido}, ${p.nombre}` : p.nombre) : null
+              })
               .filter(Boolean) as string[]
-            const docenteActual = materia.materia_docentes[0]
-              ? { persona_id: materia.materia_docentes[0].persona_id, nombre: personaMap.get(materia.materia_docentes[0].persona_id) ?? '' }
-              : null
+            const docenteActual = (() => {
+              const d = materia.materia_docentes[0]
+              if (!d) return null
+              const p = personaMap.get(d.persona_id)
+              return { persona_id: d.persona_id, nombre: p?.nombre ?? '', apellido: p?.apellido ?? null }
+            })()
             return (
               <Card key={materia.id} className="flex flex-col">
                 <CardHeader className="pb-2">
