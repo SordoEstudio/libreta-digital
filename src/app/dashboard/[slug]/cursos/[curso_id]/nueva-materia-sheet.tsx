@@ -19,7 +19,12 @@ interface CatalogoItem {
 interface Docente {
   persona_id: string
   nombre: string
+  apellido: string | null
   email: string | null
+}
+
+function displayNombre(d: Docente) {
+  return d.apellido ? `${d.apellido}, ${d.nombre}` : d.nombre
 }
 
 interface Props {
@@ -181,13 +186,13 @@ export default function NuevaMateriaSheet({ cursoId, instId }: Props) {
               <Select value={docenteId} onValueChange={v => setDocenteId(v ?? '')}>
                 <SelectTrigger id="mat-docente" disabled={loadingData}>
                   <SelectValue placeholder={loadingData ? 'Cargando...' : 'Seleccionar docente...'}>
-                    {docenteId ? docentes.find(d => d.persona_id === docenteId)?.nombre : undefined}
+                    {docenteId ? (() => { const d = docentes.find(x => x.persona_id === docenteId); return d ? displayNombre(d) : undefined })() : undefined}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {docentes.map(d => (
                     <SelectItem key={d.persona_id} value={d.persona_id}>
-                      {d.nombre}
+                      {displayNombre(d)}
                     </SelectItem>
                   ))}
                   {docentes.length === 0 && !loadingData && (
