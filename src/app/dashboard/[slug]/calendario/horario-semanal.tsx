@@ -47,7 +47,8 @@ export default function HorarioSemanal({ horarios, slug, showConflicts = true }:
     : 18
 
   const PX_PER_MINUTE = 1
-  const bodyHeight = (maxHour - minHour) * 60 * PX_PER_MINUTE
+  const TOP_PAD = 10
+  const bodyHeight = (maxHour - minHour) * 60 * PX_PER_MINUTE + TOP_PAD
 
   const conflictos = showConflicts ? detectConflicts(horarios) : []
   const conflictIds = conflictIdsSet(conflictos)
@@ -131,7 +132,7 @@ export default function HorarioSemanal({ horarios, slug, showConflicts = true }:
                 <div
                   key={hour}
                   className="absolute text-[10px] text-muted-foreground pr-2 text-right w-full leading-none"
-                  style={{ top: (hour - minHour) * 60 * PX_PER_MINUTE - 5 }}
+                  style={{ top: TOP_PAD + (hour - minHour) * 60 * PX_PER_MINUTE - 5 }}
                 >
                   {String(hour).padStart(2, '0')}:00
                 </div>
@@ -144,12 +145,12 @@ export default function HorarioSemanal({ horarios, slug, showConflicts = true }:
                   <div
                     key={hour}
                     className="absolute w-full border-t border-border/40"
-                    style={{ top: (hour - minHour) * 60 * PX_PER_MINUTE }}
+                    style={{ top: TOP_PAD + (hour - minHour) * 60 * PX_PER_MINUTE }}
                   />
                 ))}
 
                 {horarios.filter(h => h.dia_semana === dia).map(h => {
-                  const top = (timeToMinutes(h.hora_inicio) - minHour * 60) * PX_PER_MINUTE
+                  const top = TOP_PAD + (timeToMinutes(h.hora_inicio) - minHour * 60) * PX_PER_MINUTE
                   const height = (timeToMinutes(h.hora_fin) - timeToMinutes(h.hora_inicio)) * PX_PER_MINUTE
                   const isConflict = conflictIds.has(h.id)
                   return (

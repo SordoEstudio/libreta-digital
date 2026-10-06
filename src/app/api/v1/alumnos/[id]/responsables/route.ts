@@ -31,18 +31,19 @@ export async function GET(_req: NextRequest, { params }: Params) {
   const admin = createAdminClient()
   const { data, error } = await admin
     .from('alumno_responsables')
-    .select('persona_id, relacion, personas(id, nombre, email, telefono, dni, direccion)')
+    .select('persona_id, relacion, personas(id, nombre, apellido, email, telefono, dni, direccion)')
     .eq('alumno_id', alumno_id)
 
   if (error) return Err.server(error.message)
 
-  type P = { nombre: string; email: string | null; telefono: string | null; dni: string | null; direccion: string | null } | null
+  type P = { nombre: string; apellido: string | null; email: string | null; telefono: string | null; dni: string | null; direccion: string | null } | null
   const result = data.map(r => {
     const p = r.personas as P
     return {
       persona_id: r.persona_id,
       relacion: r.relacion,
       nombre: p?.nombre ?? '',
+      apellido: p?.apellido ?? null,
       email: p?.email ?? null,
       telefono: p?.telefono ?? null,
       dni: p?.dni ?? null,

@@ -5,12 +5,19 @@ import { Tooltip } from '@base-ui/react/tooltip'
 interface Resp {
   persona_id: string
   nombre: string
+  apellido?: string | null
   email: string | null
   relacion: string | null
 }
 
-function initials(nombre: string) {
-  return nombre
+function displayNombre(r: Resp) {
+  if (r.apellido) return `${r.apellido}, ${r.nombre}`
+  return r.nombre
+}
+
+function initials(r: Resp) {
+  const full = r.apellido ? `${r.apellido} ${r.nombre}` : r.nombre
+  return full
     .split(' ')
     .slice(0, 2)
     .map(n => n[0])
@@ -37,12 +44,12 @@ export function ResponsablesChips({ responsables }: { responsables: Resp[] }) {
                 <div className="inline-flex size-6 items-center justify-center rounded-full bg-muted text-[10px] font-semibold cursor-default select-none ring-1 ring-border" />
               }
             >
-              {initials(r.nombre)}
+              {initials(r)}
             </Tooltip.Trigger>
             <Tooltip.Portal>
               <Tooltip.Positioner sideOffset={6}>
                 <Tooltip.Popup className="z-50 max-w-[180px] rounded-md border border-border bg-popover px-3 py-2 text-xs shadow-md">
-                  <p className="font-medium">{r.nombre}</p>
+                  <p className="font-medium">{displayNombre(r)}</p>
                   {r.email && <p className="mt-0.5 text-muted-foreground">{r.email}</p>}
                   {r.relacion && <p className="mt-0.5 text-muted-foreground">{r.relacion}</p>}
                 </Tooltip.Popup>

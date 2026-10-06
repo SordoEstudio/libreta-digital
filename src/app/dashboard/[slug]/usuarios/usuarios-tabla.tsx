@@ -10,7 +10,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
 import { Tooltip } from '@base-ui/react/tooltip'
-import { Users, X, Link as LinkIcon, Loader2 } from 'lucide-react'
+import { Users, X, Link as LinkIcon, Loader2, ChevronsUpDown, ChevronUp, ChevronDown } from 'lucide-react'
 import { toast } from 'sonner'
 import EditarUsuarioSheet from './editar-usuario-sheet'
 
@@ -33,6 +33,7 @@ interface ChipItem { id: string; nombre: string }
 interface UsuarioRow {
   personaId: string
   nombre: string
+  apellido: string | null
   email: string | null
   rol: string
   activo: boolean
@@ -121,16 +122,39 @@ function CopiarLinkButton({ instId, personaId }: { instId: string; personaId: st
   )
 }
 
+type SortCol = 'apellido' | 'rol'
+type SortDir = 'asc' | 'desc'
+
+function SortIcon({ col, sortCol, sortDir }: { col: SortCol; sortCol: SortCol; sortDir: SortDir }) {
+  if (sortCol !== col) return <ChevronsUpDown className="size-3 ml-1 opacity-40" />
+  return sortDir === 'asc'
+    ? <ChevronUp className="size-3 ml-1" />
+    : <ChevronDown className="size-3 ml-1" />
+}
+
+function displayNombre(u: UsuarioRow) {
+  if (u.apellido) return `${u.apellido}, ${u.nombre}`
+  return u.nombre
+}
+
 export default function UsuariosTabla({ usuarios, instId }: Props) {
   const [query, setQuery] = useState('')
   const [rolFiltro, setRolFiltro] = useState('todos')
   const [estadoFiltro, setEstadoFiltro] = useState('todos')
+  const [sortCol, setSortCol] = useState<SortCol>('apellido')
+  const [sortDir, setSortDir] = useState<SortDir>('asc')
+
+  function toggleSort(col: SortCol) {
+    if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortCol(col); setSortDir('asc') }
+  }
 
   const filtered = useMemo(() => {
-    return usuarios.filter(u => {
+    const rows = usuarios.filter(u => {
       if (query) {
         const q = query.toLowerCase()
-        if (!u.nombre.toLowerCase().includes(q) && !(u.email ?? '').toLowerCase().includes(q)) return false
+        const full = `${u.apellido ?? ''} ${u.nombre}`.toLowerCase()
+        if (!full.includes(q) && !(u.email ?? '').toLowerCase().includes(q)) return false
       }
       if (rolFiltro !== 'todos' && u.rol !== rolFiltro) return false
       if (estadoFiltro === 'activo' && (u.pendiente || !u.activo)) return false
@@ -138,7 +162,21 @@ export default function UsuariosTabla({ usuarios, instId }: Props) {
       if (estadoFiltro === 'pendiente' && !u.pendiente) return false
       return true
     })
-  }, [usuarios, query, rolFiltro, estadoFiltro])
+
+    rows.sort((a, b) => {
+      let cmp = 0
+      if (sortCol === 'apellido') {
+        const aKey = `${a.apellido ?? ''}\x00${a.nombre}`.toLowerCase()
+        const bKey = `${b.apellido ?? ''}\x00${b.nombre}`.toLowerCase()
+        cmp = aKey.localeCompare(bKey, 'es')
+      } else if (sortCol === 'rol') {
+        cmp = a.rol.localeCompare(b.rol, 'es')
+      }
+      return sortDir === 'asc' ? cmp : -cmp
+    })
+
+    return rows
+  }, [usuarios, query, rolFiltro, estadoFiltro, sortCol, sortDir])
 
   const filtersActive = query || rolFiltro !== 'todos' || estadoFiltro !== 'todos'
 
@@ -152,7 +190,7 @@ export default function UsuariosTabla({ usuarios, instId }: Props) {
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-2 flex-wrap">
         <SearchInput
-          placeholder="Buscar por nombre o email..."
+          placeholder="Buscar por nombre, apellido o email..."
           value={query}
           onChange={e => setQuery(e.target.value)}
           className="h-8 w-64 text-sm"
@@ -209,9 +247,25 @@ export default function UsuariosTabla({ usuarios, instId }: Props) {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Nombre</TableHead>
+                <TableHead>
+                  <button
+                    className="flex items-center text-xs font-medium hover:text-foreground transition-colors"
+                    onClick={() => toggleSort('apellido')}
+                  >
+                    Apellido, Nombre
+                    <SortIcon col="apellido" sortCol={sortCol} sortDir={sortDir} />
+                  </button>
+                </TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead>Rol</TableHead>
+                <TableHead>
+                  <button
+                    className="flex items-center text-xs font-medium hover:text-foreground transition-colors"
+                    onClick={() => toggleSort('rol')}
+                  >
+                    Rol
+                    <SortIcon col="rol" sortCol={sortCol} sortDir={sortDir} />
+                  </button>
+                </TableHead>
                 <TableHead>Asignaciones</TableHead>
                 <TableHead>Estado</TableHead>
                 <TableHead className="w-20" />
@@ -220,7 +274,7 @@ export default function UsuariosTabla({ usuarios, instId }: Props) {
             <TableBody>
               {filtered.map(u => (
                 <TableRow key={u.personaId} className={!u.activo && !u.pendiente ? 'opacity-60' : ''}>
-                  <TableCell className="font-medium">{u.nombre}</TableCell>
+                  <TableCell className="font-medium">{displayNombre(u)}</TableCell>
                   <TableCell className="text-muted-foreground text-sm">{u.email ?? '—'}</TableCell>
                   <TableCell>
                     <Badge variant={ROL_VARIANTS[u.rol] ?? 'outline'}>
@@ -257,6 +311,7 @@ export default function UsuariosTabla({ usuarios, instId }: Props) {
                           instId={instId}
                           personaId={u.personaId}
                           nombre={u.nombre}
+                          apellido={u.apellido}
                           email={u.email}
                           rol={u.rol}
                           activo={u.activo}

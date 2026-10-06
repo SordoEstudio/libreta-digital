@@ -7,13 +7,14 @@ import { Button } from '@/components/ui/button'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
+import { Tooltip } from '@base-ui/react/tooltip'
 import { BookOpen, X } from 'lucide-react'
 import MateriaCatalogoAcciones from './materia-catalogo-acciones'
 
 interface MateriaRow {
   id: string
   nombre: string
-  instancias: number
+  cursos: string[]
 }
 
 interface Props {
@@ -66,15 +67,35 @@ export default function MateriasTabla({ materias }: Props) {
                 <TableRow key={entry.id}>
                   <TableCell className="font-medium">{entry.nombre}</TableCell>
                   <TableCell className="text-muted-foreground text-sm">
-                    {entry.instancias === 0
-                      ? 'Sin asignar'
-                      : `${entry.instancias} curso${entry.instancias !== 1 ? 's' : ''}`}
+                    {entry.cursos.length === 0 ? (
+                      'Sin asignar'
+                    ) : (
+                      <Tooltip.Provider delay={200}>
+                        <Tooltip.Root>
+                          <Tooltip.Trigger className="cursor-default underline decoration-dotted underline-offset-2">
+                            {entry.cursos.length} curso{entry.cursos.length !== 1 ? 's' : ''}
+                          </Tooltip.Trigger>
+                          <Tooltip.Portal>
+                            <Tooltip.Positioner sideOffset={4}>
+                              <Tooltip.Popup className="z-50 rounded-md border border-border bg-popover px-3 py-2 text-xs shadow-md max-w-xs">
+                                <p className="font-medium mb-1 text-foreground">Cursos asignados</p>
+                                <ul className="space-y-0.5">
+                                  {entry.cursos.map(c => (
+                                    <li key={c} className="text-muted-foreground">{c}</li>
+                                  ))}
+                                </ul>
+                              </Tooltip.Popup>
+                            </Tooltip.Positioner>
+                          </Tooltip.Portal>
+                        </Tooltip.Root>
+                      </Tooltip.Provider>
+                    )}
                   </TableCell>
                   <TableCell>
                     <MateriaCatalogoAcciones
                       id={entry.id}
                       nombre={entry.nombre}
-                      hasInstancias={entry.instancias > 0}
+                      hasInstancias={entry.cursos.length > 0}
                     />
                   </TableCell>
                 </TableRow>

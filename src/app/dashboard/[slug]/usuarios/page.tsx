@@ -29,11 +29,11 @@ export default async function UsuariosPage({ params }: Params) {
   const admin = createAdminClient()
   const { data: memberships } = await admin
     .from('memberships')
-    .select('rol, activo, personas(id, nombre, email, telefono, dni, direccion)')
+    .select('rol, activo, personas(id, nombre, apellido, email, telefono, dni, direccion)')
     .eq('institucion_id', inst.id)
     .order('rol')
 
-  type PersonaCol = { id: string; nombre: string; email: string | null; telefono: string | null; dni: string | null; direccion: string | null } | null
+  type PersonaCol = { id: string; nombre: string; apellido: string | null; email: string | null; telefono: string | null; dni: string | null; direccion: string | null } | null
   type ChipItem = { id: string; nombre: string }
 
   const personaIds = (memberships ?? []).map(m => (m.personas as PersonaCol)?.id).filter(Boolean) as string[]
@@ -100,6 +100,7 @@ export default async function UsuariosPage({ params }: Params) {
           return {
             personaId: id,
             nombre: persona?.nombre ?? '—',
+            apellido: persona?.apellido ?? null,
             email: persona?.email ?? null,
             rol: m.rol,
             activo: m.activo,
