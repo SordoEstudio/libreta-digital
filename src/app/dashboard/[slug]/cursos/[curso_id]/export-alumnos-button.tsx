@@ -7,6 +7,7 @@ import * as XLSX from 'xlsx'
 interface Alumno {
   id: string
   nombre: string
+  apellido: string | null
   activo: boolean
 }
 
@@ -15,10 +16,14 @@ interface Props {
   cursoNombre: string
 }
 
+function displayNombre(a: Alumno) {
+  return a.apellido ? `${a.apellido}, ${a.nombre}` : a.nombre
+}
+
 export default function ExportAlumnosButton({ alumnos, cursoNombre }: Props) {
   function handleExport() {
     const rows = alumnos.map(a => ({
-      Nombre: a.nombre,
+      Nombre: displayNombre(a),
       Estado: a.activo ? 'Activo' : 'Inactivo',
     }))
     const ws = XLSX.utils.json_to_sheet(rows)

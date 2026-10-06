@@ -39,14 +39,19 @@ export default async function MisAlumnosPage({ params }: Params) {
 
   const { data: vinculaciones } = await supabase
     .from('alumno_responsables')
-    .select('alumnos(id, nombre, activo)')
+    .select('alumnos(id, nombre, apellido, activo)')
     .eq('persona_id', session.persona_id)
     .eq('institucion_id', inst.id)
 
-  type AlumnoBase = { id: string; nombre: string; activo: boolean }
+  type AlumnoBase = { id: string; nombre: string; apellido: string | null; activo: boolean }
   const alumnos = (vinculaciones ?? [])
     .map(v => v.alumnos as AlumnoBase | null)
     .filter((a): a is AlumnoBase => a !== null)
+    .sort((a, b) => {
+      const ak = a.apellido ?? a.nombre
+      const bk = b.apellido ?? b.nombre
+      return ak.localeCompare(bk, 'es') || a.nombre.localeCompare(b.nombre, 'es')
+    })
 
   // Get current course for each alumno via inscripciones
   const alumnoIds = alumnos.map(a => a.id)
@@ -86,7 +91,7 @@ export default async function MisAlumnosPage({ params }: Params) {
             return (
               <Card key={alumno.id}>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-base">{alumno.nombre}</CardTitle>
+                  <CardTitle className="text-base">{alumno.apellido ? `${alumno.apellido}, ${alumno.nombre}` : alumno.nombre}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center gap-2">

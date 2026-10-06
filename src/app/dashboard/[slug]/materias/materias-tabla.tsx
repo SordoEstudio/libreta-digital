@@ -8,7 +8,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
 import { Tooltip } from '@base-ui/react/tooltip'
-import { BookOpen, X } from 'lucide-react'
+import { BookOpen, X, ChevronsUpDown, ChevronUp, ChevronDown } from 'lucide-react'
 import MateriaCatalogoAcciones from './materia-catalogo-acciones'
 
 interface MateriaRow {
@@ -21,14 +21,28 @@ interface Props {
   materias: MateriaRow[]
 }
 
+type SortDir = 'asc' | 'desc'
+
+function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
+  if (!active) return <ChevronsUpDown className="size-3 ml-1 opacity-40" />
+  return dir === 'asc'
+    ? <ChevronUp className="size-3 ml-1" />
+    : <ChevronDown className="size-3 ml-1" />
+}
+
 export default function MateriasTabla({ materias }: Props) {
   const [query, setQuery] = useState('')
+  const [sortDir, setSortDir] = useState<SortDir>('asc')
 
   const filtered = useMemo(() => {
-    if (!query) return materias
-    const q = query.toLowerCase()
-    return materias.filter(m => m.nombre.toLowerCase().includes(q))
-  }, [materias, query])
+    const base = !query
+      ? materias
+      : materias.filter(m => m.nombre.toLowerCase().includes(query.toLowerCase()))
+    return [...base].sort((a, b) => {
+      const cmp = a.nombre.localeCompare(b.nombre, 'es')
+      return sortDir === 'asc' ? cmp : -cmp
+    })
+  }, [materias, query, sortDir])
 
   return (
     <div className="flex flex-col gap-4">
@@ -57,7 +71,15 @@ export default function MateriasTabla({ materias }: Props) {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Nombre</TableHead>
+                <TableHead>
+                  <button
+                    className="flex items-center font-medium"
+                    onClick={() => setSortDir(d => d === 'asc' ? 'desc' : 'asc')}
+                  >
+                    Nombre
+                    <SortIcon active dir={sortDir} />
+                  </button>
+                </TableHead>
                 <TableHead>Instancias activas</TableHead>
                 <TableHead className="w-24" />
               </TableRow>

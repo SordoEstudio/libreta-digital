@@ -53,10 +53,11 @@ export default async function NotasPage({ params }: Params) {
   const { data: alumnos } = alumnoIds.length > 0
     ? await supabase
         .from('alumnos')
-        .select('id, nombre')
+        .select('id, nombre, apellido')
         .in('id', alumnoIds)
         .eq('activo', true)
         .is('deleted_at', null)
+        .order('apellido', { nullsFirst: false })
         .order('nombre')
     : { data: [] }
 
