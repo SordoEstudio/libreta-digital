@@ -1,18 +1,19 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useMemo, useTransition } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
-import { Save, Loader2, Download } from 'lucide-react'
+import { Save, Loader2, Download, ChevronsUpDown, ChevronUp, ChevronDown } from 'lucide-react'
 import * as XLSX from 'xlsx'
 
 interface Alumno {
   id: string
   nombre: string
+  apellido: string | null
 }
 
 interface NotaExistente {
@@ -29,6 +30,19 @@ interface NotasEditorProps {
   alumnos: Alumno[]
   notasExistentes: NotaExistente[]
   slug: string
+}
+
+type SortDir = 'asc' | 'desc'
+
+function displayNombre(a: Alumno) {
+  return a.apellido ? `${a.apellido}, ${a.nombre}` : a.nombre
+}
+
+function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
+  if (!active) return <ChevronsUpDown className="size-3 ml-1 opacity-40" />
+  return dir === 'asc'
+    ? <ChevronUp className="size-3 ml-1" />
+    : <ChevronDown className="size-3 ml-1" />
 }
 
 export function NotasEditor({ evaluacionId, evaluacionNombre, alumnos, notasExistentes, slug }: NotasEditorProps) {
@@ -64,7 +78,15 @@ export function NotasEditor({ evaluacionId, evaluacionNombre, alumnos, notasExis
     return init
   })
 
+  const [sortDir, setSortDir] = useState<SortDir>('asc')
   const [isPending, startTransition] = useTransition()
+
+  const sortedAlumnos = useMemo(() => {
+    return [...alumnos].sort((a, b) => {
+      const cmp = displayNombre(a).localeCompare(displayNombre(b), 'es')
+      return sortDir === 'asc' ? cmp : -cmp
+    })
+  }, [alumnos, sortDir])
 
   function handleChange(alumnoId: string, value: string) {
     setValores(prev => ({ ...prev, [alumnoId]: value }))
@@ -83,8 +105,8 @@ export function NotasEditor({ evaluacionId, evaluacionNombre, alumnos, notasExis
   }
 
   function handleExport() {
-    const rows = alumnos.map(a => ({
-      Alumno: a.nombre,
+    const rows = sortedAlumnos.map(a => ({
+      Alumno: displayNombre(a),
       Nota: ausentes[a.id] ? 'Ausente' : (valores[a.id] || '—'),
       Observación: ausentes[a.id] ? '' : (observaciones[a.id] ?? ''),
     }))
@@ -128,16 +150,24 @@ export function NotasEditor({ evaluacionId, evaluacionNombre, alumnos, notasExis
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Alumno</TableHead>
+              <TableHead>
+                <button
+                  className="flex items-center font-medium"
+                  onClick={() => setSortDir(d => d === 'asc' ? 'desc' : 'asc')}
+                >
+                  Alumno
+                  <SortIcon active dir={sortDir} />
+                </button>
+              </TableHead>
               <TableHead className="w-32">Nota</TableHead>
               <TableHead className="w-24 text-center">Ausente</TableHead>
               <TableHead>Observación</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {alumnos.map(alumno => (
+            {sortedAlumnos.map(alumno => (
               <TableRow key={alumno.id}>
-                <TableCell className="font-medium">{alumno.nombre}</TableCell>
+                <TableCell className="font-medium">{displayNombre(alumno)}</TableCell>
                 <TableCell>
                   <Input
                     type="number"

@@ -111,12 +111,12 @@ export default async function LibretaPage({ params }: Params) {
                 <CardTitle className="text-base">{mat.nombre}</CardTitle>
               </CardHeader>
               <CardContent>
-                <Table>
+                <Table className="table-fixed">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Evaluación</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Nota</TableHead>
+                      <TableHead className="w-28">Tipo</TableHead>
+                      <TableHead className="w-28">Nota</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

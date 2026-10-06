@@ -5,14 +5,12 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { EmptyState } from '@/components/ui/empty-state'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from '@/components/ui/table'
 import Link from 'next/link'
 import { BookOpen, GraduationCap } from 'lucide-react'
 import NuevaMateriaSheet from './nueva-materia-sheet'
 import EditarMateriaSheet, { type HorarioSlot } from './editar-materia-sheet'
 import ExportAlumnosButton from './export-alumnos-button'
+import AlumnosCursoTabla from './alumnos-curso-tabla'
 
 type Params = { params: Promise<{ slug: string; curso_id: string }> }
 
@@ -66,7 +64,7 @@ export default async function CursoDetallePage({ params }: Params) {
 
   const { data: inscripciones } = await supabase
     .from('alumno_inscripciones')
-    .select('alumnos(id, nombre, activo)')
+    .select('alumnos(id, nombre, apellido, activo)')
     .eq('curso_id', curso_id)
     .eq('activo', true)
     .is('deleted_at', null)
@@ -80,11 +78,15 @@ export default async function CursoDetallePage({ params }: Params) {
     materia_horarios: Array<{ id: string; dia_semana: number; hora_inicio: string; hora_fin: string; aula: string | null; deleted_at: string | null }>
   }
 
-  type AlumnoInscripto = { id: string; nombre: string; activo: boolean }
+  type AlumnoInscripto = { id: string; nombre: string; apellido: string | null; activo: boolean }
   const alumnos = ((inscripciones ?? []) as unknown as Array<{ alumnos: AlumnoInscripto | null }>)
     .map(i => i.alumnos)
     .filter((a): a is AlumnoInscripto => a !== null)
-    .sort((a, b) => a.nombre.localeCompare(b.nombre))
+    .sort((a, b) => {
+      const ak = a.apellido ?? a.nombre
+      const bk = b.apellido ?? b.nombre
+      return ak.localeCompare(bk, 'es') || a.nombre.localeCompare(b.nombre, 'es')
+    })
 
   const allMaterias = rawMaterias as unknown as MateriaRow[]
   const visibleMaterias = isAdminLevel
@@ -201,38 +203,7 @@ export default async function CursoDetallePage({ params }: Params) {
               }
             />
           ) : (
-            <div className="rounded-md border max-h-[480px] overflow-y-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nombre</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead className="w-28" />
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {alumnos.map(a => (
-                    <TableRow key={a.id} className={!a.activo ? 'opacity-60' : ''}>
-                      <TableCell className="font-medium">{a.nombre}</TableCell>
-                      <TableCell>
-                        <Badge variant={a.activo ? 'default' : 'outline'}>
-                          {a.activo ? 'Activo' : 'Inactivo'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          render={<Link href={`/dashboard/${slug}/libreta/${a.id}`} />}
-                        >
-                          Ver libreta
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+            <AlumnosCursoTabla alumnos={alumnos} slug={slug} />
           )}
         </div>
       )}
