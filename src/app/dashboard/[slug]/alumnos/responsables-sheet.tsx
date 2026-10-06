@@ -14,6 +14,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 interface Responsable {
   persona_id: string
   nombre: string
+  apellido: string | null
   email: string | null
   telefono: string | null
   dni: string | null
@@ -24,15 +25,21 @@ interface Responsable {
 interface UsuarioResp {
   persona_id: string
   nombre: string
+  apellido: string | null
   email: string | null
 }
 
 interface EditState {
+  apellido: string
   nombre: string
   telefono: string
   dni: string
   direccion: string
   relacion: string
+}
+
+function displayNombre(r: { nombre: string; apellido: string | null }) {
+  return r.apellido ? `${r.apellido}, ${r.nombre}` : r.nombre
 }
 
 interface Props {
@@ -58,7 +65,7 @@ export default function ResponsablesSheet({ alumnoId, alumnoNombre, instId, open
   const [adding, setAdding] = useState(false)
 
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [editState, setEditState] = useState<EditState>({ nombre: '', telefono: '', dni: '', direccion: '', relacion: '' })
+  const [editState, setEditState] = useState<EditState>({ apellido: '', nombre: '', telefono: '', dni: '', direccion: '', relacion: '' })
   const [saving, setSaving] = useState(false)
 
   const [desvinculating, setDesvinculating] = useState<string | null>(null)
@@ -84,6 +91,7 @@ export default function ResponsablesSheet({ alumnoId, alumnoNombre, instId, open
   function startEdit(r: Responsable) {
     setEditingId(r.persona_id)
     setEditState({
+      apellido: r.apellido ?? '',
       nombre: r.nombre,
       telefono: r.telefono ?? '',
       dni: r.dni ?? '',
@@ -145,6 +153,7 @@ export default function ResponsablesSheet({ alumnoId, alumnoNombre, instId, open
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           nombre: editState.nombre || undefined,
+          apellido: editState.apellido || null,
           telefono: editState.telefono || null,
           dni: editState.dni || null,
           direccion: editState.direccion || null,
@@ -197,7 +206,7 @@ export default function ResponsablesSheet({ alumnoId, alumnoNombre, instId, open
                 <div key={r.persona_id} className="flex flex-col gap-2 rounded-lg border p-3">
                   <div className="flex items-start gap-2">
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">{r.nombre}</p>
+                      <p className="font-medium text-sm truncate">{displayNombre(r)}</p>
                       <p className="text-xs text-muted-foreground truncate">{r.email}</p>
                       {editingId !== r.persona_id && (
                         <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
@@ -240,12 +249,20 @@ export default function ResponsablesSheet({ alumnoId, alumnoNombre, instId, open
                   {editingId === r.persona_id && (
                     <div className="flex flex-col gap-2 pt-1 border-t">
                       <div className="flex flex-col gap-1">
-                        <Label className="text-xs">Nombre</Label>
+                        <Label className="text-xs">Apellido</Label>
+                        <Input
+                          value={editState.apellido}
+                          onChange={e => setEditState(s => ({ ...s, apellido: e.target.value }))}
+                          className="h-7 text-xs"
+                          autoFocus
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <Label className="text-xs">Nombre(s)</Label>
                         <Input
                           value={editState.nombre}
                           onChange={e => setEditState(s => ({ ...s, nombre: e.target.value }))}
                           className="h-7 text-xs"
-                          autoFocus
                         />
                       </div>
                       <div className="flex flex-col gap-1">
@@ -312,7 +329,7 @@ export default function ResponsablesSheet({ alumnoId, alumnoNombre, instId, open
                   placeholder="Seleccionar..."
                   options={disponiblesParaAgregar.map(d => ({
                     value: d.persona_id,
-                    label: d.email ? `${d.nombre} (${d.email})` : d.nombre,
+                    label: d.email ? `${displayNombre(d)} (${d.email})` : displayNombre(d),
                   }))}
                   emptyMessage="Sin responsables disponibles"
                 />

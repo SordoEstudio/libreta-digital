@@ -28,7 +28,7 @@ export default async function BoletinPage({ params }: Params) {
 
   const { data: alumno } = await supabase
     .from('alumnos')
-    .select('id, nombre, activo, alumno_inscripciones(curso_id, activo, deleted_at)')
+    .select('id, nombre, apellido, activo, alumno_inscripciones(curso_id, activo, deleted_at)')
     .eq('id', alumno_id)
     .eq('institucion_id', inst.id)
     .single()
@@ -110,7 +110,7 @@ export default async function BoletinPage({ params }: Params) {
           <p className="text-sm text-muted-foreground print:text-gray-600">{inst.nombre}</p>
           <h1 className="text-2xl font-bold mt-1">Libreta de Calificaciones</h1>
           <div className="flex justify-center gap-6 mt-3 text-sm">
-            <span><strong>Alumno:</strong> {alumno.nombre}</span>
+            <span><strong>Alumno:</strong> {alumno.apellido ? `${alumno.apellido}, ${alumno.nombre}` : alumno.nombre}</span>
             {cursoNombre && <span><strong>Curso:</strong> {cursoNombre}</span>}
             {añoNombre && <span><strong>Año:</strong> {añoNombre}</span>}
           </div>
