@@ -9,6 +9,7 @@ import {
 import Link from 'next/link'
 import { BookOpen, ClipboardList } from 'lucide-react'
 import NuevaEvaluacionSheet from './nueva-evaluacion-sheet'
+import EditarEvaluacionSheet from './editar-evaluacion-sheet'
 
 type Params = { params: Promise<{ slug: string; materia_id: string }> }
 
@@ -69,7 +70,7 @@ export default async function EvaluacionesPage({ params }: Params) {
 
   const { data: evaluaciones } = await supabase
     .from('evaluaciones')
-    .select('id, nombre, tipo, peso, orden, periodo_id, periodos(nombre)')
+    .select('id, nombre, tipo, peso, orden, periodo_id, fecha, periodos(nombre)')
     .eq('materia_id', materia_id)
     .is('deleted_at', null)
     .order('orden')
@@ -107,6 +108,7 @@ export default async function EvaluacionesPage({ params }: Params) {
                 <TableHead>Tipo</TableHead>
                 <TableHead>Período</TableHead>
                 <TableHead className="w-24">Notas</TableHead>
+                <TableHead className="w-10" />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -130,6 +132,18 @@ export default async function EvaluacionesPage({ params }: Params) {
                         <ClipboardList data-icon="inline-start" />
                         Cargar
                       </Button>
+                    </TableCell>
+                    <TableCell>
+                      <EditarEvaluacionSheet
+                        evaluacion={{
+                          id: ev.id,
+                          nombre: ev.nombre,
+                          tipo: ev.tipo,
+                          periodo_id: ev.periodo_id,
+                          fecha: (ev as { fecha?: string | null }).fecha ?? null,
+                        }}
+                        periodos={periodos ?? []}
+                      />
                     </TableCell>
                   </TableRow>
                 )
