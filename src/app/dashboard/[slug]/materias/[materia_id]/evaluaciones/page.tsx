@@ -70,7 +70,7 @@ export default async function EvaluacionesPage({ params }: Params) {
 
   const { data: evaluaciones } = await supabase
     .from('evaluaciones')
-    .select('id, nombre, tipo, peso, orden, periodo_id, fecha, periodos(nombre)')
+    .select('id, nombre, tipo, peso, orden, periodo_id, fecha, template_id, periodos(nombre)')
     .eq('materia_id', materia_id)
     .is('deleted_at', null)
     .order('orden')
@@ -114,9 +114,17 @@ export default async function EvaluacionesPage({ params }: Params) {
             <TableBody>
               {evaluaciones.map(ev => {
                 const periodo = ev.periodos as { nombre: string } | null
+                const templateId = (ev as { template_id?: string | null }).template_id ?? null
                 return (
                   <TableRow key={ev.id}>
-                    <TableCell className="font-medium">{ev.nombre}</TableCell>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        {ev.nombre}
+                        {templateId && (
+                          <Badge variant="secondary" className="text-xs">Institucional</Badge>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell>
                       <Badge variant="outline">{TIPO_LABELS[ev.tipo] ?? ev.tipo}</Badge>
                     </TableCell>
@@ -141,8 +149,10 @@ export default async function EvaluacionesPage({ params }: Params) {
                           tipo: ev.tipo,
                           periodo_id: ev.periodo_id,
                           fecha: (ev as { fecha?: string | null }).fecha ?? null,
+                          template_id: templateId,
                         }}
                         periodos={periodos ?? []}
+                        isAdmin={isAdminLevel}
                       />
                     </TableCell>
                   </TableRow>

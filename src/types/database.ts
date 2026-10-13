@@ -374,6 +374,7 @@ export type Database = {
           orden: number
           periodo_id: string
           peso: number
+          template_id: string | null
           tipo: string
           updated_at: string
         }
@@ -388,6 +389,7 @@ export type Database = {
           orden?: number
           periodo_id: string
           peso?: number
+          template_id?: string | null
           tipo: string
           updated_at?: string
         }
@@ -402,6 +404,7 @@ export type Database = {
           orden?: number
           periodo_id?: string
           peso?: number
+          template_id?: string | null
           tipo?: string
           updated_at?: string
         }
@@ -422,6 +425,70 @@ export type Database = {
           },
           {
             foreignKeyName: "evaluaciones_periodo_id_fkey"
+            columns: ["periodo_id"]
+            isOneToOne: false
+            referencedRelation: "periodos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evaluaciones_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "evaluaciones_template"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      evaluaciones_template: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          fecha: string | null
+          id: string
+          institucion_id: string
+          nombre: string
+          orden: number
+          periodo_id: string
+          peso: number
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          fecha?: string | null
+          id?: string
+          institucion_id: string
+          nombre: string
+          orden?: number
+          periodo_id: string
+          peso?: number
+          tipo: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          fecha?: string | null
+          id?: string
+          institucion_id?: string
+          nombre?: string
+          orden?: number
+          periodo_id?: string
+          peso?: number
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evaluaciones_template_institucion_id_fkey"
+            columns: ["institucion_id"]
+            isOneToOne: false
+            referencedRelation: "instituciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evaluaciones_template_periodo_id_fkey"
             columns: ["periodo_id"]
             isOneToOne: false
             referencedRelation: "periodos"

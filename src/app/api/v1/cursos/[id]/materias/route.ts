@@ -56,13 +56,14 @@ export async function POST(request: NextRequest, { params }: Params) {
   if (!session) return Err.unauthorized()
 
   const supabase = await createClient()
-  const { data: curso } = await supabase
+  const { data: cursoRaw } = await supabase
     .from('cursos')
-    .select('institucion_id')
+    .select('*')
     .eq('id', curso_id)
     .single()
 
-  if (!curso) return Err.notFound()
+  if (!cursoRaw) return Err.notFound()
+  const curso = cursoRaw as { institucion_id: string; año_lectivo_id: string | null }
   if (!isSuperadmin(session) && !hasRole(session, curso.institucion_id, 'admin')) return Err.forbidden()
 
   const body = await request.json().catch(() => null)
@@ -109,6 +110,41 @@ export async function POST(request: NextRequest, { params }: Params) {
         institucion_id: curso.institucion_id,
       }))
     )
+  }
+
+  // Auto-propagate institutional templates for this año lectivo
+  if (curso.año_lectivo_id) {
+    const { data: periodosAño } = await supabase
+      .from('periodos')
+      .select('id')
+      .eq('año_lectivo_id', curso.año_lectivo_id)
+      .is('deleted_at', null)
+
+    const periodoIds = (periodosAño ?? []).map(p => p.id)
+    if (periodoIds.length > 0) {
+      const { data: templates } = await supabase
+        .from('evaluaciones_template')
+        .select('id, nombre, tipo, peso, orden, periodo_id, fecha')
+        .eq('institucion_id', curso.institucion_id)
+        .in('periodo_id', periodoIds)
+        .is('deleted_at', null)
+
+      if (templates && templates.length > 0) {
+        await supabase.from('evaluaciones').insert(
+          templates.map(t => ({
+            materia_id: materia.id,
+            institucion_id: curso.institucion_id,
+            periodo_id: t.periodo_id,
+            nombre: t.nombre,
+            tipo: t.tipo,
+            peso: t.peso,
+            orden: t.orden,
+            ...(t.fecha ? { fecha: t.fecha } : {}),
+            template_id: t.id,
+          }))
+        )
+      }
+    }
   }
 
   return created({

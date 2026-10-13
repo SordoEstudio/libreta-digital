@@ -25,14 +25,17 @@ interface Evaluacion {
   tipo: string
   periodo_id: string
   fecha: string | null
+  template_id: string | null
 }
 
 interface Props {
   evaluacion: Evaluacion
   periodos: Array<{ id: string; nombre: string }>
+  isAdmin: boolean
 }
 
-export default function EditarEvaluacionSheet({ evaluacion, periodos }: Props) {
+export default function EditarEvaluacionSheet({ evaluacion, periodos, isAdmin }: Props) {
+  const isInstitucional = !!evaluacion.template_id && !isAdmin
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -179,17 +182,23 @@ export default function EditarEvaluacionSheet({ evaluacion, periodos }: Props) {
             </Button>
 
             <div className="border-t pt-4">
-              <Button
-                type="button"
-                variant="destructive"
-                size="sm"
-                className="w-full"
-                onClick={() => setConfirmDelete(true)}
-                disabled={deleting}
-              >
-                <Trash2 className="size-3.5 mr-1.5" />
-                Eliminar evaluación
-              </Button>
+              {isInstitucional ? (
+                <p className="text-xs text-muted-foreground text-center">
+                  Evaluación institucional — solo el administrador puede eliminarla.
+                </p>
+              ) : (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => setConfirmDelete(true)}
+                  disabled={deleting}
+                >
+                  <Trash2 className="size-3.5 mr-1.5" />
+                  Eliminar evaluación
+                </Button>
+              )}
             </div>
           </form>
         </SheetContent>
