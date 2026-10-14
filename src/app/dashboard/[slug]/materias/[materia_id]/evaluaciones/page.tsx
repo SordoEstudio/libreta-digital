@@ -7,7 +7,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
 import Link from 'next/link'
-import { BookOpen, ClipboardList } from 'lucide-react'
+import { BookOpen, ClipboardList, UserCheck } from 'lucide-react'
 import NuevaEvaluacionSheet from './nueva-evaluacion-sheet'
 import EditarEvaluacionSheet from './editar-evaluacion-sheet'
 
@@ -96,7 +96,13 @@ export default async function EvaluacionesPage({ params }: Params) {
           <h1 className="text-2xl font-semibold">{materiaNombre}</h1>
           <p className="text-sm text-muted-foreground">{evaluaciones?.length ?? 0} evaluaciones</p>
         </div>
-        <NuevaEvaluacionSheet materiaId={materia_id} periodos={periodos ?? []} />
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" render={<Link href={`/dashboard/${slug}/materias/${materia_id}/asistencia`} />}>
+            <UserCheck data-icon="inline-start" />
+            Asistencia
+          </Button>
+          <NuevaEvaluacionSheet materiaId={materia_id} periodos={periodos ?? []} />
+        </div>
       </div>
 
       {evaluaciones && evaluaciones.length > 0 ? (
