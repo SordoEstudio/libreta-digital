@@ -50,6 +50,22 @@ export default async function LibretaPage({ params }: Params) {
     .eq('alumno_id', alumno_id)
     .is('deleted_at', null)
 
+  const { data: asistencias } = await supabase
+    .from('asistencia_resumen')
+    .select('materia_id, total_clases, inasistencias_justificadas, inasistencias_injustificadas')
+    .eq('alumno_id', alumno_id)
+
+  type AsistenciaRow = {
+    materia_id: string | null
+    total_clases: number
+    inasistencias_justificadas: number
+    inasistencias_injustificadas: number
+  }
+  const asistenciaMap = new Map<string, AsistenciaRow>()
+  for (const a of (asistencias ?? [])) {
+    if (a.materia_id) asistenciaMap.set(a.materia_id, a as AsistenciaRow)
+  }
+
   type Evaluacion = {
     id: string; nombre: string; peso: number; tipo: string; periodo_id: string
     materias: { id: string; materias_catalogo: { nombre: string } | null } | null
@@ -143,6 +159,17 @@ export default async function LibretaPage({ params }: Params) {
                     })}
                   </TableBody>
                 </Table>
+                {(() => {
+                  const a = asistenciaMap.get(matId)
+                  if (!a || a.total_clases === 0) return null
+                  const presentes = a.total_clases - a.inasistencias_justificadas - a.inasistencias_injustificadas
+                  const pct = Math.round((presentes / a.total_clases) * 1000) / 10
+                  return (
+                    <p className="text-sm text-muted-foreground mt-3">
+                      Inasistencias: {a.inasistencias_justificadas} just. / {a.inasistencias_injustificadas} injust. ({pct}% asistencia)
+                    </p>
+                  )
+                })()}
               </CardContent>
             </Card>
           ))}
