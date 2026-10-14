@@ -444,7 +444,9 @@ export type Database = {
           nombre: string
           orden: number
           periodo_id: string | null
+          permite_recuperatorio: boolean
           peso: number
+          recuperatorio_de_evaluacion_id: string | null
           template_id: string | null
           tipo: string
           updated_at: string
@@ -459,7 +461,9 @@ export type Database = {
           nombre: string
           orden?: number
           periodo_id?: string | null
+          permite_recuperatorio?: boolean
           peso?: number
+          recuperatorio_de_evaluacion_id?: string | null
           template_id?: string | null
           tipo: string
           updated_at?: string
@@ -474,7 +478,9 @@ export type Database = {
           nombre?: string
           orden?: number
           periodo_id?: string | null
+          permite_recuperatorio?: boolean
           peso?: number
+          recuperatorio_de_evaluacion_id?: string | null
           template_id?: string | null
           tipo?: string
           updated_at?: string
@@ -520,6 +526,7 @@ export type Database = {
           nombre: string
           orden: number
           periodo_id: string | null
+          permite_recuperatorio: boolean
           peso: number
           tipo: string
           updated_at: string
@@ -533,6 +540,7 @@ export type Database = {
           nombre: string
           orden?: number
           periodo_id?: string | null
+          permite_recuperatorio?: boolean
           peso?: number
           tipo: string
           updated_at?: string
@@ -546,6 +554,7 @@ export type Database = {
           nombre?: string
           orden?: number
           periodo_id?: string | null
+          permite_recuperatorio?: boolean
           peso?: number
           tipo?: string
           updated_at?: string
@@ -577,6 +586,7 @@ export type Database = {
           id: string
           logo_url: string | null
           nombre: string
+          nota_aprobacion: number
           slug: string
           telefono: string | null
           tipo: string | null
@@ -591,6 +601,7 @@ export type Database = {
           id?: string
           logo_url?: string | null
           nombre: string
+          nota_aprobacion?: number
           slug: string
           telefono?: string | null
           tipo?: string | null
@@ -605,6 +616,7 @@ export type Database = {
           id?: string
           logo_url?: string | null
           nombre?: string
+          nota_aprobacion?: number
           slug?: string
           telefono?: string | null
           tipo?: string | null
