@@ -11,6 +11,7 @@ const CreateSchema = z.object({
   orden: z.number().int().positive().default(1),
   periodo_id: z.string().uuid().optional().nullable(),
   fecha: z.string().date().optional().nullable(),
+  permite_recuperatorio: z.boolean().default(false),
 })
 
 type Params = { params: Promise<{ id: string }> }
@@ -73,6 +74,7 @@ export async function POST(request: NextRequest, { params }: Params) {
       tipo: parsed.data.tipo,
       peso: parsed.data.peso,
       orden: parsed.data.orden,
+      permite_recuperatorio: parsed.data.permite_recuperatorio,
       ...(parsed.data.periodo_id ? { periodo_id: parsed.data.periodo_id } : {}),
       ...(parsed.data.fecha ? { fecha: parsed.data.fecha } : {}),
     })

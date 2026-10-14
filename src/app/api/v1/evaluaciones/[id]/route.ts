@@ -11,6 +11,7 @@ const PatchSchema = z.object({
   orden: z.number().int().positive().optional(),
   periodo_id: z.string().uuid().nullable().optional(),
   fecha: z.string().date().nullable().optional(),
+  permite_recuperatorio: z.boolean().optional(),
 }).strict()
 
 type Params = { params: Promise<{ id: string }> }

@@ -11,6 +11,7 @@ const PatchSchema = z.object({
   orden: z.number().int().positive().optional(),
   periodo_id: z.string().uuid().nullable().optional(),
   fecha: z.string().date().nullable().optional(),
+  permite_recuperatorio: z.boolean().optional(),
   sync: z.boolean().default(false),
 }).strict()
 
@@ -66,6 +67,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     if (updateData.peso !== undefined) syncFields.peso = updateData.peso
     if (updateData.orden !== undefined) syncFields.orden = updateData.orden
     if (updateData.fecha !== undefined) syncFields.fecha = updateData.fecha
+    if (updateData.permite_recuperatorio !== undefined) syncFields.permite_recuperatorio = updateData.permite_recuperatorio
 
     if (Object.keys(syncFields).length > 0) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
