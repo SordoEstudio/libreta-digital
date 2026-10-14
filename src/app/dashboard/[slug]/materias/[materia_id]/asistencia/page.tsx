@@ -98,6 +98,7 @@ export default async function AsistenciaPage({ params, searchParams }: Props) {
       </div>
 
       <AsistenciaEditor
+        key={periodoId ?? 'sin-periodo'}
         materiaId={materia_id}
         periodoId={periodoId}
         periodos={periodosList}

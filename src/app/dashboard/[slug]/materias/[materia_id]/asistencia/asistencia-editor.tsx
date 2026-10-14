@@ -121,7 +121,9 @@ export default function AsistenciaEditor({
       <div className="flex items-center justify-between gap-4">
         <Select value={periodoId ?? ''} onValueChange={handlePeriodoChange}>
           <SelectTrigger className="w-48">
-            <SelectValue placeholder="Seleccionar período" />
+            <SelectValue placeholder="Seleccionar período">
+              {periodoId ? periodos.find(p => p.id === periodoId)?.nombre : undefined}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {periodos.map(p => (
