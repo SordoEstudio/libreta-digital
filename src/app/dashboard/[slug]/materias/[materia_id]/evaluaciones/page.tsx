@@ -70,7 +70,7 @@ export default async function EvaluacionesPage({ params }: Params) {
 
   const { data: evaluaciones } = await supabase
     .from('evaluaciones')
-    .select('id, nombre, tipo, peso, orden, periodo_id, fecha, template_id, periodos(nombre)')
+    .select('id, nombre, tipo, peso, orden, periodo_id, fecha, template_id, permite_recuperatorio, periodos(nombre)')
     .eq('materia_id', materia_id)
     .is('deleted_at', null)
     .order('orden')
@@ -156,6 +156,7 @@ export default async function EvaluacionesPage({ params }: Params) {
                           periodo_id: ev.periodo_id,
                           fecha: (ev as { fecha?: string | null }).fecha ?? null,
                           template_id: templateId,
+                          permite_recuperatorio: ev.permite_recuperatorio,
                         }}
                         periodos={periodos ?? []}
                         isAdmin={isAdminLevel}

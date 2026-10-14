@@ -26,6 +26,7 @@ interface Evaluacion {
   periodo_id: string | null
   fecha: string | null
   template_id: string | null
+  permite_recuperatorio: boolean
 }
 
 interface Props {
@@ -46,6 +47,7 @@ export default function EditarEvaluacionSheet({ evaluacion, periodos, isAdmin }:
   const [tipo, setTipo] = useState(evaluacion.tipo)
   const [periodoId, setPeriodoId] = useState(evaluacion.periodo_id ?? '__anual__')
   const [fecha, setFecha] = useState(evaluacion.fecha ?? '')
+  const [permiteRecuperatorio, setPermiteRecuperatorio] = useState(evaluacion.permite_recuperatorio)
 
   function handleOpen(v: boolean) {
     setOpen(v)
@@ -54,6 +56,7 @@ export default function EditarEvaluacionSheet({ evaluacion, periodos, isAdmin }:
       setTipo(evaluacion.tipo)
       setPeriodoId(evaluacion.periodo_id ?? '__anual__')
       setFecha(evaluacion.fecha ?? '')
+      setPermiteRecuperatorio(evaluacion.permite_recuperatorio)
     }
   }
 
@@ -69,6 +72,7 @@ export default function EditarEvaluacionSheet({ evaluacion, periodos, isAdmin }:
         tipo,
         periodo_id: periodoId === '__anual__' ? null : periodoId,
         fecha: fecha || null,
+        permite_recuperatorio: permiteRecuperatorio,
       }),
     })
 
@@ -174,6 +178,16 @@ export default function EditarEvaluacionSheet({ evaluacion, periodos, isAdmin }:
                 className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               />
             </div>
+
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input
+                type="checkbox"
+                checked={permiteRecuperatorio}
+                onChange={e => setPermiteRecuperatorio(e.target.checked)}
+                className="size-4 cursor-pointer accent-primary"
+              />
+              <span>Permite recuperatorio</span>
+            </label>
 
             <Button
               type="submit"

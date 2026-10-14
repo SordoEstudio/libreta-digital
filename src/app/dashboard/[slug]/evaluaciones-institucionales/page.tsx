@@ -61,7 +61,7 @@ export default async function EvaluacionesInstitucionalesPage({ params }: Params
 
   const { data: templates } = await supabase
     .from('evaluaciones_template')
-    .select('id, nombre, tipo, peso, orden, periodo_id, fecha, periodos(nombre, orden)')
+    .select('id, nombre, tipo, peso, orden, periodo_id, fecha, permite_recuperatorio, periodos(nombre, orden)')
     .eq('institucion_id', inst.id)
     .is('deleted_at', null)
     .order('orden')
@@ -145,6 +145,7 @@ export default async function EvaluacionesInstitucionalesPage({ params }: Params
                               fecha: t.fecha ?? null,
                               peso: t.peso,
                               orden: t.orden,
+                              permite_recuperatorio: t.permite_recuperatorio,
                             }}
                             instancias={t.instancias}
                             periodos={periodos ?? []}

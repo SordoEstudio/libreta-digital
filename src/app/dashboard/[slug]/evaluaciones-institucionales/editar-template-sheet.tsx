@@ -27,6 +27,7 @@ interface Template {
   fecha: string | null
   peso: number
   orden: number
+  permite_recuperatorio: boolean
 }
 
 interface Props {
@@ -46,6 +47,7 @@ export default function EditarTemplateSheet({ template, instancias, periodos }: 
   const [tipo, setTipo] = useState(template.tipo)
   const [periodoId, setPeriodoId] = useState(template.periodo_id ?? '__anual__')
   const [fecha, setFecha] = useState(template.fecha ?? '')
+  const [permiteRecuperatorio, setPermiteRecuperatorio] = useState(template.permite_recuperatorio)
   const [sync, setSync] = useState(true)
 
   function handleOpen(v: boolean) {
@@ -55,6 +57,7 @@ export default function EditarTemplateSheet({ template, instancias, periodos }: 
       setTipo(template.tipo)
       setPeriodoId(template.periodo_id ?? '__anual__')
       setFecha(template.fecha ?? '')
+      setPermiteRecuperatorio(template.permite_recuperatorio)
       setSync(true)
     }
   }
@@ -71,6 +74,7 @@ export default function EditarTemplateSheet({ template, instancias, periodos }: 
         tipo,
         periodo_id: periodoId === '__anual__' ? null : periodoId,
         fecha: fecha || null,
+        permite_recuperatorio: permiteRecuperatorio,
         sync,
       }),
     })
@@ -181,6 +185,16 @@ export default function EditarTemplateSheet({ template, instancias, periodos }: 
                 className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               />
             </div>
+
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input
+                type="checkbox"
+                checked={permiteRecuperatorio}
+                onChange={e => setPermiteRecuperatorio(e.target.checked)}
+                className="size-4 cursor-pointer accent-primary"
+              />
+              <span>Permite recuperatorio</span>
+            </label>
 
             {instancias > 0 && (
               <label className="flex items-start gap-2 text-sm cursor-pointer">
