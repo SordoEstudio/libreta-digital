@@ -33,7 +33,6 @@ interface Props {
   alumnos: Alumno[]
   asistenciaExistente: AsistenciaRow[]
   slug: string
-  materia_id: string
 }
 
 function displayNombre(a: Alumno) {
@@ -48,7 +47,7 @@ type Valores = Record<string, {
 }>
 
 export default function AsistenciaEditor({
-  materiaId, periodoId, periodos, alumnos, asistenciaExistente, slug, materia_id,
+  materiaId, periodoId, periodos, alumnos, asistenciaExistente, slug,
 }: Props) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -74,7 +73,7 @@ export default function AsistenciaEditor({
   }
 
   function handlePeriodoChange(newPeriodoId: string) {
-    router.push(`/dashboard/${slug}/materias/${materia_id}/asistencia?periodo_id=${newPeriodoId}`)
+    router.push(`/dashboard/${slug}/materias/${materiaId}/asistencia?periodo_id=${newPeriodoId}`)
   }
 
   function handleSave() {

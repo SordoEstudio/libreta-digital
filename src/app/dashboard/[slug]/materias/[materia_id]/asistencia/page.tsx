@@ -104,7 +104,6 @@ export default async function AsistenciaPage({ params, searchParams }: Props) {
         alumnos={alumnos ?? []}
         asistenciaExistente={asistenciaExistente ?? []}
         slug={slug}
-        materia_id={materia_id}
       />
     </div>
   )

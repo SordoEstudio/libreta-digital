@@ -52,15 +52,22 @@ export default async function BoletinPage({ params }: Params) {
     .select('materia_id, total_clases, inasistencias_justificadas, inasistencias_injustificadas')
     .eq('alumno_id', alumno_id)
 
-  type AsistenciaRow = {
-    materia_id: string | null
-    total_clases: number
-    inasistencias_justificadas: number
-    inasistencias_injustificadas: number
-  }
-  const asistenciaMap = new Map<string, AsistenciaRow>()
+  type AsistenciaTotales = { total_clases: number; inasistencias_justificadas: number; inasistencias_injustificadas: number }
+  const asistenciaMap = new Map<string, AsistenciaTotales>()
   for (const a of (asistencias ?? [])) {
-    if (a.materia_id) asistenciaMap.set(a.materia_id, a as AsistenciaRow)
+    if (!a.materia_id) continue
+    const existing = asistenciaMap.get(a.materia_id)
+    if (existing) {
+      existing.total_clases += a.total_clases
+      existing.inasistencias_justificadas += a.inasistencias_justificadas
+      existing.inasistencias_injustificadas += a.inasistencias_injustificadas
+    } else {
+      asistenciaMap.set(a.materia_id, {
+        total_clases: a.total_clases,
+        inasistencias_justificadas: a.inasistencias_justificadas,
+        inasistencias_injustificadas: a.inasistencias_injustificadas,
+      })
+    }
   }
 
   type Evaluacion = {
