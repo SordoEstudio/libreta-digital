@@ -72,7 +72,8 @@ export default function AsistenciaEditor({
     setValores(prev => ({ ...prev, [alumnoId]: { ...prev[alumnoId], [field]: value } }))
   }
 
-  function handlePeriodoChange(newPeriodoId: string) {
+  function handlePeriodoChange(newPeriodoId: string | null) {
+    if (!newPeriodoId) return
     router.push(`/dashboard/${slug}/materias/${materiaId}/asistencia?periodo_id=${newPeriodoId}`)
   }
 

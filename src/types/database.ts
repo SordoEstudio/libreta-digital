@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.17"
   }
   public: {
     Tables: {
@@ -218,6 +218,77 @@ export type Database = {
             columns: ["institucion_id"]
             isOneToOne: false
             referencedRelation: "instituciones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      asistencia_resumen: {
+        Row: {
+          alumno_id: string
+          created_at: string
+          id: string
+          inasistencias_injustificadas: number
+          inasistencias_justificadas: number
+          institucion_id: string
+          materia_id: string | null
+          observacion: string | null
+          periodo_id: string
+          total_clases: number
+          updated_at: string
+        }
+        Insert: {
+          alumno_id: string
+          created_at?: string
+          id?: string
+          inasistencias_injustificadas?: number
+          inasistencias_justificadas?: number
+          institucion_id: string
+          materia_id?: string | null
+          observacion?: string | null
+          periodo_id: string
+          total_clases?: number
+          updated_at?: string
+        }
+        Update: {
+          alumno_id?: string
+          created_at?: string
+          id?: string
+          inasistencias_injustificadas?: number
+          inasistencias_justificadas?: number
+          institucion_id?: string
+          materia_id?: string | null
+          observacion?: string | null
+          periodo_id?: string
+          total_clases?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asistencia_resumen_alumno_id_fkey"
+            columns: ["alumno_id"]
+            isOneToOne: false
+            referencedRelation: "alumnos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asistencia_resumen_institucion_id_fkey"
+            columns: ["institucion_id"]
+            isOneToOne: false
+            referencedRelation: "instituciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asistencia_resumen_materia_id_fkey"
+            columns: ["materia_id"]
+            isOneToOne: false
+            referencedRelation: "materias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asistencia_resumen_periodo_id_fkey"
+            columns: ["periodo_id"]
+            isOneToOne: false
+            referencedRelation: "periodos"
             referencedColumns: ["id"]
           },
         ]
