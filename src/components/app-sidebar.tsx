@@ -31,6 +31,7 @@ export function AppSidebar({ session }: AppSidebarProps) {
   const isAdmin = !!activeSlug && session.memberships.some(m => m.rol === 'admin')
   const isDocente = !!activeSlug && session.memberships.some(m => m.rol === 'docente')
   const isResponsable = !!activeSlug && session.memberships.some(m => m.rol === 'responsable')
+  const isAdminLevel = isAdmin || isSuperadmin
 
   const initials = (session.nombre ?? session.email)
     .split(' ')
@@ -61,6 +62,7 @@ export function AppSidebar({ session }: AppSidebarProps) {
       </SidebarHeader>
 
       <SidebarContent>
+        {/* Superadmin */}
         {isSuperadmin && (
           <SidebarGroup>
             <SidebarGroupLabel>Superadmin</SidebarGroupLabel>
@@ -89,7 +91,8 @@ export function AppSidebar({ session }: AppSidebarProps) {
           </SidebarGroup>
         )}
 
-        {activeSlug && (isAdmin || isDocente || isResponsable || isSuperadmin) && (
+        {/* Institución — operativo */}
+        {activeSlug && (isAdminLevel || isDocente || isResponsable) && (
           <SidebarGroup>
             <SidebarGroupLabel>Institución</SidebarGroupLabel>
             <SidebarGroupContent>
@@ -104,69 +107,31 @@ export function AppSidebar({ session }: AppSidebarProps) {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
 
-                {(isAdmin || isSuperadmin) && (
-                  <>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton
-                        render={<Link href={`/dashboard/${activeSlug}/cursos`} />}
-                        isActive={pathname.startsWith(`/dashboard/${activeSlug}/cursos`)}
-                      >
-                        <BookOpen />
-                        Cursos
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton
-                        render={<Link href={`/dashboard/${activeSlug}/materias`} />}
-                        isActive={pathname.startsWith(`/dashboard/${activeSlug}/materias`)}
-                      >
-                        <Library />
-                        Materias
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton
-                        render={<Link href={`/dashboard/${activeSlug}/alumnos`} />}
-                        isActive={pathname.startsWith(`/dashboard/${activeSlug}/alumnos`)}
-                      >
-                        <GraduationCap />
-                        Alumnos
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton
-                        render={<Link href={`/dashboard/${activeSlug}/usuarios`} />}
-                        isActive={pathname.startsWith(`/dashboard/${activeSlug}/usuarios`)}
-                      >
-                        <Users />
-                        Usuarios
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton
-                        render={<Link href={`/dashboard/${activeSlug}/evaluaciones-institucionales`} />}
-                        isActive={pathname.startsWith(`/dashboard/${activeSlug}/evaluaciones-institucionales`)}
-                      >
-                        <BookMarked />
-                        Ev. institucionales
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  </>
-                )}
-
-                {isDocente && !isAdmin && (
+                {isAdminLevel && (
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       render={<Link href={`/dashboard/${activeSlug}/cursos`} />}
                       isActive={pathname.startsWith(`/dashboard/${activeSlug}/cursos`)}
                     >
                       <BookOpen />
-                      Mis Materias
+                      Cursos
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )}
 
-                {isResponsable && !isAdmin && !isDocente && (
+                {isDocente && !isAdminLevel && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      render={<Link href={`/dashboard/${activeSlug}/cursos`} />}
+                      isActive={pathname.startsWith(`/dashboard/${activeSlug}/cursos`)}
+                    >
+                      <BookOpen />
+                      Mis materias
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
+
+                {isResponsable && !isAdminLevel && !isDocente && (
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       render={<Link href={`/dashboard/${activeSlug}/mis-alumnos`} />}
@@ -187,18 +152,62 @@ export function AppSidebar({ session }: AppSidebarProps) {
                     Calendario
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
-                {(isAdmin || isSuperadmin) && (
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      render={<Link href={`/dashboard/${activeSlug}/configuracion`} />}
-                      isActive={pathname.startsWith(`/dashboard/${activeSlug}/configuracion`)}
-                    >
-                      <Settings />
-                      Configuración
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )}
+        {/* Configuración — admin only */}
+        {activeSlug && isAdminLevel && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Configuración</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    render={<Link href={`/dashboard/${activeSlug}/configuracion`} />}
+                    isActive={pathname.startsWith(`/dashboard/${activeSlug}/configuracion`)}
+                  >
+                    <Settings />
+                    Años y cursos
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    render={<Link href={`/dashboard/${activeSlug}/materias`} />}
+                    isActive={pathname.startsWith(`/dashboard/${activeSlug}/materias`)}
+                  >
+                    <Library />
+                    Materias
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    render={<Link href={`/dashboard/${activeSlug}/evaluaciones-institucionales`} />}
+                    isActive={pathname.startsWith(`/dashboard/${activeSlug}/evaluaciones-institucionales`)}
+                  >
+                    <BookMarked />
+                    Ev. institucionales
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    render={<Link href={`/dashboard/${activeSlug}/alumnos`} />}
+                    isActive={pathname.startsWith(`/dashboard/${activeSlug}/alumnos`)}
+                  >
+                    <GraduationCap />
+                    Alumnos
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    render={<Link href={`/dashboard/${activeSlug}/usuarios`} />}
+                    isActive={pathname.startsWith(`/dashboard/${activeSlug}/usuarios`)}
+                  >
+                    <Users />
+                    Usuarios
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
