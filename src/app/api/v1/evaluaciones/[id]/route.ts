@@ -12,6 +12,7 @@ const PatchSchema = z.object({
   periodo_id: z.string().uuid().nullable().optional(),
   fecha: z.string().date().nullable().optional(),
   permite_recuperatorio: z.boolean().optional(),
+  dimension_id: z.string().uuid().nullable().optional(),
 }).strict()
 
 type Params = { params: Promise<{ id: string }> }
@@ -44,9 +45,10 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   const parsed = PatchSchema.safeParse(body)
   if (!parsed.success) return Err.validation(parsed.error.issues[0].message)
 
-  const { fecha, ...rest } = parsed.data
+  const { fecha, dimension_id, ...rest } = parsed.data
   const updateData: Record<string, unknown> = { ...rest }
   if (fecha !== undefined) updateData.fecha = fecha
+  if (dimension_id !== undefined) updateData.dimension_id = dimension_id
 
   if (Object.keys(updateData).length === 0) return ok({ id })
 

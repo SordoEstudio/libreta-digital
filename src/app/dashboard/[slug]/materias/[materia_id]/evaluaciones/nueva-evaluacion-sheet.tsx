@@ -21,9 +21,10 @@ const TIPOS = [
 interface Props {
   materiaId: string
   periodos: Array<{ id: string; nombre: string }>
+  dimensiones: Array<{ id: string; nombre: string }>
 }
 
-export default function NuevaEvaluacionSheet({ materiaId, periodos }: Props) {
+export default function NuevaEvaluacionSheet({ materiaId, periodos, dimensiones }: Props) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -31,6 +32,8 @@ export default function NuevaEvaluacionSheet({ materiaId, periodos }: Props) {
   const [tipo, setTipo] = useState('')
   const [periodoId, setPeriodoId] = useState('')
   const [fecha, setFecha] = useState('')
+  const [permiteRecuperatorio, setPermiteRecuperatorio] = useState(false)
+  const [dimensionId, setDimensionId] = useState<string | null>(null)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -39,7 +42,7 @@ export default function NuevaEvaluacionSheet({ materiaId, periodos }: Props) {
     const res = await fetch(`/api/v1/materias/${materiaId}/evaluaciones`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre, tipo, periodo_id: periodoId === '__anual__' ? null : periodoId || undefined, ...(fecha ? { fecha } : {}) }),
+      body: JSON.stringify({ nombre, tipo, periodo_id: periodoId === '__anual__' ? null : periodoId || undefined, permite_recuperatorio: permiteRecuperatorio, ...(fecha ? { fecha } : {}), dimension_id: dimensionId }),
     })
 
     const json = await res.json()
@@ -56,6 +59,8 @@ export default function NuevaEvaluacionSheet({ materiaId, periodos }: Props) {
     setTipo('')
     setPeriodoId('')
     setFecha('')
+    setPermiteRecuperatorio(false)
+    setDimensionId(null)
     router.refresh()
   }
 
@@ -126,6 +131,32 @@ export default function NuevaEvaluacionSheet({ materiaId, periodos }: Props) {
                 className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               />
             </div>
+
+            {dimensiones.length > 0 && (
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="ev-dimension">Dimensión (opcional)</Label>
+                <Select value={dimensionId ?? ''} onValueChange={v => setDimensionId(v || null)}>
+                  <SelectTrigger id="ev-dimension">
+                    <SelectValue placeholder="Sin dimensión" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {dimensiones.map(d => (
+                      <SelectItem key={d.id} value={d.id}>{d.nombre}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input
+                type="checkbox"
+                checked={permiteRecuperatorio}
+                onChange={e => setPermiteRecuperatorio(e.target.checked)}
+                className="size-4 cursor-pointer accent-primary"
+              />
+              <span>Permite recuperatorio</span>
+            </label>
 
             <Button
               type="submit"

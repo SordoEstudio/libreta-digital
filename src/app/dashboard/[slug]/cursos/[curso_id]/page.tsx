@@ -9,6 +9,7 @@ import Link from 'next/link'
 import { BookOpen, GraduationCap } from 'lucide-react'
 import NuevaMateriaSheet from './nueva-materia-sheet'
 import EditarMateriaSheet, { type HorarioSlot } from './editar-materia-sheet'
+import DimensionesMateriaSheet from './dimensiones-materia-sheet'
 import ExportAlumnosButton from './export-alumnos-button'
 import AlumnosCursoTabla from './alumnos-curso-tabla'
 
@@ -43,13 +44,13 @@ export default async function CursoDetallePage({ params }: Params) {
 
   const { data: materias } = await supabase
     .from('materias')
-    .select('id, materias_catalogo(nombre), materia_docentes(persona_id), materia_horarios(id, dia_semana, hora_inicio, hora_fin, aula, deleted_at)')
+    .select('id, materias_catalogo(nombre), materia_docentes(persona_id), materia_horarios(id, dia_semana, hora_inicio, hora_fin, aula, deleted_at), materias_dimensiones(id, nombre, peso, orden)')
     .eq('curso_id', curso_id)
     .is('deleted_at', null)
     .order('materias_catalogo(nombre)')
 
   // Collect all persona_ids from materia_docentes, then query names in one shot
-  type RawMateria = { id: string; materias_catalogo: unknown; materia_docentes: Array<{ persona_id: string }>; materia_horarios: unknown[] }
+  type RawMateria = { id: string; materias_catalogo: unknown; materia_docentes: Array<{ persona_id: string }>; materia_horarios: unknown[]; materias_dimensiones: Array<{ id: string; nombre: string; peso: number; orden: number }> }
   const rawMaterias = (materias ?? []) as unknown as RawMateria[]
   const allPersonaIds = [...new Set(rawMaterias.flatMap(m => m.materia_docentes.map(d => d.persona_id)))]
 
@@ -76,6 +77,7 @@ export default async function CursoDetallePage({ params }: Params) {
     materias_catalogo: { nombre: string } | null
     materia_docentes: Array<{ persona_id: string }>
     materia_horarios: Array<{ id: string; dia_semana: number; hora_inicio: string; hora_fin: string; aula: string | null; deleted_at: string | null }>
+    materias_dimensiones: Array<{ id: string; nombre: string; peso: number; orden: number }>
   }
 
   type AlumnoInscripto = { id: string; nombre: string; apellido: string | null; activo: boolean }
@@ -163,7 +165,7 @@ export default async function CursoDetallePage({ params }: Params) {
                     </div>
                   )}
                 </CardContent>
-                <CardFooter className="mt-auto">
+                <CardFooter className="mt-auto flex flex-col gap-2">
                   <Button
                     variant="secondary"
                     size="sm"
@@ -173,6 +175,13 @@ export default async function CursoDetallePage({ params }: Params) {
                     <BookOpen data-icon="inline-start" />
                     Evaluaciones
                   </Button>
+                  {isAdminLevel && (
+                    <DimensionesMateriaSheet
+                      materiaId={materia.id}
+                      materiaNombre={nombre}
+                      initialDimensiones={(materia.materias_dimensiones ?? []).sort((a, b) => a.orden - b.orden)}
+                    />
+                  )}
                 </CardFooter>
               </Card>
             )

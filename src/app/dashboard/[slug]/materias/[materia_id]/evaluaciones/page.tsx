@@ -89,6 +89,12 @@ export default async function EvaluacionesPage({ params }: Params) {
     .is('deleted_at', null)
     .order('orden')
 
+  const { data: dimensiones } = await supabase
+    .from('materias_dimensiones')
+    .select('id, nombre')
+    .eq('materia_id', materia_id)
+    .order('orden')
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
@@ -108,7 +114,7 @@ export default async function EvaluacionesPage({ params }: Params) {
             <UserCheck data-icon="inline-start" />
             Asistencia
           </Button>
-          <NuevaEvaluacionSheet materiaId={materia_id} periodos={periodos ?? []} />
+          <NuevaEvaluacionSheet materiaId={materia_id} periodos={periodos ?? []} dimensiones={dimensiones ?? []} />
         </div>
       </div>
 
@@ -178,8 +184,10 @@ export default async function EvaluacionesPage({ params }: Params) {
                           fecha: (ev as { fecha?: string | null }).fecha ?? null,
                           template_id: templateId,
                           permite_recuperatorio: ev.permite_recuperatorio,
+                          dimension_id: (ev as { dimension_id?: string | null }).dimension_id ?? null,
                         }}
                         periodos={periodos ?? []}
+                        dimensiones={dimensiones ?? []}
                         isAdmin={isAdminLevel}
                       />
                     </TableCell>

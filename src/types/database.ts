@@ -437,6 +437,7 @@ export type Database = {
         Row: {
           created_at: string
           deleted_at: string | null
+          dimension_id: string | null
           fecha: string | null
           id: string
           institucion_id: string
@@ -454,6 +455,7 @@ export type Database = {
         Insert: {
           created_at?: string
           deleted_at?: string | null
+          dimension_id?: string | null
           fecha?: string | null
           id?: string
           institucion_id: string
@@ -471,6 +473,7 @@ export type Database = {
         Update: {
           created_at?: string
           deleted_at?: string | null
+          dimension_id?: string | null
           fecha?: string | null
           id?: string
           institucion_id?: string
@@ -486,6 +489,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "evaluaciones_dimension_id_fkey"
+            columns: ["dimension_id"]
+            isOneToOne: false
+            referencedRelation: "materias_dimensiones"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "evaluaciones_institucion_id_fkey"
             columns: ["institucion_id"]
@@ -505,6 +515,13 @@ export type Database = {
             columns: ["periodo_id"]
             isOneToOne: false
             referencedRelation: "periodos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evaluaciones_recuperatorio_de_evaluacion_id_fkey"
+            columns: ["recuperatorio_de_evaluacion_id"]
+            isOneToOne: false
+            referencedRelation: "evaluaciones"
             referencedColumns: ["id"]
           },
           {
@@ -586,7 +603,7 @@ export type Database = {
           id: string
           logo_url: string | null
           nombre: string
-          nota_aprobacion: number
+          nota_aprobacion: number | null
           slug: string
           telefono: string | null
           tipo: string | null
@@ -601,7 +618,7 @@ export type Database = {
           id?: string
           logo_url?: string | null
           nombre: string
-          nota_aprobacion?: number
+          nota_aprobacion?: number | null
           slug: string
           telefono?: string | null
           tipo?: string | null
@@ -616,7 +633,7 @@ export type Database = {
           id?: string
           logo_url?: string | null
           nombre?: string
-          nota_aprobacion?: number
+          nota_aprobacion?: number | null
           slug?: string
           telefono?: string | null
           tipo?: string | null
@@ -808,6 +825,41 @@ export type Database = {
             columns: ["institucion_id"]
             isOneToOne: false
             referencedRelation: "instituciones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      materias_dimensiones: {
+        Row: {
+          created_at: string
+          id: string
+          materia_id: string
+          nombre: string
+          orden: number
+          peso: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          materia_id: string
+          nombre: string
+          orden?: number
+          peso?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          materia_id?: string
+          nombre?: string
+          orden?: number
+          peso?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "materias_dimensiones_materia_id_fkey"
+            columns: ["materia_id"]
+            isOneToOne: false
+            referencedRelation: "materias"
             referencedColumns: ["id"]
           },
         ]

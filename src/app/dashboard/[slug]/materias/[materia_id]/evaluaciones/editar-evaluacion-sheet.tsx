@@ -27,15 +27,17 @@ interface Evaluacion {
   fecha: string | null
   template_id: string | null
   permite_recuperatorio: boolean
+  dimension_id: string | null
 }
 
 interface Props {
   evaluacion: Evaluacion
   periodos: Array<{ id: string; nombre: string }>
+  dimensiones: Array<{ id: string; nombre: string }>
   isAdmin: boolean
 }
 
-export default function EditarEvaluacionSheet({ evaluacion, periodos, isAdmin }: Props) {
+export default function EditarEvaluacionSheet({ evaluacion, periodos, dimensiones, isAdmin }: Props) {
   const isInstitucional = !!evaluacion.template_id && !isAdmin
   const router = useRouter()
   const [open, setOpen] = useState(false)
@@ -48,6 +50,7 @@ export default function EditarEvaluacionSheet({ evaluacion, periodos, isAdmin }:
   const [periodoId, setPeriodoId] = useState(evaluacion.periodo_id ?? '__anual__')
   const [fecha, setFecha] = useState(evaluacion.fecha ?? '')
   const [permiteRecuperatorio, setPermiteRecuperatorio] = useState(evaluacion.permite_recuperatorio)
+  const [dimensionId, setDimensionId] = useState<string | null>(evaluacion.dimension_id)
 
   function handleOpen(v: boolean) {
     setOpen(v)
@@ -57,6 +60,7 @@ export default function EditarEvaluacionSheet({ evaluacion, periodos, isAdmin }:
       setPeriodoId(evaluacion.periodo_id ?? '__anual__')
       setFecha(evaluacion.fecha ?? '')
       setPermiteRecuperatorio(evaluacion.permite_recuperatorio)
+      setDimensionId(evaluacion.dimension_id)
     }
   }
 
@@ -73,6 +77,7 @@ export default function EditarEvaluacionSheet({ evaluacion, periodos, isAdmin }:
         periodo_id: periodoId === '__anual__' ? null : periodoId,
         fecha: fecha || null,
         permite_recuperatorio: permiteRecuperatorio,
+        dimension_id: dimensionId,
       }),
     })
 
@@ -178,6 +183,22 @@ export default function EditarEvaluacionSheet({ evaluacion, periodos, isAdmin }:
                 className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               />
             </div>
+
+            {dimensiones.length > 0 && (
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="ev-dimension">Dimensión (opcional)</Label>
+                <Select value={dimensionId ?? ''} onValueChange={v => setDimensionId(v || null)}>
+                  <SelectTrigger id="ev-dimension">
+                    <SelectValue placeholder="Sin dimensión" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {dimensiones.map(d => (
+                      <SelectItem key={d.id} value={d.id}>{d.nombre}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <label className="flex items-center gap-2 text-sm cursor-pointer">
               <input

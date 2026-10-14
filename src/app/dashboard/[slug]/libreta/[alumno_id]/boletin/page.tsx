@@ -41,7 +41,8 @@ export default async function BoletinPage({ params }: Params) {
       id, valor_numerico, valor_literal, observacion,
       evaluaciones(id, nombre, peso, tipo, periodo_id,
         periodos(nombre, orden),
-        materias(id, materias_catalogo(nombre))
+        materias(id, materias_catalogo(nombre)),
+        materias_dimensiones(id, nombre, peso)
       )
     `)
     .eq('alumno_id', alumno_id)
@@ -70,10 +71,12 @@ export default async function BoletinPage({ params }: Params) {
     }
   }
 
+  type Dimension = { id: string; nombre: string; peso: number }
   type Evaluacion = {
     id: string; nombre: string; peso: number; tipo: string; periodo_id: string | null
     periodos: { nombre: string; orden: number } | null
     materias: { id: string; materias_catalogo: { nombre: string } | null } | null
+    materias_dimensiones: Dimension | null
   }
   type NotaRow = NonNullable<typeof notas>[number]
 
@@ -150,9 +153,19 @@ export default async function BoletinPage({ params }: Params) {
                 const ob = b._ev.periodos?.orden ?? 9999
                 return oa !== ob ? oa - ob : a._ev.nombre.localeCompare(b._ev.nombre)
               })
-              return (
-                <div key={matId}>
-                  <h2 className="font-semibold text-base mb-2 pb-1 border-b">{mat.nombre}</h2>
+
+              const conDimension = sorted.filter(n => n._ev.materias_dimensiones)
+              const sinDimension = sorted.filter(n => !n._ev.materias_dimensiones)
+              const dimMap = new Map<string, { dim: Dimension; notas: typeof sorted }>()
+              for (const nota of conDimension) {
+                const dim = nota._ev.materias_dimensiones!
+                if (!dimMap.has(dim.id)) dimMap.set(dim.id, { dim, notas: [] })
+                dimMap.get(dim.id)!.notas.push(nota)
+              }
+              const hasDimensiones = dimMap.size > 0
+
+              function NotasTable({ rows }: { rows: typeof sorted }) {
+                return (
                   <table className="w-full text-sm border-collapse">
                     <thead>
                       <tr className="text-left text-muted-foreground print:text-gray-600">
@@ -163,7 +176,7 @@ export default async function BoletinPage({ params }: Params) {
                       </tr>
                     </thead>
                     <tbody>
-                      {sorted.map(nota => (
+                      {rows.map(nota => (
                         <tr key={nota.id} className="border-t border-muted print:border-gray-200">
                           <td className="py-1.5 pr-4">{nota._ev.nombre}</td>
                           <td className="py-1.5 pr-4 text-muted-foreground print:text-gray-600 capitalize">{nota._ev.periodos?.nombre ?? 'Anual'}</td>
@@ -178,6 +191,39 @@ export default async function BoletinPage({ params }: Params) {
                       ))}
                     </tbody>
                   </table>
+                )
+              }
+
+              return (
+                <div key={matId}>
+                  <h2 className="font-semibold text-base mb-2 pb-1 border-b">{mat.nombre}</h2>
+
+                  {hasDimensiones ? (
+                    <div className="flex flex-col gap-4">
+                      {Array.from(dimMap.values()).map(({ dim, notas: dimNotas }) => {
+                        const numNotas = dimNotas.filter(n => n.valor_numerico !== null && n.valor_literal !== 'A')
+                        const prom = numNotas.length > 0
+                          ? Math.round((numNotas.reduce((s, n) => s + n.valor_numerico!, 0) / numNotas.length) * 100) / 100
+                          : null
+                        return (
+                          <div key={dim.id}>
+                            <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">
+                              {dim.nombre} · peso: {dim.peso}%{prom !== null ? ` · Promedio: ${prom}` : ''}
+                            </p>
+                            <NotasTable rows={dimNotas} />
+                          </div>
+                        )
+                      })}
+                      {sinDimension.length > 0 && (
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Sin dimensión</p>
+                          <NotasTable rows={sinDimension} />
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <NotasTable rows={sorted} />
+                  )}
                   {(() => {
                     const a = asistenciaMap.get(matId)
                     if (!a || a.total_clases === 0) return null
