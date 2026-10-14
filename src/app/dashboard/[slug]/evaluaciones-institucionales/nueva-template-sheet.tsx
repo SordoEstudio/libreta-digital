@@ -31,6 +31,7 @@ export default function NuevaTemplateSheet({ instId, periodos }: Props) {
   const [tipo, setTipo] = useState('')
   const [periodoId, setPeriodoId] = useState('')
   const [fecha, setFecha] = useState('')
+  const [permiteRecuperatorio, setPermiteRecuperatorio] = useState(false)
 
   const activePeriodos = periodos.filter(p => p.isActive)
 
@@ -45,6 +46,7 @@ export default function NuevaTemplateSheet({ instId, periodos }: Props) {
         nombre,
         tipo,
         periodo_id: periodoId === '__anual__' ? null : periodoId || undefined,
+        permite_recuperatorio: permiteRecuperatorio,
         ...(fecha ? { fecha } : {}),
       }),
     })
@@ -64,6 +66,7 @@ export default function NuevaTemplateSheet({ instId, periodos }: Props) {
     setTipo('')
     setPeriodoId('')
     setFecha('')
+    setPermiteRecuperatorio(false)
     router.refresh()
   }
 
@@ -142,6 +145,16 @@ export default function NuevaTemplateSheet({ instId, periodos }: Props) {
                 className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               />
             </div>
+
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input
+                type="checkbox"
+                checked={permiteRecuperatorio}
+                onChange={e => setPermiteRecuperatorio(e.target.checked)}
+                className="size-4 cursor-pointer accent-primary"
+              />
+              <span>Permite recuperatorio</span>
+            </label>
 
             <Button
               type="submit"
