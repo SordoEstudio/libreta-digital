@@ -44,7 +44,7 @@ export default function NuevaTemplateSheet({ instId, periodos }: Props) {
       body: JSON.stringify({
         nombre,
         tipo,
-        periodo_id: periodoId,
+        periodo_id: periodoId === '__anual__' ? null : periodoId || undefined,
         ...(fecha ? { fecha } : {}),
       }),
     })
@@ -110,14 +110,17 @@ export default function NuevaTemplateSheet({ instId, periodos }: Props) {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="tpl-periodo">Período *</Label>
+              <Label htmlFor="tpl-periodo">Período</Label>
               <Select value={periodoId} onValueChange={v => setPeriodoId(v ?? '')}>
                 <SelectTrigger id="tpl-periodo">
                   <SelectValue placeholder="Seleccionar período...">
-                    {periodoId ? activePeriodos.find(p => p.id === periodoId)?.nombre : undefined}
+                    {periodoId === '__anual__'
+                      ? 'Sin período — evaluación anual'
+                      : periodoId ? activePeriodos.find(p => p.id === periodoId)?.nombre : undefined}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="__anual__">Sin período — evaluación anual</SelectItem>
                   {activePeriodos.length === 0 ? (
                     <div className="px-3 py-2 text-sm text-muted-foreground">Sin períodos activos</div>
                   ) : (
@@ -142,7 +145,7 @@ export default function NuevaTemplateSheet({ instId, periodos }: Props) {
 
             <Button
               type="submit"
-              disabled={loading || !nombre || !tipo || !periodoId}
+              disabled={loading || !nombre || !tipo}
               className="mt-2"
             >
               {loading && <Loader2 data-icon="inline-start" className="animate-spin" />}

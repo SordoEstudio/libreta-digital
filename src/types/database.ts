@@ -443,7 +443,7 @@ export type Database = {
           materia_id: string
           nombre: string
           orden: number
-          periodo_id: string
+          periodo_id: string | null
           peso: number
           template_id: string | null
           tipo: string
@@ -458,7 +458,7 @@ export type Database = {
           materia_id: string
           nombre: string
           orden?: number
-          periodo_id: string
+          periodo_id?: string | null
           peso?: number
           template_id?: string | null
           tipo: string
@@ -473,7 +473,7 @@ export type Database = {
           materia_id?: string
           nombre?: string
           orden?: number
-          periodo_id?: string
+          periodo_id?: string | null
           peso?: number
           template_id?: string | null
           tipo?: string
@@ -519,7 +519,7 @@ export type Database = {
           institucion_id: string
           nombre: string
           orden: number
-          periodo_id: string
+          periodo_id: string | null
           peso: number
           tipo: string
           updated_at: string
@@ -532,7 +532,7 @@ export type Database = {
           institucion_id: string
           nombre: string
           orden?: number
-          periodo_id: string
+          periodo_id?: string | null
           peso?: number
           tipo: string
           updated_at?: string
@@ -545,7 +545,7 @@ export type Database = {
           institucion_id?: string
           nombre?: string
           orden?: number
-          periodo_id?: string
+          periodo_id?: string | null
           peso?: number
           tipo?: string
           updated_at?: string

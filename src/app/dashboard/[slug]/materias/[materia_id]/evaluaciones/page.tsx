@@ -135,7 +135,7 @@ export default async function EvaluacionesPage({ params }: Params) {
                       <Badge variant="outline">{TIPO_LABELS[ev.tipo] ?? ev.tipo}</Badge>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {periodo?.nombre ?? '—'}
+                      {periodo?.nombre ?? 'Anual'}
                     </TableCell>
                     <TableCell>
                       <Button

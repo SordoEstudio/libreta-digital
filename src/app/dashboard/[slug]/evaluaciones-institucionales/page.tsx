@@ -85,9 +85,10 @@ export default async function EvaluacionesInstitucionalesPage({ params }: Params
   const periodoMap = new Map<string, { nombre: string; templates: (Template & { instancias: number })[] }>()
   for (const t of templates ?? []) {
     const p = t.periodos as { nombre: string; orden: number } | null
-    const pNombre = p?.nombre ?? '—'
-    if (!periodoMap.has(t.periodo_id)) periodoMap.set(t.periodo_id, { nombre: pNombre, templates: [] })
-    periodoMap.get(t.periodo_id)!.templates.push({ ...t, instancias: countMap[t.id] ?? 0 })
+    const pNombre = p?.nombre ?? 'Anual'
+    const mapKey = t.periodo_id ?? '__anual__'
+    if (!periodoMap.has(mapKey)) periodoMap.set(mapKey, { nombre: pNombre, templates: [] })
+    periodoMap.get(mapKey)!.templates.push({ ...t, instancias: countMap[t.id] ?? 0 })
   }
 
   return (

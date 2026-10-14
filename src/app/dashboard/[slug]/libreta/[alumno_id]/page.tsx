@@ -74,7 +74,7 @@ export default async function LibretaPage({ params }: Params) {
   }
 
   type Evaluacion = {
-    id: string; nombre: string; peso: number; tipo: string; periodo_id: string
+    id: string; nombre: string; peso: number; tipo: string; periodo_id: string | null
     materias: { id: string; materias_catalogo: { nombre: string } | null } | null
   }
 

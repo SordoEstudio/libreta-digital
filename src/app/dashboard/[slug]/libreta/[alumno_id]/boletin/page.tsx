@@ -71,7 +71,7 @@ export default async function BoletinPage({ params }: Params) {
   }
 
   type Evaluacion = {
-    id: string; nombre: string; peso: number; tipo: string; periodo_id: string
+    id: string; nombre: string; peso: number; tipo: string; periodo_id: string | null
     periodos: { nombre: string; orden: number } | null
     materias: { id: string; materias_catalogo: { nombre: string } | null } | null
   }
@@ -146,8 +146,8 @@ export default async function BoletinPage({ params }: Params) {
           <div className="flex flex-col gap-6">
             {Array.from(materiaMap.entries()).map(([matId, mat]) => {
               const sorted = [...mat.notas].sort((a, b) => {
-                const oa = a._ev.periodos?.orden ?? 0
-                const ob = b._ev.periodos?.orden ?? 0
+                const oa = a._ev.periodos?.orden ?? 9999
+                const ob = b._ev.periodos?.orden ?? 9999
                 return oa !== ob ? oa - ob : a._ev.nombre.localeCompare(b._ev.nombre)
               })
               return (
@@ -166,7 +166,7 @@ export default async function BoletinPage({ params }: Params) {
                       {sorted.map(nota => (
                         <tr key={nota.id} className="border-t border-muted print:border-gray-200">
                           <td className="py-1.5 pr-4">{nota._ev.nombre}</td>
-                          <td className="py-1.5 pr-4 text-muted-foreground print:text-gray-600 capitalize">{nota._ev.periodos?.nombre ?? '—'}</td>
+                          <td className="py-1.5 pr-4 text-muted-foreground print:text-gray-600 capitalize">{nota._ev.periodos?.nombre ?? 'Anual'}</td>
                           <td className="py-1.5 pr-4 text-muted-foreground print:text-gray-600 capitalize">{nota._ev.tipo}</td>
                           <td className="py-1.5 font-semibold">
                             {nota.valor_literal === 'A' ? 'Ausente' : (nota.valor_numerico ?? nota.valor_literal ?? '—')}

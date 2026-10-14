@@ -23,7 +23,7 @@ interface Template {
   id: string
   nombre: string
   tipo: string
-  periodo_id: string
+  periodo_id: string | null
   fecha: string | null
   peso: number
   orden: number
@@ -44,7 +44,7 @@ export default function EditarTemplateSheet({ template, instancias, periodos }: 
 
   const [nombre, setNombre] = useState(template.nombre)
   const [tipo, setTipo] = useState(template.tipo)
-  const [periodoId, setPeriodoId] = useState(template.periodo_id)
+  const [periodoId, setPeriodoId] = useState(template.periodo_id ?? '__anual__')
   const [fecha, setFecha] = useState(template.fecha ?? '')
   const [sync, setSync] = useState(true)
 
@@ -53,7 +53,7 @@ export default function EditarTemplateSheet({ template, instancias, periodos }: 
     if (v) {
       setNombre(template.nombre)
       setTipo(template.tipo)
-      setPeriodoId(template.periodo_id)
+      setPeriodoId(template.periodo_id ?? '__anual__')
       setFecha(template.fecha ?? '')
       setSync(true)
     }
@@ -69,7 +69,7 @@ export default function EditarTemplateSheet({ template, instancias, periodos }: 
       body: JSON.stringify({
         nombre,
         tipo,
-        periodo_id: periodoId,
+        periodo_id: periodoId === '__anual__' ? null : periodoId,
         fecha: fecha || null,
         sync,
       }),
@@ -153,14 +153,17 @@ export default function EditarTemplateSheet({ template, instancias, periodos }: 
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="tpl-periodo">Período *</Label>
+              <Label htmlFor="tpl-periodo">Período</Label>
               <Select value={periodoId} onValueChange={v => setPeriodoId(v ?? periodoId)}>
                 <SelectTrigger id="tpl-periodo">
                   <SelectValue>
-                    {periodos.find(p => p.id === periodoId)?.nombre}
+                    {periodoId === '__anual__'
+                      ? 'Sin período — evaluación anual'
+                      : periodos.find(p => p.id === periodoId)?.nombre}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="__anual__">Sin período — evaluación anual</SelectItem>
                   {periodos.map(p => (
                     <SelectItem key={p.id} value={p.id}>{p.nombre}</SelectItem>
                   ))}
@@ -195,7 +198,7 @@ export default function EditarTemplateSheet({ template, instancias, periodos }: 
 
             <Button
               type="submit"
-              disabled={saving || !nombre || !tipo || !periodoId}
+              disabled={saving || !nombre || !tipo}
               className="mt-2"
             >
               {saving && <Loader2 data-icon="inline-start" className="animate-spin" />}

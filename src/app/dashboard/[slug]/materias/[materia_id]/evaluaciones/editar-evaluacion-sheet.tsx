@@ -23,7 +23,7 @@ interface Evaluacion {
   id: string
   nombre: string
   tipo: string
-  periodo_id: string
+  periodo_id: string | null
   fecha: string | null
   template_id: string | null
 }
@@ -44,7 +44,7 @@ export default function EditarEvaluacionSheet({ evaluacion, periodos, isAdmin }:
 
   const [nombre, setNombre] = useState(evaluacion.nombre)
   const [tipo, setTipo] = useState(evaluacion.tipo)
-  const [periodoId, setPeriodoId] = useState(evaluacion.periodo_id)
+  const [periodoId, setPeriodoId] = useState(evaluacion.periodo_id ?? '__anual__')
   const [fecha, setFecha] = useState(evaluacion.fecha ?? '')
 
   function handleOpen(v: boolean) {
@@ -52,7 +52,7 @@ export default function EditarEvaluacionSheet({ evaluacion, periodos, isAdmin }:
     if (v) {
       setNombre(evaluacion.nombre)
       setTipo(evaluacion.tipo)
-      setPeriodoId(evaluacion.periodo_id)
+      setPeriodoId(evaluacion.periodo_id ?? '__anual__')
       setFecha(evaluacion.fecha ?? '')
     }
   }
@@ -67,7 +67,7 @@ export default function EditarEvaluacionSheet({ evaluacion, periodos, isAdmin }:
       body: JSON.stringify({
         nombre,
         tipo,
-        periodo_id: periodoId,
+        periodo_id: periodoId === '__anual__' ? null : periodoId,
         fecha: fecha || null,
       }),
     })
@@ -146,14 +146,17 @@ export default function EditarEvaluacionSheet({ evaluacion, periodos, isAdmin }:
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="ev-periodo">Período *</Label>
+              <Label htmlFor="ev-periodo">Período</Label>
               <Select value={periodoId} onValueChange={v => setPeriodoId(v ?? periodoId)}>
                 <SelectTrigger id="ev-periodo">
                   <SelectValue>
-                    {periodos.find(p => p.id === periodoId)?.nombre}
+                    {periodoId === '__anual__'
+                      ? 'Sin período — evaluación anual'
+                      : periodos.find(p => p.id === periodoId)?.nombre}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="__anual__">Sin período — evaluación anual</SelectItem>
                   {periodos.map(p => (
                     <SelectItem key={p.id} value={p.id}>{p.nombre}</SelectItem>
                   ))}
@@ -174,7 +177,7 @@ export default function EditarEvaluacionSheet({ evaluacion, periodos, isAdmin }:
 
             <Button
               type="submit"
-              disabled={saving || !nombre || !tipo || !periodoId}
+              disabled={saving || !nombre || !tipo}
               className="mt-2"
             >
               {saving && <Loader2 data-icon="inline-start" className="animate-spin" />}

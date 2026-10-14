@@ -39,7 +39,7 @@ export default function NuevaEvaluacionSheet({ materiaId, periodos }: Props) {
     const res = await fetch(`/api/v1/materias/${materiaId}/evaluaciones`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre, tipo, periodo_id: periodoId, ...(fecha ? { fecha } : {}) }),
+      body: JSON.stringify({ nombre, tipo, periodo_id: periodoId === '__anual__' ? null : periodoId || undefined, ...(fecha ? { fecha } : {}) }),
     })
 
     const json = await res.json()
@@ -98,14 +98,17 @@ export default function NuevaEvaluacionSheet({ materiaId, periodos }: Props) {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="ev-periodo">Período *</Label>
+              <Label htmlFor="ev-periodo">Período</Label>
               <Select value={periodoId} onValueChange={v => setPeriodoId(v ?? '')}>
                 <SelectTrigger id="ev-periodo">
                   <SelectValue placeholder="Seleccionar período...">
-                    {periodoId ? periodos.find(p => p.id === periodoId)?.nombre : undefined}
+                    {periodoId === '__anual__'
+                      ? 'Sin período — evaluación anual'
+                      : periodoId ? periodos.find(p => p.id === periodoId)?.nombre : undefined}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="__anual__">Sin período — evaluación anual</SelectItem>
                   {periodos.map(p => (
                     <SelectItem key={p.id} value={p.id}>{p.nombre}</SelectItem>
                   ))}
@@ -126,7 +129,7 @@ export default function NuevaEvaluacionSheet({ materiaId, periodos }: Props) {
 
             <Button
               type="submit"
-              disabled={loading || !nombre || !tipo || !periodoId}
+              disabled={loading || !nombre || !tipo}
               className="mt-2"
             >
               {loading && <Loader2 data-icon="inline-start" className="animate-spin" />}

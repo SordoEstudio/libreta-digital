@@ -9,7 +9,7 @@ const PatchSchema = z.object({
   tipo: z.enum(['parcial', 'final', 'recuperatorio', 'tp', 'concepto']).optional(),
   peso: z.number().positive().optional(),
   orden: z.number().int().positive().optional(),
-  periodo_id: z.string().uuid().optional(),
+  periodo_id: z.string().uuid().nullable().optional(),
   fecha: z.string().date().nullable().optional(),
   sync: z.boolean().default(false),
 }).strict()
