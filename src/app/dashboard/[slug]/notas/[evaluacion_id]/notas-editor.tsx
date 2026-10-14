@@ -8,6 +8,8 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
 import { Save, Loader2, Download, ChevronsUpDown, ChevronUp, ChevronDown } from 'lucide-react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import * as XLSX from 'xlsx'
 
 interface Alumno {
@@ -30,6 +32,10 @@ interface NotasEditorProps {
   alumnos: Alumno[]
   notasExistentes: NotaExistente[]
   slug: string
+  notaAprobacion: number | null
+  permiteRecuperatorio: boolean
+  recuperatorioId: string | null
+  esRecuperatorio: boolean
 }
 
 type SortDir = 'asc' | 'desc'
@@ -45,7 +51,7 @@ function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
     : <ChevronDown className="size-3 ml-1" />
 }
 
-export function NotasEditor({ evaluacionId, evaluacionNombre, alumnos, notasExistentes, slug }: NotasEditorProps) {
+export function NotasEditor({ evaluacionId, evaluacionNombre, alumnos, notasExistentes, slug, notaAprobacion, permiteRecuperatorio, recuperatorioId, esRecuperatorio }: NotasEditorProps) {
   const notaMap = new Map(notasExistentes.map(n => [n.alumno_id, n]))
 
   const [valores, setValores] = useState<Record<string, string>>(() => {
@@ -80,6 +86,8 @@ export function NotasEditor({ evaluacionId, evaluacionNombre, alumnos, notasExis
 
   const [sortDir, setSortDir] = useState<SortDir>('asc')
   const [isPending, startTransition] = useTransition()
+  const [generando, setGenerando] = useState(false)
+  const router = useRouter()
 
   const sortedAlumnos = useMemo(() => {
     return [...alumnos].sort((a, b) => {
@@ -144,6 +152,23 @@ export function NotasEditor({ evaluacionId, evaluacionNombre, alumnos, notasExis
     })
   }
 
+  const countBelowThreshold = notaAprobacion !== null
+    ? alumnos.filter(a => !ausentes[a.id] && valores[a.id] !== '' && parseFloat(valores[a.id]) < notaAprobacion!).length
+    : 0
+
+  async function handleGenerar() {
+    setGenerando(true)
+    const res = await fetch(`/api/v1/evaluaciones/${evaluacionId}/recuperatorio`, { method: 'POST' })
+    const json = await res.json()
+    setGenerando(false)
+    if (res.ok) {
+      toast.success('Recuperatorio generado')
+      router.refresh()
+    } else {
+      toast.error(json.error?.message ?? 'Error al generar recuperatorio')
+    }
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <div className="overflow-x-auto rounded-md border">
@@ -162,6 +187,7 @@ export function NotasEditor({ evaluacionId, evaluacionNombre, alumnos, notasExis
               <TableHead className="w-32">Nota</TableHead>
               <TableHead className="w-24 text-center">Ausente</TableHead>
               <TableHead>Observación</TableHead>
+              {notaAprobacion !== null && <TableHead className="w-28">Resultado</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -199,6 +225,16 @@ export function NotasEditor({ evaluacionId, evaluacionNombre, alumnos, notasExis
                     className="min-w-40"
                   />
                 </TableCell>
+                {notaAprobacion !== null && (
+                  <TableCell className="text-sm">
+                    {ausentes[alumno.id] || valores[alumno.id] === ''
+                      ? <span className="text-muted-foreground">—</span>
+                      : parseFloat(valores[alumno.id]) < notaAprobacion
+                        ? <span className="text-destructive font-medium">✗ Reprobado</span>
+                        : <span className="text-green-600 font-medium">✓ Aprobado</span>
+                    }
+                  </TableCell>
+                )}
               </TableRow>
             ))}
           </TableBody>
@@ -215,6 +251,32 @@ export function NotasEditor({ evaluacionId, evaluacionNombre, alumnos, notasExis
           {isPending ? 'Guardando...' : 'Guardar notas'}
         </Button>
       </div>
+
+      {permiteRecuperatorio && !esRecuperatorio && (
+        <div className="flex items-center justify-between rounded-md border p-3 bg-muted/30">
+          <p className="text-sm text-muted-foreground">
+            {recuperatorioId
+              ? 'Recuperatorio generado.'
+              : `${countBelowThreshold} alumno${countBelowThreshold !== 1 ? 's' : ''} por debajo del umbral de aprobación.`}
+          </p>
+          {recuperatorioId
+            ? (
+              <Button variant="outline" size="sm" render={<Link href={`/dashboard/${slug}/notas/${recuperatorioId}`} />}>
+                Ver recuperatorio
+              </Button>
+            )
+            : (
+              <Button variant="outline" size="sm" onClick={handleGenerar} disabled={generando}>
+                {generando ? 'Generando...' : 'Generar recuperatorio'}
+              </Button>
+            )
+          }
+        </div>
+      )}
+
+      {esRecuperatorio && (
+        <p className="text-sm text-muted-foreground">Esta es la instancia de recuperatorio.</p>
+      )}
     </div>
   )
 }

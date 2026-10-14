@@ -24,7 +24,7 @@ export default async function NotasPage({ params }: Params) {
 
   const { data: evaluacion } = await supabase
     .from('evaluaciones')
-    .select('id, nombre, tipo, peso, materias(id, materias_catalogo(nombre), cursos(id, nombre))')
+    .select('id, nombre, tipo, peso, permite_recuperatorio, recuperatorio_de_evaluacion_id, materias(id, materias_catalogo(nombre), cursos(id, nombre))')
     .eq('id', evaluacion_id)
     .single()
 
@@ -39,6 +39,24 @@ export default async function NotasPage({ params }: Params) {
 
   const materiaNombre = mat.materias_catalogo?.nombre ?? ''
   const cursoId = mat.cursos?.id ?? ''
+
+  const { data: instData } = await supabase
+    .from('instituciones')
+    .select('nota_aprobacion')
+    .eq('id', inst.id)
+    .single()
+
+  const permiteRecuperatorio = !!(evaluacion as { permite_recuperatorio?: boolean }).permite_recuperatorio
+  const esRecuperatorio = !!(evaluacion as { recuperatorio_de_evaluacion_id?: string | null }).recuperatorio_de_evaluacion_id
+
+  const { data: recuperatorioExistente } = permiteRecuperatorio
+    ? await supabase
+        .from('evaluaciones')
+        .select('id')
+        .eq('recuperatorio_de_evaluacion_id', evaluacion_id)
+        .is('deleted_at', null)
+        .maybeSingle()
+    : { data: null }
 
   // Fetch students enrolled in this course (via inscripciones)
   const { data: inscripciones } = await supabase
@@ -85,6 +103,10 @@ export default async function NotasPage({ params }: Params) {
         alumnos={alumnos ?? []}
         notasExistentes={notasExistentes ?? []}
         slug={slug}
+        notaAprobacion={instData?.nota_aprobacion ?? null}
+        permiteRecuperatorio={permiteRecuperatorio}
+        recuperatorioId={recuperatorioExistente?.id ?? null}
+        esRecuperatorio={esRecuperatorio}
       />
     </div>
   )

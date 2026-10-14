@@ -10,6 +10,7 @@ import Link from 'next/link'
 import { BookOpen, ClipboardList, UserCheck } from 'lucide-react'
 import NuevaEvaluacionSheet from './nueva-evaluacion-sheet'
 import EditarEvaluacionSheet from './editar-evaluacion-sheet'
+import GenerarRecuperatorioButton from './generar-recuperatorio-button'
 
 type Params = { params: Promise<{ slug: string; materia_id: string }> }
 
@@ -70,10 +71,16 @@ export default async function EvaluacionesPage({ params }: Params) {
 
   const { data: evaluaciones } = await supabase
     .from('evaluaciones')
-    .select('id, nombre, tipo, peso, orden, periodo_id, fecha, template_id, permite_recuperatorio, periodos(nombre)')
+    .select('id, nombre, tipo, peso, orden, periodo_id, fecha, template_id, permite_recuperatorio, recuperatorio_de_evaluacion_id, periodos(nombre)')
     .eq('materia_id', materia_id)
     .is('deleted_at', null)
     .order('orden')
+
+  const recuperatorioMap = new Map<string, string>(
+    (evaluaciones ?? [])
+      .filter(ev => ev.recuperatorio_de_evaluacion_id)
+      .map(ev => [ev.recuperatorio_de_evaluacion_id!, ev.id])
+  )
 
   const { data: periodos } = await supabase
     .from('periodos')
@@ -114,6 +121,7 @@ export default async function EvaluacionesPage({ params }: Params) {
                 <TableHead>Tipo</TableHead>
                 <TableHead>Período</TableHead>
                 <TableHead className="w-24">Notas</TableHead>
+                <TableHead className="w-40" />
                 <TableHead className="w-10" />
               </TableRow>
             </TableHeader>
@@ -121,6 +129,7 @@ export default async function EvaluacionesPage({ params }: Params) {
               {evaluaciones.map(ev => {
                 const periodo = ev.periodos as { nombre: string } | null
                 const templateId = (ev as { template_id?: string | null }).template_id ?? null
+                const recuperatorioDeId = (ev as { recuperatorio_de_evaluacion_id?: string | null }).recuperatorio_de_evaluacion_id ?? null
                 return (
                   <TableRow key={ev.id}>
                     <TableCell className="font-medium">
@@ -128,6 +137,9 @@ export default async function EvaluacionesPage({ params }: Params) {
                         {ev.nombre}
                         {templateId && (
                           <Badge variant="secondary" className="text-xs">Institucional</Badge>
+                        )}
+                        {recuperatorioDeId && (
+                          <Badge variant="outline" className="text-xs">Recuperatorio</Badge>
                         )}
                       </div>
                     </TableCell>
@@ -146,6 +158,15 @@ export default async function EvaluacionesPage({ params }: Params) {
                         <ClipboardList data-icon="inline-start" />
                         Cargar
                       </Button>
+                    </TableCell>
+                    <TableCell>
+                      {ev.permite_recuperatorio && (
+                        <GenerarRecuperatorioButton
+                          evaluacionId={ev.id}
+                          recuperatorioId={recuperatorioMap.get(ev.id) ?? null}
+                          slug={slug}
+                        />
+                      )}
                     </TableCell>
                     <TableCell>
                       <EditarEvaluacionSheet
