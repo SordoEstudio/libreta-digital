@@ -67,6 +67,13 @@ export async function DELETE(_request: NextRequest, { params }: Params) {
   if (!isSuperadmin(session) && !hasAnyRole(session, evRef.institucion_id, ['admin', 'docente']))
     return Err.forbidden()
 
+  const { error: deleteNotasError } = await supabase
+    .from('notas_referencia')
+    .delete()
+    .eq('evaluacion_ref_id', ref_id)
+
+  if (deleteNotasError) return Err.server(deleteNotasError.message)
+
   const { error } = await supabase
     .from('evaluaciones_referencia')
     .update({ deleted_at: new Date().toISOString() })

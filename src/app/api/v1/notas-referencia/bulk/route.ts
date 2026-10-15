@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
 
   const { data: evRef } = await supabase
     .from('evaluaciones_referencia')
-    .select('institucion_id')
+    .select('institucion_id, materia_id, materias(curso_id)')
     .eq('id', evaluacion_ref_id)
     .is('deleted_at', null)
     .single()
@@ -37,8 +37,20 @@ export async function POST(request: NextRequest) {
   if (!isSuperadmin(session) && !hasAnyRole(session, evRef.institucion_id, ['admin', 'docente']))
     return Err.forbidden()
 
+  const cursoId = (evRef.materias as { curso_id: string } | null)?.curso_id
+  if (!cursoId) return Err.notFound('Materia sin curso asignado')
+
+  const { data: inscripciones } = await supabase
+    .from('alumno_inscripciones')
+    .select('alumno_id')
+    .eq('curso_id', cursoId)
+    .eq('activo', true)
+    .is('deleted_at', null)
+
+  const alumnoIdsValidos = new Set((inscripciones ?? []).map(i => i.alumno_id))
+
   const toUpsert = notas
-    .filter(n => n.valor_numerico != null || n.valor_literal != null)
+    .filter(n => alumnoIdsValidos.has(n.alumno_id) && (n.valor_numerico != null || n.valor_literal != null))
     .map(n => ({
       evaluacion_ref_id,
       alumno_id: n.alumno_id,

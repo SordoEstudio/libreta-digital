@@ -25,7 +25,6 @@ interface NotaExistente {
 
 interface Props {
   evalRefId: string
-  evalRefNombre: string
   tipo: 'numerica' | 'conceptual'
   alumnos: Alumno[]
   notasExistentes: NotaExistente[]
@@ -79,9 +78,10 @@ export default function NotasRefEditor({ evalRefId, tipo, alumnos, notasExistent
 
   const promedio = useMemo(() => {
     if (tipo !== 'numerica') return null
-    const notas = alumnos.map(a => ({
-      valor_numerico: valores[a.id] ? parseFloat(valores[a.id]) : null,
-    }))
+    const notas = alumnos.map(a => {
+      const parsed = parseFloat(valores[a.id])
+      return { valor_numerico: Number.isFinite(parsed) ? parsed : null }
+    })
     return calcPromedioReferencia(notas)
   }, [alumnos, valores, tipo])
 

@@ -110,7 +110,6 @@ export default async function NotasReferenciaPage({ params }: Params) {
 
       <NotasRefEditor
         evalRefId={ref_id}
-        evalRefNombre={evRef.nombre}
         tipo={evRef.tipo as 'numerica' | 'conceptual'}
         alumnos={alumnos ?? []}
         notasExistentes={notasExistentes ?? []}
