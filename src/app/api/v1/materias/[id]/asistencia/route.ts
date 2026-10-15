@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { getSession, isSuperadmin, hasAnyRole, hasRole } from '@/lib/auth'
 import { ok, Err } from '@/lib/api'
+import { isPeriodoCerrado } from '@/lib/cierre-periodo'
 
 const RegistroSchema = z.object({
   alumno_id:                    z.string().uuid(),
@@ -78,6 +79,14 @@ export async function POST(request: NextRequest, { params }: Params) {
   const body = await request.json().catch(() => null)
   const parsed = BulkSchema.safeParse(body)
   if (!parsed.success) return Err.validation(parsed.error.issues[0].message)
+
+  const { data: periodo } = await supabase
+    .from('periodos')
+    .select('cerrado_at')
+    .eq('id', parsed.data.periodo_id)
+    .is('deleted_at', null)
+    .single()
+  if (isPeriodoCerrado(periodo?.cerrado_at)) return Err.conflict('Período cerrado')
 
   const rows = parsed.data.registros.map(r => ({
     institucion_id:               materia.institucion_id,

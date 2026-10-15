@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { getSession, isSuperadmin, hasAnyRole } from '@/lib/auth'
 import { ok, created, Err } from '@/lib/api'
+import { isPeriodoCerrado } from '@/lib/cierre-periodo'
 
 const CreateSchema = z.object({
   nombre: z.string().min(1),
@@ -65,6 +66,16 @@ export async function POST(request: NextRequest, { params }: Params) {
   const body = await request.json().catch(() => null)
   const parsed = CreateSchema.safeParse(body)
   if (!parsed.success) return Err.validation(parsed.error.issues[0].message)
+
+  if (parsed.data.periodo_id) {
+    const { data: periodo } = await supabase
+      .from('periodos')
+      .select('cerrado_at')
+      .eq('id', parsed.data.periodo_id)
+      .is('deleted_at', null)
+      .single()
+    if (isPeriodoCerrado(periodo?.cerrado_at)) return Err.conflict('Período cerrado')
+  }
 
   const { data, error } = await supabase
     .from('evaluaciones')

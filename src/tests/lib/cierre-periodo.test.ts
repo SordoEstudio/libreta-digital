@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildCierrePreview } from '@/lib/cierre-periodo'
+import { buildCierrePreview, isPeriodoCerrado } from '@/lib/cierre-periodo'
 
 describe('buildCierrePreview', () => {
   it('completo:true cuando todos los alumnos tienen notas y asistencia', () => {
@@ -39,6 +39,12 @@ describe('buildCierrePreview', () => {
       asistenciaExistente: new Set(),
     })
     expect(result.alumnos_sin_notas).toHaveLength(0)
+  })
+
+  it('isPeriodoCerrado retorna true cuando cerrado_at tiene valor', () => {
+    expect(isPeriodoCerrado('2026-10-15T00:00:00Z')).toBe(true)
+    expect(isPeriodoCerrado(null)).toBe(false)
+    expect(isPeriodoCerrado(undefined)).toBe(false)
   })
 
   it('no incluye materia en asistencia_sin_cargar si no tiene total_clases > 0', () => {

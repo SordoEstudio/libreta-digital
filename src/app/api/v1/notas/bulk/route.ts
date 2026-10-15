@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getSession, isSuperadmin, hasAnyRole } from '@/lib/auth'
 import { ok, Err } from '@/lib/api'
 import { notificarNotaCargada } from '@/lib/notificaciones'
+import { isPeriodoCerrado } from '@/lib/cierre-periodo'
 
 const BulkSchema = z.object({
   evaluacion_id: z.string().uuid(),
@@ -29,12 +30,22 @@ export async function POST(request: NextRequest) {
 
   const { data: evaluacion } = await supabase
     .from('evaluaciones')
-    .select('id, nombre, tipo, institucion_id, materias(materias_catalogo(nombre), cursos(nombre))')
+    .select('id, nombre, tipo, periodo_id, institucion_id, materias(materias_catalogo(nombre), cursos(nombre))')
     .eq('id', evaluacion_id)
     .single()
 
   if (!evaluacion) return Err.notFound('Evaluación no encontrada')
   if (!isSuperadmin(session) && !hasAnyRole(session, evaluacion.institucion_id, ['admin', 'docente'])) return Err.forbidden()
+
+  if (evaluacion.periodo_id) {
+    const { data: periodo } = await supabase
+      .from('periodos')
+      .select('cerrado_at')
+      .eq('id', evaluacion.periodo_id)
+      .is('deleted_at', null)
+      .single()
+    if (isPeriodoCerrado(periodo?.cerrado_at)) return Err.conflict('Período cerrado')
+  }
 
   const mat = evaluacion.materias as { materias_catalogo: { nombre: string } | null; cursos: { nombre: string } | null } | null
 

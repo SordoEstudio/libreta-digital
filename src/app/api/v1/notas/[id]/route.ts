@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { getSession, isSuperadmin, hasAnyRole } from '@/lib/auth'
 import { ok, Err } from '@/lib/api'
+import { isPeriodoCerrado } from '@/lib/cierre-periodo'
 
 const PatchSchema = z.object({
   valor_numerico: z.number().optional(),
@@ -20,7 +21,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   const supabase = await createClient()
   const { data: nota } = await supabase
     .from('notas')
-    .select('id, institucion_id, docente_id')
+    .select('id, institucion_id, docente_id, evaluacion_id')
     .eq('id', id)
     .is('deleted_at', null)
     .single()
@@ -31,6 +32,22 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   // Docente can only edit their own notas
   const isDocente = !isSuperadmin(session) && !hasAnyRole(session, nota.institucion_id, ['admin'])
   if (isDocente && nota.docente_id !== session.persona_id) return Err.forbidden()
+
+  const { data: evalForLock } = await supabase
+    .from('evaluaciones')
+    .select('periodo_id')
+    .eq('id', nota.evaluacion_id)
+    .is('deleted_at', null)
+    .single()
+  if (evalForLock?.periodo_id) {
+    const { data: periodo } = await supabase
+      .from('periodos')
+      .select('cerrado_at')
+      .eq('id', evalForLock.periodo_id)
+      .is('deleted_at', null)
+      .single()
+    if (isPeriodoCerrado(periodo?.cerrado_at)) return Err.conflict('Período cerrado')
+  }
 
   const body = await request.json().catch(() => null)
   const parsed = PatchSchema.safeParse(body)

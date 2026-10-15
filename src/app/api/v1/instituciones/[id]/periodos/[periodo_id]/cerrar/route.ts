@@ -22,14 +22,15 @@ export async function POST(request: NextRequest, { params }: Params) {
 
   const supabase = await createClient()
 
-  const { data: periodo, error: periodoErr } = await supabase
+  const { data: periodoRaw, error: periodoErr } = await supabase
     .from('periodos')
-    .select('id, orden, año_lectivo_id, cerrado_at')
+    .select('*')
     .eq('id', periodo_id)
     .eq('institucion_id', institucion_id)
     .is('deleted_at', null)
     .single()
-  if (periodoErr || !periodo) return Err.notFound('Período no encontrado')
+  if (periodoErr || !periodoRaw) return Err.notFound('Período no encontrado')
+  const periodo = periodoRaw as { id: string; orden: number; año_lectivo_id: string; cerrado_at: string | null }
 
   if (periodo.cerrado_at !== null) return Err.conflict('Período ya cerrado')
 

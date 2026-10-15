@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { getSession, isSuperadmin, hasAnyRole } from '@/lib/auth'
 import { ok, Err } from '@/lib/api'
+import { isPeriodoCerrado } from '@/lib/cierre-periodo'
 
 const PatchSchema = z.object({
   nombre: z.string().min(1).optional(),
@@ -21,7 +22,7 @@ async function resolveEvaluacion(id: string) {
   const supabase = await createClient()
   const { data } = await supabase
     .from('evaluaciones')
-    .select('id, materia_id, materias(institucion_id)')
+    .select('id, materia_id, periodo_id, materias(institucion_id)')
     .eq('id', id)
     .is('deleted_at', null)
     .single()
@@ -40,6 +41,16 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   if (!mat) return Err.notFound()
   if (!isSuperadmin(session) && !hasAnyRole(session, mat.institucion_id, ['admin', 'docente']))
     return Err.forbidden()
+
+  if (evaluacion.periodo_id) {
+    const { data: periodo } = await supabase
+      .from('periodos')
+      .select('cerrado_at')
+      .eq('id', evaluacion.periodo_id)
+      .is('deleted_at', null)
+      .single()
+    if (isPeriodoCerrado(periodo?.cerrado_at)) return Err.conflict('Período cerrado')
+  }
 
   const body = await request.json().catch(() => null)
   const parsed = PatchSchema.safeParse(body)
@@ -76,6 +87,16 @@ export async function DELETE(_request: NextRequest, { params }: Params) {
   if (!mat) return Err.notFound()
   if (!isSuperadmin(session) && !hasAnyRole(session, mat.institucion_id, ['admin', 'docente']))
     return Err.forbidden()
+
+  if (evaluacion.periodo_id) {
+    const { data: periodo } = await supabase
+      .from('periodos')
+      .select('cerrado_at')
+      .eq('id', evaluacion.periodo_id)
+      .is('deleted_at', null)
+      .single()
+    if (isPeriodoCerrado(periodo?.cerrado_at)) return Err.conflict('Período cerrado')
+  }
 
   // Cascade: soft-delete notas first
   await supabase

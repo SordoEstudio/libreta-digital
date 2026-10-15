@@ -14,14 +14,15 @@ export async function GET(_request: NextRequest, { params }: Params) {
 
   const supabase = await createClient()
 
-  const { data: periodo, error: periodoErr } = await supabase
+  const { data: periodoRaw, error: periodoErr } = await supabase
     .from('periodos')
-    .select('id, año_lectivo_id')
+    .select('*')
     .eq('id', periodo_id)
     .eq('institucion_id', institucion_id)
     .is('deleted_at', null)
     .single()
-  if (periodoErr || !periodo) return Err.notFound('Período no encontrado')
+  if (periodoErr || !periodoRaw) return Err.notFound('Período no encontrado')
+  const periodo = periodoRaw as { id: string; año_lectivo_id: string }
 
   const { data: cursos } = await supabase
     .from('cursos')
