@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { getSession, isSuperadmin, hasAnyRole } from '@/lib/auth'
 import { ok, created, Err } from '@/lib/api'
 import { CreateComunicadoSchema, deduplicarResponsables } from '@/lib/comunicados'
@@ -44,8 +45,10 @@ export async function POST(request: NextRequest) {
 
   if (insertError || !comunicado) return Err.server(insertError?.message ?? 'Error al crear comunicado')
 
-  // Fetch responsables en 3 queries
-  const { data: insc } = await supabase
+  // Fetch responsables en 3 queries — usa admin client porque personas_select solo expone la fila propia
+  const adminSupabase = createAdminClient()
+
+  const { data: insc } = await adminSupabase
     .from('alumno_inscripciones')
     .select('alumno_id')
     .eq('curso_id', curso_id)
@@ -58,7 +61,7 @@ export async function POST(request: NextRequest) {
     return created({ ...comunicado, emails_enviados: 0 })
   }
 
-  const { data: respRaw } = await supabase
+  const { data: respRaw } = await adminSupabase
     .from('alumno_responsables')
     .select('persona_id')
     .in('alumno_id', alumnoIds)
@@ -70,7 +73,7 @@ export async function POST(request: NextRequest) {
     return created({ ...comunicado, emails_enviados: 0 })
   }
 
-  const { data: personas } = await supabase
+  const { data: personas } = await adminSupabase
     .from('personas')
     .select('id, email')
     .in('id', personaIds)
