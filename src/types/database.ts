@@ -1,4 +1,4 @@
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -600,11 +600,40 @@ export type Database = {
           },
         ]
       }
+      evaluacion_dimensiones: {
+        Row: {
+          dimension_id: string
+          evaluacion_id: string
+        }
+        Insert: {
+          dimension_id: string
+          evaluacion_id: string
+        }
+        Update: {
+          dimension_id?: string
+          evaluacion_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evaluacion_dimensiones_dimension_id_fkey"
+            columns: ["dimension_id"]
+            isOneToOne: false
+            referencedRelation: "materias_dimensiones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evaluacion_dimensiones_evaluacion_id_fkey"
+            columns: ["evaluacion_id"]
+            isOneToOne: false
+            referencedRelation: "evaluaciones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       evaluaciones: {
         Row: {
           created_at: string
           deleted_at: string | null
-          dimension_id: string | null
           fecha: string | null
           id: string
           institucion_id: string
@@ -622,7 +651,6 @@ export type Database = {
         Insert: {
           created_at?: string
           deleted_at?: string | null
-          dimension_id?: string | null
           fecha?: string | null
           id?: string
           institucion_id: string
@@ -640,7 +668,6 @@ export type Database = {
         Update: {
           created_at?: string
           deleted_at?: string | null
-          dimension_id?: string | null
           fecha?: string | null
           id?: string
           institucion_id?: string
@@ -656,13 +683,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "evaluaciones_dimension_id_fkey"
-            columns: ["dimension_id"]
-            isOneToOne: false
-            referencedRelation: "materias_dimensiones"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "evaluaciones_institucion_id_fkey"
             columns: ["institucion_id"]
@@ -1132,6 +1152,7 @@ export type Database = {
           alumno_id: string
           created_at: string
           deleted_at: string | null
+          dimension_id: string | null
           docente_id: string
           evaluacion_id: string
           fecha_carga: string
@@ -1146,6 +1167,7 @@ export type Database = {
           alumno_id: string
           created_at?: string
           deleted_at?: string | null
+          dimension_id?: string | null
           docente_id: string
           evaluacion_id: string
           fecha_carga?: string
@@ -1160,6 +1182,7 @@ export type Database = {
           alumno_id?: string
           created_at?: string
           deleted_at?: string | null
+          dimension_id?: string | null
           docente_id?: string
           evaluacion_id?: string
           fecha_carga?: string
@@ -1176,6 +1199,13 @@ export type Database = {
             columns: ["alumno_id"]
             isOneToOne: false
             referencedRelation: "alumnos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notas_dimension_id_fkey"
+            columns: ["dimension_id"]
+            isOneToOne: false
+            referencedRelation: "materias_dimensiones"
             referencedColumns: ["id"]
           },
           {

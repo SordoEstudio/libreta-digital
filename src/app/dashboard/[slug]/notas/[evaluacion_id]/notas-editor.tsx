@@ -21,9 +21,15 @@ interface Alumno {
 interface NotaExistente {
   id: string
   alumno_id: string
+  dimension_id: string | null
   valor_numerico: number | null
   valor_literal: string | null
   observacion: string | null
+}
+
+interface Dimension {
+  id: string
+  nombre: string
 }
 
 interface NotasEditorProps {
@@ -31,6 +37,7 @@ interface NotasEditorProps {
   evaluacionNombre: string
   alumnos: Alumno[]
   notasExistentes: NotaExistente[]
+  dimensiones: Dimension[]
   slug: string
   notaAprobacion: number | null
   permiteRecuperatorio: boolean
@@ -51,18 +58,34 @@ function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
     : <ChevronDown className="size-3 ml-1" />
 }
 
-export function NotasEditor({ evaluacionId, evaluacionNombre, alumnos, notasExistentes, slug, notaAprobacion, permiteRecuperatorio, recuperatorioId, esRecuperatorio }: NotasEditorProps) {
-  const notaMap = new Map(notasExistentes.map(n => [n.alumno_id, n]))
+export function NotasEditor({ evaluacionId, evaluacionNombre, alumnos, notasExistentes, dimensiones, slug, notaAprobacion, permiteRecuperatorio, recuperatorioId, esRecuperatorio }: NotasEditorProps) {
+  const hasDims = dimensiones.length > 0
 
+  // Multi-dim state: valores[alumnoId][dimId] = value string
+  const [valoresDim, setValoresDim] = useState<Record<string, Record<string, string>>>(() => {
+    const init: Record<string, Record<string, string>> = {}
+    for (const alumno of alumnos) {
+      init[alumno.id] = {}
+      for (const dim of dimensiones) {
+        const nota = notasExistentes.find(n => n.alumno_id === alumno.id && n.dimension_id === dim.id)
+        if (nota?.valor_literal === 'A') {
+          init[alumno.id][dim.id] = ''
+        } else {
+          init[alumno.id][dim.id] = nota?.valor_numerico?.toString() ?? nota?.valor_literal ?? ''
+        }
+      }
+    }
+    return init
+  })
+
+  // Single-dim state: valores[alumnoId] = value string
+  const notaMap = new Map(notasExistentes.filter(n => !n.dimension_id).map(n => [n.alumno_id, n]))
   const [valores, setValores] = useState<Record<string, string>>(() => {
+    if (hasDims) return {}
     const init: Record<string, string> = {}
     for (const alumno of alumnos) {
       const nota = notaMap.get(alumno.id)
-      if (nota?.valor_literal === 'A') {
-        init[alumno.id] = ''
-      } else {
-        init[alumno.id] = nota?.valor_numerico?.toString() ?? nota?.valor_literal ?? ''
-      }
+      init[alumno.id] = nota?.valor_literal === 'A' ? '' : (nota?.valor_numerico?.toString() ?? nota?.valor_literal ?? '')
     }
     return init
   })
@@ -70,8 +93,12 @@ export function NotasEditor({ evaluacionId, evaluacionNombre, alumnos, notasExis
   const [ausentes, setAusentes] = useState<Record<string, boolean>>(() => {
     const init: Record<string, boolean> = {}
     for (const alumno of alumnos) {
-      const nota = notaMap.get(alumno.id)
-      init[alumno.id] = nota?.valor_literal === 'A'
+      if (hasDims) {
+        const nota = notasExistentes.find(n => n.alumno_id === alumno.id && n.valor_literal === 'A')
+        init[alumno.id] = !!nota
+      } else {
+        init[alumno.id] = notaMap.get(alumno.id)?.valor_literal === 'A'
+      }
     }
     return init
   })
@@ -79,7 +106,12 @@ export function NotasEditor({ evaluacionId, evaluacionNombre, alumnos, notasExis
   const [observaciones, setObservaciones] = useState<Record<string, string>>(() => {
     const init: Record<string, string> = {}
     for (const alumno of alumnos) {
-      init[alumno.id] = notaMap.get(alumno.id)?.observacion ?? ''
+      if (hasDims) {
+        const nota = notasExistentes.find(n => n.alumno_id === alumno.id && n.dimension_id === dimensiones[0]?.id)
+        init[alumno.id] = nota?.observacion ?? ''
+      } else {
+        init[alumno.id] = notaMap.get(alumno.id)?.observacion ?? ''
+      }
     }
     return init
   })
@@ -100,11 +132,25 @@ export function NotasEditor({ evaluacionId, evaluacionNombre, alumnos, notasExis
     setValores(prev => ({ ...prev, [alumnoId]: value }))
   }
 
+  function handleChangeDim(alumnoId: string, dimId: string, value: string) {
+    setValoresDim(prev => ({
+      ...prev,
+      [alumnoId]: { ...(prev[alumnoId] ?? {}), [dimId]: value },
+    }))
+  }
+
   function handleAusente(alumnoId: string, checked: boolean) {
     setAusentes(prev => ({ ...prev, [alumnoId]: checked }))
     if (checked) {
       setValores(prev => ({ ...prev, [alumnoId]: '' }))
       setObservaciones(prev => ({ ...prev, [alumnoId]: '' }))
+      if (hasDims) {
+        setValoresDim(prev => {
+          const dims: Record<string, string> = {}
+          for (const dim of dimensiones) dims[dim.id] = ''
+          return { ...prev, [alumnoId]: dims }
+        })
+      }
     }
   }
 
@@ -113,27 +159,63 @@ export function NotasEditor({ evaluacionId, evaluacionNombre, alumnos, notasExis
   }
 
   function handleExport() {
-    const rows = sortedAlumnos.map(a => ({
-      Alumno: displayNombre(a),
-      Nota: ausentes[a.id] ? 'Ausente' : (valores[a.id] || '—'),
-      Observación: ausentes[a.id] ? '' : (observaciones[a.id] ?? ''),
-    }))
-    const ws = XLSX.utils.json_to_sheet(rows)
-    const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, 'Notas')
-    XLSX.writeFile(wb, `${evaluacionNombre}.xlsx`)
+    if (hasDims) {
+      const rows = sortedAlumnos.map(a => {
+        const row: Record<string, string> = { Alumno: displayNombre(a) }
+        for (const dim of dimensiones) {
+          row[dim.nombre] = ausentes[a.id] ? 'Ausente' : (valoresDim[a.id]?.[dim.id] || '—')
+        }
+        return row
+      })
+      const ws = XLSX.utils.json_to_sheet(rows)
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, 'Notas')
+      XLSX.writeFile(wb, `${evaluacionNombre}.xlsx`)
+    } else {
+      const rows = sortedAlumnos.map(a => ({
+        Alumno: displayNombre(a),
+        Nota: ausentes[a.id] ? 'Ausente' : (valores[a.id] || '—'),
+        Observación: ausentes[a.id] ? '' : (observaciones[a.id] ?? ''),
+      }))
+      const ws = XLSX.utils.json_to_sheet(rows)
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, 'Notas')
+      XLSX.writeFile(wb, `${evaluacionNombre}.xlsx`)
+    }
   }
 
   async function handleSave() {
-    const notas = alumnos.map(a => {
-      if (ausentes[a.id]) {
-        return { alumno_id: a.id, valor_numerico: null, valor_literal: 'A' }
-      }
-      const raw = valores[a.id]
-      const num = raw !== '' ? parseFloat(raw) : null
-      const obs = observaciones[a.id]?.trim()
-      return { alumno_id: a.id, valor_numerico: num, valor_literal: null, ...(obs ? { observacion: obs } : {}) }
-    })
+    let notas: Array<{ alumno_id: string; dimension_id?: string | null; valor_numerico: number | null; valor_literal: string | null; observacion?: string }>
+
+    if (hasDims) {
+      notas = alumnos.flatMap(a => {
+        const obs = observaciones[a.id]?.trim()
+        return dimensiones.map(dim => {
+          if (ausentes[a.id]) {
+            return { alumno_id: a.id, dimension_id: dim.id, valor_numerico: null as number | null, valor_literal: 'A' as string | null }
+          }
+          const raw = valoresDim[a.id]?.[dim.id] ?? ''
+          const num = raw !== '' ? parseFloat(raw) : null
+          return {
+            alumno_id: a.id,
+            dimension_id: dim.id,
+            valor_numerico: num as number | null,
+            valor_literal: null as string | null,
+            ...(obs ? { observacion: obs } : {}),
+          }
+        })
+      })
+    } else {
+      notas = alumnos.map(a => {
+        if (ausentes[a.id]) {
+          return { alumno_id: a.id, valor_numerico: null, valor_literal: 'A' }
+        }
+        const raw = valores[a.id]
+        const num = raw !== '' ? parseFloat(raw) : null
+        const obs = observaciones[a.id]?.trim()
+        return { alumno_id: a.id, valor_numerico: num, valor_literal: null, ...(obs ? { observacion: obs } : {}) }
+      })
+    }
 
     startTransition(async () => {
       const res = await fetch(`/api/v1/notas/bulk`, {
@@ -152,7 +234,7 @@ export function NotasEditor({ evaluacionId, evaluacionNombre, alumnos, notasExis
     })
   }
 
-  const countBelowThreshold = notaAprobacion !== null
+  const countBelowThreshold = notaAprobacion !== null && !hasDims
     ? alumnos.filter(a => !ausentes[a.id] && valores[a.id] !== '' && parseFloat(valores[a.id]) < notaAprobacion!).length
     : 0
 
@@ -184,29 +266,53 @@ export function NotasEditor({ evaluacionId, evaluacionNombre, alumnos, notasExis
                   <SortIcon active dir={sortDir} />
                 </button>
               </TableHead>
-              <TableHead className="w-32">Nota</TableHead>
+              {hasDims ? (
+                dimensiones.map(dim => (
+                  <TableHead key={dim.id} className="w-32">{dim.nombre}</TableHead>
+                ))
+              ) : (
+                <TableHead className="w-32">Nota</TableHead>
+              )}
               <TableHead className="w-24 text-center">Ausente</TableHead>
-              <TableHead>Observación</TableHead>
-              {notaAprobacion !== null && <TableHead className="w-28">Resultado</TableHead>}
+              {!hasDims && <TableHead>Observación</TableHead>}
+              {!hasDims && notaAprobacion !== null && <TableHead className="w-28">Resultado</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {sortedAlumnos.map(alumno => (
               <TableRow key={alumno.id}>
                 <TableCell className="font-medium">{displayNombre(alumno)}</TableCell>
-                <TableCell>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    max="10"
-                    placeholder="—"
-                    value={valores[alumno.id] ?? ''}
-                    onChange={e => handleChange(alumno.id, e.target.value)}
-                    disabled={ausentes[alumno.id]}
-                    className="w-24"
-                  />
-                </TableCell>
+                {hasDims ? (
+                  dimensiones.map(dim => (
+                    <TableCell key={dim.id}>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="10"
+                        placeholder="—"
+                        value={valoresDim[alumno.id]?.[dim.id] ?? ''}
+                        onChange={e => handleChangeDim(alumno.id, dim.id, e.target.value)}
+                        disabled={ausentes[alumno.id]}
+                        className="w-24"
+                      />
+                    </TableCell>
+                  ))
+                ) : (
+                  <TableCell>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="10"
+                      placeholder="—"
+                      value={valores[alumno.id] ?? ''}
+                      onChange={e => handleChange(alumno.id, e.target.value)}
+                      disabled={ausentes[alumno.id]}
+                      className="w-24"
+                    />
+                  </TableCell>
+                )}
                 <TableCell className="text-center">
                   <input
                     type="checkbox"
@@ -215,17 +321,19 @@ export function NotasEditor({ evaluacionId, evaluacionNombre, alumnos, notasExis
                     className="size-4 cursor-pointer accent-primary"
                   />
                 </TableCell>
-                <TableCell>
-                  <Input
-                    type="text"
-                    placeholder="—"
-                    value={observaciones[alumno.id] ?? ''}
-                    onChange={e => handleObservacion(alumno.id, e.target.value)}
-                    disabled={ausentes[alumno.id]}
-                    className="min-w-40"
-                  />
-                </TableCell>
-                {notaAprobacion !== null && (
+                {!hasDims && (
+                  <TableCell>
+                    <Input
+                      type="text"
+                      placeholder="—"
+                      value={observaciones[alumno.id] ?? ''}
+                      onChange={e => handleObservacion(alumno.id, e.target.value)}
+                      disabled={ausentes[alumno.id]}
+                      className="min-w-40"
+                    />
+                  </TableCell>
+                )}
+                {!hasDims && notaAprobacion !== null && (
                   <TableCell className="text-sm">
                     {ausentes[alumno.id] || valores[alumno.id] === ''
                       ? <span className="text-muted-foreground">—</span>

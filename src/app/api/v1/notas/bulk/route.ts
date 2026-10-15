@@ -10,6 +10,7 @@ const BulkSchema = z.object({
   evaluacion_id: z.string().uuid(),
   notas: z.array(z.object({
     alumno_id: z.string().uuid(),
+    dimension_id: z.string().uuid().nullable().optional(),
     valor_numerico: z.number().nullable().optional(),
     valor_literal: z.string().nullable().optional(),
     observacion: z.string().optional(),
@@ -55,6 +56,7 @@ export async function POST(request: NextRequest) {
     .map(n => ({
       evaluacion_id,
       alumno_id: n.alumno_id,
+      dimension_id: n.dimension_id ?? null,
       valor_numerico: n.valor_numerico ?? null,
       valor_literal: n.valor_literal ?? null,
       observacion: n.observacion,
@@ -66,15 +68,16 @@ export async function POST(request: NextRequest) {
 
   const { data, error } = await supabase
     .from('notas')
-    .upsert(toUpsert, { onConflict: 'evaluacion_id,alumno_id' })
+    .upsert(toUpsert, { onConflict: 'evaluacion_id,dimension_id,alumno_id' })
     .select('id, alumno_id, valor_numerico, valor_literal')
 
   if (error) return Err.server(error.message)
 
+  const uniqueAlumnoIds = [...new Set(data.map(n => n.alumno_id))]
   const { data: alumnos } = await supabase
     .from('alumnos')
     .select('id, nombre')
-    .in('id', data.map(n => n.alumno_id))
+    .in('id', uniqueAlumnoIds)
 
   const alumnoMap = new Map((alumnos ?? []).map(a => [a.id, a.nombre]))
   const { data: inst } = await supabase
@@ -83,8 +86,14 @@ export async function POST(request: NextRequest) {
     .eq('id', evaluacion.institucion_id)
     .single()
 
+  // Deduplicate notifications by alumno_id — one notif per alumno regardless of dimensions
+  const notifByAlumno = new Map<string, typeof data[number]>()
+  for (const nota of data) {
+    if (!notifByAlumno.has(nota.alumno_id)) notifByAlumno.set(nota.alumno_id, nota)
+  }
+
   void Promise.allSettled(
-    data.map(nota =>
+    Array.from(notifByAlumno.values()).map(nota =>
       notificarNotaCargada({
         nota_id: nota.id,
         alumno_id: nota.alumno_id,

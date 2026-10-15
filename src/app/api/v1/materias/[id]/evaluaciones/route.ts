@@ -13,7 +13,7 @@ const CreateSchema = z.object({
   periodo_id: z.string().uuid().optional().nullable(),
   fecha: z.string().date().optional().nullable(),
   permite_recuperatorio: z.boolean().default(false),
-  dimension_id: z.string().uuid().optional().nullable(),
+  dimension_ids: z.array(z.string().uuid()).optional(),
 })
 
 type Params = { params: Promise<{ id: string }> }
@@ -37,7 +37,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
   const { data, error } = await supabase
     .from('evaluaciones')
-    .select('id, nombre, tipo, peso, orden, periodo_id, dimension_id, created_at, periodos(id, nombre)')
+    .select('id, nombre, tipo, peso, orden, periodo_id, created_at, periodos(id, nombre), evaluacion_dimensiones(dimension_id)')
     .eq('materia_id', materia_id)
     .is('deleted_at', null)
     .order('orden', { ascending: true })
@@ -89,11 +89,17 @@ export async function POST(request: NextRequest, { params }: Params) {
       permite_recuperatorio: parsed.data.permite_recuperatorio,
       ...(parsed.data.periodo_id ? { periodo_id: parsed.data.periodo_id } : {}),
       ...(parsed.data.fecha ? { fecha: parsed.data.fecha } : {}),
-      ...(parsed.data.dimension_id !== undefined ? { dimension_id: parsed.data.dimension_id } : {}),
     })
     .select('id, nombre, tipo, peso, orden, periodo_id, fecha, created_at')
     .single()
 
   if (error) return Err.server(error.message)
+
+  if (parsed.data.dimension_ids?.length) {
+    await supabase.from('evaluacion_dimensiones').insert(
+      parsed.data.dimension_ids.map(did => ({ evaluacion_id: data.id, dimension_id: did }))
+    )
+  }
+
   return created(data)
 }

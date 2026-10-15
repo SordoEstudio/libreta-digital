@@ -24,7 +24,7 @@ export default async function NotasPage({ params }: Params) {
 
   const { data: evaluacion } = await supabase
     .from('evaluaciones')
-    .select('id, nombre, tipo, peso, permite_recuperatorio, recuperatorio_de_evaluacion_id, materias(id, materias_catalogo(nombre), cursos(id, nombre))')
+    .select('id, nombre, tipo, peso, permite_recuperatorio, recuperatorio_de_evaluacion_id, materias(id, materias_catalogo(nombre), cursos(id, nombre)), evaluacion_dimensiones(dimension_id, materias_dimensiones(id, nombre))')
     .eq('id', evaluacion_id)
     .single()
 
@@ -81,9 +81,15 @@ export default async function NotasPage({ params }: Params) {
 
   const { data: notasExistentes } = await supabase
     .from('notas')
-    .select('id, alumno_id, valor_numerico, valor_literal, observacion')
+    .select('id, alumno_id, dimension_id, valor_numerico, valor_literal, observacion')
     .eq('evaluacion_id', evaluacion_id)
     .is('deleted_at', null)
+
+  type DimEntry = { id: string; nombre: string }
+  const rawDims = (evaluacion.evaluacion_dimensiones ?? []) as Array<{ dimension_id: string; materias_dimensiones: { id: string; nombre: string } | null }>
+  const dimensiones: DimEntry[] = rawDims
+    .filter(d => d.materias_dimensiones)
+    .map(d => ({ id: d.materias_dimensiones!.id, nombre: d.materias_dimensiones!.nombre }))
 
   return (
     <div className="flex flex-col gap-6">
@@ -102,6 +108,7 @@ export default async function NotasPage({ params }: Params) {
         evaluacionNombre={evaluacion.nombre}
         alumnos={alumnos ?? []}
         notasExistentes={notasExistentes ?? []}
+        dimensiones={dimensiones}
         slug={slug}
         notaAprobacion={instData?.nota_aprobacion ?? null}
         permiteRecuperatorio={permiteRecuperatorio}

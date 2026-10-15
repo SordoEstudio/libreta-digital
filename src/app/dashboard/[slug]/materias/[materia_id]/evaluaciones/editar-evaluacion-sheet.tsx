@@ -27,7 +27,7 @@ interface Evaluacion {
   fecha: string | null
   template_id: string | null
   permite_recuperatorio: boolean
-  dimension_id: string | null
+  dimension_ids: string[]
 }
 
 interface Props {
@@ -50,7 +50,11 @@ export default function EditarEvaluacionSheet({ evaluacion, periodos, dimensione
   const [periodoId, setPeriodoId] = useState(evaluacion.periodo_id ?? '__anual__')
   const [fecha, setFecha] = useState(evaluacion.fecha ?? '')
   const [permiteRecuperatorio, setPermiteRecuperatorio] = useState(evaluacion.permite_recuperatorio)
-  const [dimensionId, setDimensionId] = useState<string | null>(evaluacion.dimension_id)
+  const [dimensionIds, setDimensionIds] = useState<string[]>(evaluacion.dimension_ids)
+
+  function toggleDimension(id: string) {
+    setDimensionIds(prev => prev.includes(id) ? prev.filter(d => d !== id) : [...prev, id])
+  }
 
   function handleOpen(v: boolean) {
     setOpen(v)
@@ -60,7 +64,7 @@ export default function EditarEvaluacionSheet({ evaluacion, periodos, dimensione
       setPeriodoId(evaluacion.periodo_id ?? '__anual__')
       setFecha(evaluacion.fecha ?? '')
       setPermiteRecuperatorio(evaluacion.permite_recuperatorio)
-      setDimensionId(evaluacion.dimension_id)
+      setDimensionIds(evaluacion.dimension_ids)
     }
   }
 
@@ -77,7 +81,7 @@ export default function EditarEvaluacionSheet({ evaluacion, periodos, dimensione
         periodo_id: periodoId === '__anual__' ? null : periodoId,
         fecha: fecha || null,
         permite_recuperatorio: permiteRecuperatorio,
-        dimension_id: dimensionId,
+        dimension_ids: dimensionIds,
       }),
     })
 
@@ -186,17 +190,20 @@ export default function EditarEvaluacionSheet({ evaluacion, periodos, dimensione
 
             {dimensiones.length > 0 && (
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="ev-dimension">Dimensión (opcional)</Label>
-                <Select value={dimensionId ?? ''} onValueChange={v => setDimensionId(v || null)}>
-                  <SelectTrigger id="ev-dimension">
-                    <SelectValue placeholder="Sin dimensión" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {dimensiones.map(d => (
-                      <SelectItem key={d.id} value={d.id}>{d.nombre}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label>Dimensiones (opcional)</Label>
+                <div className="flex flex-col gap-1.5 rounded-md border px-3 py-2">
+                  {dimensiones.map(d => (
+                    <label key={d.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={dimensionIds.includes(d.id)}
+                        onChange={() => toggleDimension(d.id)}
+                        className="size-4 cursor-pointer accent-primary"
+                      />
+                      {d.nombre}
+                    </label>
+                  ))}
+                </div>
               </div>
             )}
 

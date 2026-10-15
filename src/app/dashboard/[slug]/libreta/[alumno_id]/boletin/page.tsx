@@ -38,11 +38,11 @@ export default async function BoletinPage({ params }: Params) {
   const { data: notas } = await supabase
     .from('notas')
     .select(`
-      id, valor_numerico, valor_literal, observacion,
+      id, valor_numerico, valor_literal, observacion, dimension_id,
+      materias_dimensiones(id, nombre, peso),
       evaluaciones(id, nombre, peso, tipo, periodo_id,
         periodos(nombre, orden),
-        materias(id, materias_catalogo(nombre)),
-        materias_dimensiones(id, nombre, peso)
+        materias(id, materias_catalogo(nombre))
       )
     `)
     .eq('alumno_id', alumno_id)
@@ -76,7 +76,6 @@ export default async function BoletinPage({ params }: Params) {
     id: string; nombre: string; peso: number; tipo: string; periodo_id: string | null
     periodos: { nombre: string; orden: number } | null
     materias: { id: string; materias_catalogo: { nombre: string } | null } | null
-    materias_dimensiones: Dimension | null
   }
   type NotaRow = NonNullable<typeof notas>[number]
 
@@ -154,11 +153,11 @@ export default async function BoletinPage({ params }: Params) {
                 return oa !== ob ? oa - ob : a._ev.nombre.localeCompare(b._ev.nombre)
               })
 
-              const conDimension = sorted.filter(n => n._ev.materias_dimensiones)
-              const sinDimension = sorted.filter(n => !n._ev.materias_dimensiones)
+              const conDimension = sorted.filter(n => n.materias_dimensiones)
+              const sinDimension = sorted.filter(n => !n.materias_dimensiones)
               const dimMap = new Map<string, { dim: Dimension; notas: typeof sorted }>()
               for (const nota of conDimension) {
-                const dim = nota._ev.materias_dimensiones!
+                const dim = nota.materias_dimensiones as Dimension
                 if (!dimMap.has(dim.id)) dimMap.set(dim.id, { dim, notas: [] })
                 dimMap.get(dim.id)!.notas.push(nota)
               }

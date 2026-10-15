@@ -25,12 +25,12 @@ export async function GET(_req: NextRequest, { params }: Params) {
   const { data: notas, error } = await supabase
     .from('notas')
     .select(`
-      id, valor_numerico, valor_literal, observacion,
+      id, valor_numerico, valor_literal, observacion, dimension_id,
+      materias_dimensiones(id, nombre, peso),
       evaluaciones(
         id, nombre, tipo, peso, orden, periodo_id,
         periodos(id, nombre),
-        materias(id, materias_catalogo(nombre)),
-        materias_dimensiones(id, nombre, peso)
+        materias(id, materias_catalogo(nombre))
       )
     `)
     .eq('alumno_id', alumno_id)
@@ -45,7 +45,6 @@ export async function GET(_req: NextRequest, { params }: Params) {
     id: string; nombre: string; tipo: string; peso: number; orden: number; periodo_id: string
     periodos: Periodo | null
     materias: Materia | null
-    materias_dimensiones: Dimension | null
   }
 
   const materiaMap = new Map<string, {
@@ -82,7 +81,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
       tipo: ev.tipo,
       peso: ev.peso,
       orden: ev.orden,
-      dimension: (ev.materias_dimensiones as Dimension | null) ?? null,
+      dimension: (nota.materias_dimensiones as Dimension | null) ?? null,
       nota: {
         valor_numerico: nota.valor_numerico,
         valor_literal: nota.valor_literal,

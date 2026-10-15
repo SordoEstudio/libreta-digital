@@ -13,7 +13,7 @@ const PatchSchema = z.object({
   periodo_id: z.string().uuid().nullable().optional(),
   fecha: z.string().date().nullable().optional(),
   permite_recuperatorio: z.boolean().optional(),
-  dimension_id: z.string().uuid().nullable().optional(),
+  dimension_ids: z.array(z.string().uuid()).optional(),
 }).strict()
 
 type Params = { params: Promise<{ id: string }> }
@@ -56,23 +56,31 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   const parsed = PatchSchema.safeParse(body)
   if (!parsed.success) return Err.validation(parsed.error.issues[0].message)
 
-  const { fecha, dimension_id, ...rest } = parsed.data
+  const { fecha, dimension_ids, ...rest } = parsed.data
   const updateData: Record<string, unknown> = { ...rest }
   if (fecha !== undefined) updateData.fecha = fecha
-  if (dimension_id !== undefined) updateData.dimension_id = dimension_id
 
-  if (Object.keys(updateData).length === 0) return ok({ id })
+  if (Object.keys(updateData).length > 0) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await supabase
+      .from('evaluaciones')
+      .update(updateData as any)
+      .eq('id', id)
+      .select('id, nombre, tipo, peso, orden, periodo_id, fecha')
+      .single()
+    if (error) return Err.server(error.message)
+  }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await supabase
-    .from('evaluaciones')
-    .update(updateData as any)
-    .eq('id', id)
-    .select('id, nombre, tipo, peso, orden, periodo_id, fecha')
-    .single()
+  if (dimension_ids !== undefined) {
+    await supabase.from('evaluacion_dimensiones').delete().eq('evaluacion_id', id)
+    if (dimension_ids.length > 0) {
+      await supabase.from('evaluacion_dimensiones').insert(
+        dimension_ids.map(did => ({ evaluacion_id: id, dimension_id: did }))
+      )
+    }
+  }
 
-  if (error) return Err.server(error.message)
-  return ok(data)
+  return ok({ id })
 }
 
 export async function DELETE(_request: NextRequest, { params }: Params) {

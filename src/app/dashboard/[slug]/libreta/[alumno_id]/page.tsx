@@ -42,10 +42,10 @@ export default async function LibretaPage({ params }: Params) {
   const { data: notas } = await supabase
     .from('notas')
     .select(`
-      id, valor_numerico, valor_literal, observacion,
+      id, valor_numerico, valor_literal, observacion, dimension_id,
+      materias_dimensiones(id, nombre, peso),
       evaluaciones(id, nombre, peso, tipo, periodo_id,
-        materias(id, materias_catalogo(nombre)),
-        materias_dimensiones(id, nombre, peso)
+        materias(id, materias_catalogo(nombre))
       )
     `)
     .eq('alumno_id', alumno_id)
@@ -78,7 +78,6 @@ export default async function LibretaPage({ params }: Params) {
   type Evaluacion = {
     id: string; nombre: string; peso: number; tipo: string; periodo_id: string | null
     materias: { id: string; materias_catalogo: { nombre: string } | null } | null
-    materias_dimensiones: Dimension | null
   }
 
   type NotaRow = NonNullable<typeof notas>[number]
@@ -133,11 +132,11 @@ export default async function LibretaPage({ params }: Params) {
         <div className="flex flex-col gap-4">
           {Array.from(materiaMap.entries()).map(([matId, mat]) => {
             const notasConEv = mat.notas.map(n => ({ ...n, _ev: n.evaluaciones as Evaluacion | null })).filter(n => n._ev)
-            const conDimension = notasConEv.filter(n => n._ev?.materias_dimensiones)
-            const sinDimension = notasConEv.filter(n => !n._ev?.materias_dimensiones)
+            const conDimension = notasConEv.filter(n => n.materias_dimensiones)
+            const sinDimension = notasConEv.filter(n => !n.materias_dimensiones)
             const dimMap2 = new Map<string, { dim: Dimension; notas: typeof notasConEv }>()
             for (const n of conDimension) {
-              const dim = n._ev!.materias_dimensiones!
+              const dim = n.materias_dimensiones as Dimension
               if (!dimMap2.has(dim.id)) dimMap2.set(dim.id, { dim, notas: [] })
               dimMap2.get(dim.id)!.notas.push(n)
             }
