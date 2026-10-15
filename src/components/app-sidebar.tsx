@@ -13,7 +13,7 @@ import type { SessionUser } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/client'
 import {
   Building2, BarChart3, LayoutDashboard, GraduationCap,
-  Users, BookOpen, LogOut, Settings, Library, CalendarDays, BookMarked,
+  Users, BookOpen, LogOut, Settings, Library, CalendarDays, BookMarked, MessageSquare,
 } from 'lucide-react'
 
 interface AppSidebarProps {
@@ -139,6 +139,18 @@ export function AppSidebar({ session }: AppSidebarProps) {
                     >
                       <GraduationCap />
                       Mis alumnos
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
+
+                {(isAdminLevel || isDocente) && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      render={<Link href={`/dashboard/${activeSlug}/comunicados`} />}
+                      isActive={pathname.startsWith(`/dashboard/${activeSlug}/comunicados`)}
+                    >
+                      <MessageSquare />
+                      Comunicados
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )}
