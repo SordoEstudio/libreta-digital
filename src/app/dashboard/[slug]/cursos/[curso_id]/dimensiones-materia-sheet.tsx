@@ -87,7 +87,7 @@ export default function DimensionesMateriaSheet({ materiaId, materiaNombre, init
             <SheetTitle>Dimensiones — {materiaNombre}</SheetTitle>
           </SheetHeader>
 
-          <div className="flex flex-col gap-4 mt-4">
+          <div className="flex flex-col gap-4 mt-4 px-4">
             {dimensiones.length === 0 ? (
               <p className="text-sm text-muted-foreground">Sin dimensiones configuradas.</p>
             ) : (
