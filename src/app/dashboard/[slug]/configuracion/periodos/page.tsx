@@ -8,6 +8,9 @@ import Link from 'next/link'
 import NuevoAñoSheet from './nuevo-año-sheet'
 import ActivarAñoButton from './activar-año-button'
 import EliminarAñoButton from './eliminar-año-button'
+import CerrarPeriodoSheet from './cerrar-periodo-sheet'
+import ReabrirPeriodoButton from './reabrir-periodo-button'
+import NotificarPeriodoDialog from './notificar-periodo-dialog'
 
 type Params = { params: Promise<{ slug: string }> }
 
@@ -31,13 +34,14 @@ export default async function AñosLectivosPage({ params }: Params) {
 
   const { data: años } = await supabase
     .from('años_lectivos')
-    .select('id, nombre, activo, fecha_inicio, fecha_fin, periodos(id, nombre, orden)')
+    .select('id, nombre, activo, fecha_inicio, fecha_fin, periodos(id, nombre, orden, activo, cerrado_at)')
     .eq('institucion_id', inst.id)
     .is('deleted_at', null)
     .order('nombre', { ascending: false })
 
-  type Periodo = { id: string; nombre: string; orden: number }
+  type Periodo = { id: string; nombre: string; orden: number; activo: boolean; cerrado_at: string | null }
   type Año = NonNullable<typeof años>[number]
+  const isAdmin = isSuperadmin(session) || hasRole(session, inst.id, 'admin')
 
   return (
     <div className="flex flex-col gap-6">
@@ -80,9 +84,28 @@ export default async function AñosLectivosPage({ params }: Params) {
                 </CardHeader>
                 <CardContent>
                   {periodos.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-col gap-3">
                       {periodos.map(p => (
-                        <Badge key={p.id} variant="secondary">{p.nombre}</Badge>
+                        <div key={p.id} className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium">{p.nombre}</span>
+                            {p.activo && <Badge>Activo</Badge>}
+                            {p.cerrado_at && <Badge variant="secondary">Cerrado</Badge>}
+                          </div>
+                          {isAdmin && (
+                            <div className="flex items-center gap-1">
+                              {!p.cerrado_at && (
+                                <CerrarPeriodoSheet instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
+                              )}
+                              {p.cerrado_at && (
+                                <>
+                                  <ReabrirPeriodoButton instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
+                                  <NotificarPeriodoDialog instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
+                                </>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       ))}
                     </div>
                   ) : (

@@ -49,13 +49,14 @@ export default async function AsistenciaPage({ params, searchParams }: Props) {
 
   const { data: periodos } = await supabase
     .from('periodos')
-    .select('id, nombre')
+    .select('id, nombre, cerrado_at')
     .eq('institucion_id', inst.id)
     .is('deleted_at', null)
     .order('orden')
 
   const periodosList = periodos ?? []
   const periodoId = periodosList.find(p => p.id === periodoParam)?.id ?? periodosList[0]?.id ?? null
+  const selectedPeriodo = periodosList.find(p => p.id === periodoId)
 
   const { data: inscripciones } = await supabase
     .from('alumno_inscripciones')
@@ -96,6 +97,12 @@ export default async function AsistenciaPage({ params, searchParams }: Props) {
         <h1 className="text-2xl font-semibold">Asistencia — {materiaNombre}</h1>
         <p className="text-sm text-muted-foreground">{alumnos?.length ?? 0} alumnos</p>
       </div>
+
+      {selectedPeriodo?.cerrado_at && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          El período <strong>{selectedPeriodo.nombre}</strong> está cerrado. No se pueden editar datos.
+        </div>
+      )}
 
       <AsistenciaEditor
         key={periodoId ?? 'sin-periodo'}

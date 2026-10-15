@@ -84,10 +84,12 @@ export default async function EvaluacionesPage({ params }: Params) {
 
   const { data: periodos } = await supabase
     .from('periodos')
-    .select('id, nombre')
+    .select('id, nombre, activo, cerrado_at')
     .eq('institucion_id', inst.id)
     .is('deleted_at', null)
     .order('orden')
+
+  const activePeriodo = (periodos ?? []).find(p => p.activo)
 
   const { data: dimensiones } = await supabase
     .from('materias_dimensiones')
@@ -117,6 +119,12 @@ export default async function EvaluacionesPage({ params }: Params) {
           <NuevaEvaluacionSheet materiaId={materia_id} periodos={periodos ?? []} dimensiones={dimensiones ?? []} />
         </div>
       </div>
+
+      {activePeriodo?.cerrado_at && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          El período <strong>{activePeriodo.nombre}</strong> está cerrado. No se pueden editar datos.
+        </div>
+      )}
 
       {evaluaciones && evaluaciones.length > 0 ? (
         <div className="rounded-md border">
