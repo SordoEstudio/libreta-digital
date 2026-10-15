@@ -13,7 +13,7 @@ import type { SessionUser } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/client'
 import {
   Building2, BarChart3, LayoutDashboard, GraduationCap,
-  Users, BookOpen, LogOut, Settings, Library, CalendarDays, BookMarked, MessageSquare,
+  Users, BookOpen, LogOut, Settings, Library, CalendarDays, BookMarked, MessageSquare, Layers,
 } from 'lucide-react'
 
 interface AppSidebarProps {
@@ -200,6 +200,15 @@ export function AppSidebar({ session }: AppSidebarProps) {
                   >
                     <BookMarked />
                     Ev. institucionales
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    render={<Link href={`/dashboard/${activeSlug}/configuracion/dimension-plantillas`} />}
+                    isActive={pathname.startsWith(`/dashboard/${activeSlug}/configuracion/dimension-plantillas`)}
+                  >
+                    <Layers />
+                    Dim. plantillas
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
