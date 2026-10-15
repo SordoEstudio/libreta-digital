@@ -1087,7 +1087,10 @@ export type Database = {
       }
       periodos: {
         Row: {
+          activo: boolean
           año_lectivo_id: string
+          cerrado_at: string | null
+          cerrado_por: string | null
           created_at: string
           deleted_at: string | null
           fecha_fin: string | null
@@ -1099,7 +1102,10 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          activo?: boolean
           año_lectivo_id: string
+          cerrado_at?: string | null
+          cerrado_por?: string | null
           created_at?: string
           deleted_at?: string | null
           fecha_fin?: string | null
@@ -1111,7 +1117,10 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          activo?: boolean
           año_lectivo_id?: string
+          cerrado_at?: string | null
+          cerrado_por?: string | null
           created_at?: string
           deleted_at?: string | null
           fecha_fin?: string | null
@@ -1128,6 +1137,13 @@ export type Database = {
             columns: ["año_lectivo_id"]
             isOneToOne: false
             referencedRelation: "años_lectivos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "periodos_cerrado_por_fkey"
+            columns: ["cerrado_por"]
+            isOneToOne: false
+            referencedRelation: "personas"
             referencedColumns: ["id"]
           },
           {
