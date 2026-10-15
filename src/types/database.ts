@@ -454,6 +454,73 @@ export type Database = {
           },
         ]
       }
+      dimension_plantilla_items: {
+        Row: {
+          id: string
+          nombre: string
+          orden: number
+          peso: number | null
+          plantilla_id: string
+        }
+        Insert: {
+          id?: string
+          nombre: string
+          orden?: number
+          peso?: number | null
+          plantilla_id: string
+        }
+        Update: {
+          id?: string
+          nombre?: string
+          orden?: number
+          peso?: number | null
+          plantilla_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dimension_plantilla_items_plantilla_id_fkey"
+            columns: ["plantilla_id"]
+            isOneToOne: false
+            referencedRelation: "dimension_plantillas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dimension_plantillas: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          id: string
+          institucion_id: string
+          nombre: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          institucion_id: string
+          nombre: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          institucion_id?: string
+          nombre?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dimension_plantillas_institucion_id_fkey"
+            columns: ["institucion_id"]
+            isOneToOne: false
+            referencedRelation: "instituciones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       escala_valores: {
         Row: {
           codigo: string
@@ -1414,6 +1481,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      aplicar_plantilla_a_curso: {
+        Args: {
+          p_curso_id: string
+          p_institucion_id: string
+          p_plantilla_id: string
+        }
+        Returns: number
+      }
       get_persona_id: { Args: never; Returns: string }
       get_personas_login_status: {
         Args: { p_ids: string[] }
