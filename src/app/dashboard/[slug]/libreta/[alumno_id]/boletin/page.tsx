@@ -71,7 +71,7 @@ export default async function BoletinPage({ params }: Params) {
     }
   }
 
-  type Dimension = { id: string; nombre: string; peso: number }
+  type Dimension = { id: string; nombre: string; peso: number | null }
   type Evaluacion = {
     id: string; nombre: string; peso: number; tipo: string; periodo_id: string | null
     periodos: { nombre: string; orden: number } | null
@@ -208,7 +208,7 @@ export default async function BoletinPage({ params }: Params) {
                         return (
                           <div key={dim.id}>
                             <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">
-                              {dim.nombre} · peso: {dim.peso}%{prom !== null ? ` · Promedio: ${prom}` : ''}
+                              {dim.nombre} · {dim.peso !== null ? `peso: ${dim.peso}%` : 'Promedio directo'}{prom !== null ? ` · Promedio: ${prom}` : ''}
                             </p>
                             <NotasTable rows={dimNotas} />
                           </div>

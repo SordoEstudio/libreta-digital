@@ -6,7 +6,7 @@ import { ok, Err } from '@/lib/api'
 
 const PatchSchema = z.object({
   nombre: z.string().min(1).max(100).optional(),
-  peso:   z.number().positive().optional(),
+  peso:   z.number().nonnegative().nullable().optional(),
   orden:  z.number().int().positive().optional(),
 }).strict()
 
@@ -56,9 +56,14 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     return ok(data)
   }
 
+  const updateData = { ...parsed.data }
+  if ('peso' in updateData) {
+    updateData.peso = updateData.peso && updateData.peso > 0 ? updateData.peso : null
+  }
+
   const { data, error } = await supabase
     .from('materias_dimensiones')
-    .update(parsed.data)
+    .update(updateData)
     .eq('id', dim_id)
     .select('id, nombre, peso, orden')
     .single()

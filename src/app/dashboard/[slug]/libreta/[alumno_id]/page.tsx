@@ -74,7 +74,7 @@ export default async function LibretaPage({ params }: Params) {
     }
   }
 
-  type Dimension = { id: string; nombre: string; peso: number }
+  type Dimension = { id: string; nombre: string; peso: number | null }
   type Evaluacion = {
     id: string; nombre: string; peso: number; tipo: string; periodo_id: string | null
     materias: { id: string; materias_catalogo: { nombre: string } | null } | null
@@ -174,7 +174,9 @@ export default async function LibretaPage({ params }: Params) {
                   <div className="flex flex-col gap-4">
                     {Array.from(dimMap2.values()).map(({ dim, notas: dimNotas }) => (
                       <div key={dim.id}>
-                        <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">{dim.nombre} · {dim.peso}%</p>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">
+                          {dim.nombre}{dim.peso !== null ? ` · ${dim.peso}%` : ' · Promedio directo'}
+                        </p>
                         <Table className="table-fixed">
                           <TableHeader><TableRow>
                             <TableHead>Evaluación</TableHead>

@@ -987,7 +987,7 @@ export type Database = {
           materia_id: string
           nombre: string
           orden: number
-          peso: number
+          peso: number | null
         }
         Insert: {
           created_at?: string
@@ -995,7 +995,7 @@ export type Database = {
           materia_id: string
           nombre: string
           orden?: number
-          peso?: number
+          peso?: number | null
         }
         Update: {
           created_at?: string
@@ -1003,7 +1003,7 @@ export type Database = {
           materia_id?: string
           nombre?: string
           orden?: number
-          peso?: number
+          peso?: number | null
         }
         Relationships: [
           {

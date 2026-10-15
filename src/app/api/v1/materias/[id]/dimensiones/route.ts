@@ -6,7 +6,7 @@ import { ok, created, Err } from '@/lib/api'
 
 const CreateSchema = z.object({
   nombre: z.string().min(1).max(100),
-  peso:   z.number().positive(),
+  peso:   z.number().nonnegative().nullable().optional(),
   orden:  z.number().int().positive().optional(),
 }).strict()
 
@@ -69,9 +69,11 @@ export async function POST(request: NextRequest, { params }: Params) {
     orden = (max?.orden ?? 0) + 1
   }
 
+  const pesoValue = parsed.data.peso && parsed.data.peso > 0 ? parsed.data.peso : null
+
   const { data, error } = await supabase
     .from('materias_dimensiones')
-    .insert({ materia_id, nombre: parsed.data.nombre, peso: parsed.data.peso, orden })
+    .insert({ materia_id, nombre: parsed.data.nombre, peso: pesoValue, orden })
     .select('id, nombre, peso, orden')
     .single()
 

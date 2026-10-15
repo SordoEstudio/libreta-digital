@@ -12,7 +12,7 @@ import { toast } from 'sonner'
 interface Dimension {
   id: string
   nombre: string
-  peso: number
+  peso: number | null
   orden: number
 }
 
@@ -31,7 +31,7 @@ export default function DimensionesMateriaSheet({ materiaId, materiaNombre, init
   const [adding, setAdding] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
-  const totalPeso = dimensiones.reduce((sum, d) => sum + d.peso, 0)
+  const totalPeso = dimensiones.reduce((sum, d) => sum + (d.peso ?? 0), 0)
 
   function handleOpen(val: boolean) {
     if (val) setDimensiones(initialDimensiones)
@@ -39,8 +39,9 @@ export default function DimensionesMateriaSheet({ materiaId, materiaNombre, init
   }
 
   async function handleAdd() {
-    const pesoNum = parseFloat(peso)
-    if (!nombre.trim() || isNaN(pesoNum) || pesoNum <= 0) return
+    if (!nombre.trim()) return
+    const pesoNum = peso.trim() === '' ? null : parseFloat(peso)
+    if (pesoNum !== null && (isNaN(pesoNum) || pesoNum < 0)) return
     setAdding(true)
     const res = await fetch(`/api/v1/materias/${materiaId}/dimensiones`, {
       method: 'POST',
@@ -96,7 +97,9 @@ export default function DimensionesMateriaSheet({ materiaId, materiaNombre, init
                   <div key={d.id} className="flex items-center justify-between rounded-md border px-3 py-2">
                     <div>
                       <p className="text-sm font-medium">{d.nombre}</p>
-                      <p className="text-xs text-muted-foreground">Peso: {d.peso}%</p>
+                      <p className="text-xs text-muted-foreground">
+                        {d.peso !== null ? `Peso: ${d.peso}%` : 'Promedio directo'}
+                      </p>
                     </div>
                     <Button
                       variant="ghost"
@@ -110,9 +113,11 @@ export default function DimensionesMateriaSheet({ materiaId, materiaNombre, init
                     </Button>
                   </div>
                 ))}
-                <p className="text-xs text-muted-foreground text-right">
-                  Total: {totalPeso}%{totalPeso !== 100 && ' (no suma 100%)'}
-                </p>
+                {dimensiones.some(d => d.peso !== null) && (
+                  <p className="text-xs text-muted-foreground text-right">
+                    Total: {totalPeso}%{totalPeso !== 100 && ' (no suma 100%)'}
+                  </p>
+                )}
               </div>
             )}
 
@@ -128,20 +133,20 @@ export default function DimensionesMateriaSheet({ materiaId, materiaNombre, init
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="dim-peso">Peso (%)</Label>
+                <Label htmlFor="dim-peso">Peso (%) <span className="text-muted-foreground font-normal">— opcional</span></Label>
                 <Input
                   id="dim-peso"
                   type="number"
-                  min="0.01"
+                  min="0"
                   step="0.01"
-                  placeholder="Ej: 40"
+                  placeholder="Vacío = promedio directo"
                   value={peso}
                   onChange={e => setPeso(e.target.value)}
                 />
               </div>
               <Button
                 onClick={handleAdd}
-                disabled={adding || !nombre.trim() || !peso}
+                disabled={adding || !nombre.trim()}
               >
                 {adding
                   ? <Loader2 data-icon="inline-start" className="animate-spin" />

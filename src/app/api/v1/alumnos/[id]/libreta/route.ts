@@ -40,7 +40,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
   type Periodo = { id: string; nombre: string }
   type Materia = { id: string; materias_catalogo: { nombre: string } | null }
-  type Dimension = { id: string; nombre: string; peso: number }
+  type Dimension = { id: string; nombre: string; peso: number | null }
   type Evaluacion = {
     id: string; nombre: string; tipo: string; peso: number; orden: number; periodo_id: string
     periodos: Periodo | null
