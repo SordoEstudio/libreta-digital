@@ -293,6 +293,106 @@ export type Database = {
           },
         ]
       }
+      comunicado_confirmaciones: {
+        Row: {
+          comunicado_id: string
+          confirmed_at: string | null
+          created_at: string
+          email: string
+          id: string
+          institucion_id: string
+          persona_id: string
+        }
+        Insert: {
+          comunicado_id: string
+          confirmed_at?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          institucion_id: string
+          persona_id: string
+        }
+        Update: {
+          comunicado_id?: string
+          confirmed_at?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          institucion_id?: string
+          persona_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comunicado_confirmaciones_comunicado_id_fkey"
+            columns: ["comunicado_id"]
+            isOneToOne: false
+            referencedRelation: "comunicados"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comunicado_confirmaciones_persona_id_fkey"
+            columns: ["persona_id"]
+            isOneToOne: false
+            referencedRelation: "personas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      comunicados: {
+        Row: {
+          autor_id: string
+          contenido: string
+          created_at: string
+          curso_id: string
+          deleted_at: string | null
+          id: string
+          institucion_id: string
+          titulo: string
+        }
+        Insert: {
+          autor_id: string
+          contenido: string
+          created_at?: string
+          curso_id: string
+          deleted_at?: string | null
+          id?: string
+          institucion_id: string
+          titulo: string
+        }
+        Update: {
+          autor_id?: string
+          contenido?: string
+          created_at?: string
+          curso_id?: string
+          deleted_at?: string | null
+          id?: string
+          institucion_id?: string
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comunicados_autor_id_fkey"
+            columns: ["autor_id"]
+            isOneToOne: false
+            referencedRelation: "personas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comunicados_curso_id_fkey"
+            columns: ["curso_id"]
+            isOneToOne: false
+            referencedRelation: "cursos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comunicados_institucion_id_fkey"
+            columns: ["institucion_id"]
+            isOneToOne: false
+            referencedRelation: "instituciones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cursos: {
         Row: {
           año_lectivo_id: string
