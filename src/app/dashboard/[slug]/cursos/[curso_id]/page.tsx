@@ -10,7 +10,6 @@ import { BookOpen, GraduationCap } from 'lucide-react'
 import NuevaMateriaSheet from './nueva-materia-sheet'
 import EditarMateriaSheet, { type HorarioSlot } from './editar-materia-sheet'
 import DimensionesMateriaSheet from './dimensiones-materia-sheet'
-import AplicarPlantillaCursoButton from './aplicar-plantilla-curso-button'
 import ExportAlumnosButton from './export-alumnos-button'
 import AlumnosCursoTabla from './alumnos-curso-tabla'
 
@@ -115,10 +114,7 @@ export default async function CursoDetallePage({ params }: Params) {
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-medium">Materias</h2>
           {isAdminLevel && (
-            <div className="flex items-center gap-2">
-              <AplicarPlantillaCursoButton cursoId={curso_id} instId={inst.id} />
-              <NuevaMateriaSheet cursoId={curso_id} instId={inst.id} />
-            </div>
+            <NuevaMateriaSheet cursoId={curso_id} instId={inst.id} />
           )}
         </div>
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">

@@ -91,6 +91,20 @@ export default async function EvaluacionesPage({ params }: Params) {
 
   const activePeriodo = (periodos ?? []).find(p => p.activo)
 
+  // Group evaluaciones by period, maintaining period orden
+  type Evaluacion = NonNullable<typeof evaluaciones>[number]
+  const periodoGroups = new Map<string, { nombre: string; evs: Evaluacion[] }>()
+  for (const p of periodos ?? []) periodoGroups.set(p.id, { nombre: p.nombre, evs: [] })
+  periodoGroups.set('__anual__', { nombre: 'Anual', evs: [] })
+  for (const ev of evaluaciones ?? []) {
+    const key = ev.periodo_id ?? '__anual__'
+    if (!periodoGroups.has(key)) {
+      periodoGroups.set(key, { nombre: (ev.periodos as { nombre: string } | null)?.nombre ?? 'Período eliminado', evs: [] })
+    }
+    periodoGroups.get(key)!.evs.push(ev)
+  }
+  const grupos = Array.from(periodoGroups.entries()).filter(([, g]) => g.evs.length > 0)
+
   const { data: dimensiones } = await supabase
     .from('materias_dimensiones')
     .select('id, nombre')
@@ -130,84 +144,88 @@ export default async function EvaluacionesPage({ params }: Params) {
         </div>
       )}
 
-      {evaluaciones && evaluaciones.length > 0 ? (
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nombre</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Período</TableHead>
-                <TableHead className="w-24">Notas</TableHead>
-                <TableHead className="w-40" />
-                <TableHead className="w-10" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {evaluaciones.map(ev => {
-                const periodo = ev.periodos as { nombre: string } | null
-                const templateId = (ev as { template_id?: string | null }).template_id ?? null
-                const recuperatorioDeId = (ev as { recuperatorio_de_evaluacion_id?: string | null }).recuperatorio_de_evaluacion_id ?? null
-                return (
-                  <TableRow key={ev.id}>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        {ev.nombre}
-                        {templateId && (
-                          <Badge variant="secondary" className="text-xs">Institucional</Badge>
-                        )}
-                        {recuperatorioDeId && (
-                          <Badge variant="outline" className="text-xs">Recuperatorio</Badge>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{TIPO_LABELS[ev.tipo] ?? ev.tipo}</Badge>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {periodo?.nombre ?? 'Anual'}
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        render={<Link href={`/dashboard/${slug}/notas/${ev.id}`} />}
-                      >
-                        <ClipboardList data-icon="inline-start" />
-                        Cargar
-                      </Button>
-                    </TableCell>
-                    <TableCell>
-                      {ev.permite_recuperatorio && (
-                        <GenerarRecuperatorioButton
-                          evaluacionId={ev.id}
-                          recuperatorioId={recuperatorioMap.get(ev.id) ?? null}
-                          slug={slug}
-                        />
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <EditarEvaluacionSheet
-                        evaluacion={{
-                          id: ev.id,
-                          nombre: ev.nombre,
-                          tipo: ev.tipo,
-                          periodo_id: ev.periodo_id,
-                          fecha: (ev as { fecha?: string | null }).fecha ?? null,
-                          template_id: templateId,
-                          permite_recuperatorio: ev.permite_recuperatorio,
-                          dimension_id: (ev as { dimension_id?: string | null }).dimension_id ?? null,
-                        }}
-                        periodos={periodos ?? []}
-                        dimensiones={dimensiones ?? []}
-                        isAdmin={isAdminLevel}
-                      />
-                    </TableCell>
-                  </TableRow>
-                )
-              })}
-            </TableBody>
-          </Table>
+      {grupos.length > 0 ? (
+        <div className="flex flex-col gap-6">
+          {grupos.map(([periodoId, grupo]) => (
+            <div key={periodoId}>
+              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                {grupo.nombre}
+              </h2>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nombre</TableHead>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead className="w-24">Notas</TableHead>
+                      <TableHead className="w-40" />
+                      <TableHead className="w-10" />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {grupo.evs.map(ev => {
+                      const templateId = (ev as { template_id?: string | null }).template_id ?? null
+                      const recuperatorioDeId = (ev as { recuperatorio_de_evaluacion_id?: string | null }).recuperatorio_de_evaluacion_id ?? null
+                      return (
+                        <TableRow key={ev.id}>
+                          <TableCell className="font-medium">
+                            <div className="flex items-center gap-2">
+                              {ev.nombre}
+                              {templateId && (
+                                <Badge variant="secondary" className="text-xs">Institucional</Badge>
+                              )}
+                              {recuperatorioDeId && (
+                                <Badge variant="outline" className="text-xs">Recuperatorio</Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{TIPO_LABELS[ev.tipo] ?? ev.tipo}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              render={<Link href={`/dashboard/${slug}/notas/${ev.id}`} />}
+                            >
+                              <ClipboardList data-icon="inline-start" />
+                              Cargar
+                            </Button>
+                          </TableCell>
+                          <TableCell>
+                            {ev.permite_recuperatorio && (
+                              <GenerarRecuperatorioButton
+                                evaluacionId={ev.id}
+                                recuperatorioId={recuperatorioMap.get(ev.id) ?? null}
+                                slug={slug}
+                              />
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <EditarEvaluacionSheet
+                              evaluacion={{
+                                id: ev.id,
+                                nombre: ev.nombre,
+                                tipo: ev.tipo,
+                                periodo_id: ev.periodo_id,
+                                fecha: (ev as { fecha?: string | null }).fecha ?? null,
+                                template_id: templateId,
+                                permite_recuperatorio: ev.permite_recuperatorio,
+                                dimension_id: (ev as { dimension_id?: string | null }).dimension_id ?? null,
+                              }}
+                              periodos={periodos ?? []}
+                              dimensiones={dimensiones ?? []}
+                              isAdmin={isAdminLevel}
+                            />
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          ))}
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">

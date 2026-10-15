@@ -4,6 +4,7 @@ import { notFound, redirect } from 'next/navigation'
 import { Layers } from 'lucide-react'
 import NuevaPlantillaSheet from './nueva-plantilla-sheet'
 import EliminarPlantillaButton from './eliminar-plantilla-button'
+import AplicarPlantillaTodas from './aplicar-plantilla-todas-button'
 
 type Props = { params: Promise<{ slug: string }> }
 
@@ -65,7 +66,10 @@ export default async function DimensionPlantillasPage({ params }: Props) {
                   {p.items.length > 0 && ': ' + p.items.map(i => i.peso !== null ? `${i.nombre} (${i.peso}%)` : i.nombre).join(', ')}
                 </p>
               </div>
-              <EliminarPlantillaButton plantillaId={p.id} plantillaNombre={p.nombre} />
+              <div className="flex items-center gap-1">
+                <AplicarPlantillaTodas plantillaId={p.id} plantillaNombre={p.nombre} />
+                <EliminarPlantillaButton plantillaId={p.id} plantillaNombre={p.nombre} />
+              </div>
             </div>
           ))}
         </div>
