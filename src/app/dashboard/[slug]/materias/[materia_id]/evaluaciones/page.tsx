@@ -7,7 +7,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
 import Link from 'next/link'
-import { BookOpen, ClipboardList, UserCheck } from 'lucide-react'
+import { BookOpen, BookMarked, ClipboardList, UserCheck } from 'lucide-react'
 import NuevaEvaluacionSheet from './nueva-evaluacion-sheet'
 import EditarEvaluacionSheet from './editar-evaluacion-sheet'
 import GenerarRecuperatorioButton from './generar-recuperatorio-button'
@@ -115,6 +115,10 @@ export default async function EvaluacionesPage({ params }: Params) {
           <Button variant="outline" size="sm" render={<Link href={`/dashboard/${slug}/materias/${materia_id}/asistencia`} />}>
             <UserCheck data-icon="inline-start" />
             Asistencia
+          </Button>
+          <Button variant="outline" size="sm" render={<Link href={`/dashboard/${slug}/materias/${materia_id}/referencia`} />}>
+            <BookMarked data-icon="inline-start" />
+            Referencia
           </Button>
           <NuevaEvaluacionSheet materiaId={materia_id} periodos={periodos ?? []} dimensiones={dimensiones ?? []} />
         </div>

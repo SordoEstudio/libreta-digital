@@ -38,7 +38,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   const parsed = PatchSchema.safeParse(body)
   if (!parsed.success) return Err.validation(parsed.error.issues[0].message)
 
-  const updateData: Record<string, unknown> = {}
+  const updateData: { nombre?: string; tipo?: string; fecha?: string | null } = {}
   if (parsed.data.nombre !== undefined) updateData.nombre = parsed.data.nombre
   if (parsed.data.tipo !== undefined) updateData.tipo = parsed.data.tipo
   if (parsed.data.fecha !== undefined) updateData.fecha = parsed.data.fecha

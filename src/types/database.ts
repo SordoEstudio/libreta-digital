@@ -533,6 +533,57 @@ export type Database = {
           },
         ]
       }
+      evaluaciones_referencia: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          docente_id: string | null
+          fecha: string | null
+          id: string
+          institucion_id: string
+          materia_id: string
+          nombre: string
+          tipo: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          docente_id?: string | null
+          fecha?: string | null
+          id?: string
+          institucion_id: string
+          materia_id: string
+          nombre: string
+          tipo?: string
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          docente_id?: string | null
+          fecha?: string | null
+          id?: string
+          institucion_id?: string
+          materia_id?: string
+          nombre?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evaluaciones_referencia_docente_id_fkey"
+            columns: ["docente_id"]
+            isOneToOne: false
+            referencedRelation: "personas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evaluaciones_referencia_materia_id_fkey"
+            columns: ["materia_id"]
+            isOneToOne: false
+            referencedRelation: "materias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       evaluaciones_template: {
         Row: {
           created_at: string
@@ -1027,6 +1078,64 @@ export type Database = {
             columns: ["nota_id"]
             isOneToOne: false
             referencedRelation: "notas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notas_referencia: {
+        Row: {
+          alumno_id: string
+          created_at: string
+          docente_id: string | null
+          evaluacion_ref_id: string
+          id: string
+          institucion_id: string
+          observacion: string | null
+          valor_literal: string | null
+          valor_numerico: number | null
+        }
+        Insert: {
+          alumno_id: string
+          created_at?: string
+          docente_id?: string | null
+          evaluacion_ref_id: string
+          id?: string
+          institucion_id: string
+          observacion?: string | null
+          valor_literal?: string | null
+          valor_numerico?: number | null
+        }
+        Update: {
+          alumno_id?: string
+          created_at?: string
+          docente_id?: string | null
+          evaluacion_ref_id?: string
+          id?: string
+          institucion_id?: string
+          observacion?: string | null
+          valor_literal?: string | null
+          valor_numerico?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notas_referencia_alumno_id_fkey"
+            columns: ["alumno_id"]
+            isOneToOne: false
+            referencedRelation: "alumnos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notas_referencia_docente_id_fkey"
+            columns: ["docente_id"]
+            isOneToOne: false
+            referencedRelation: "personas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notas_referencia_evaluacion_ref_id_fkey"
+            columns: ["evaluacion_ref_id"]
+            isOneToOne: false
+            referencedRelation: "evaluaciones_referencia"
             referencedColumns: ["id"]
           },
         ]
