@@ -2,6 +2,7 @@ import { Resend } from 'resend'
 import { createElement } from 'react'
 import { NotaNuevaEmail, type NotaNuevaEmailProps } from '@/emails/nota-nueva'
 import { BienvenidaEmail, type BienvenidaEmailProps } from '@/emails/bienvenida'
+import { CierrePeriodoEmail, type CierrePeriodoEmailProps } from '@/emails/cierre-periodo'
 
 const FROM_ADDRESS = process.env.EMAIL_FROM ?? 'Libreta Digital <notificaciones@libretadigital.app>'
 
@@ -35,5 +36,17 @@ export async function sendBienvenida(to: string, props: BienvenidaEmailProps) {
     react: createElement(BienvenidaEmail, props),
   })
   if (error) console.error('[email] sendBienvenida failed:', error.message)
+  return !error
+}
+
+export async function sendCierrePeriodo(to: string, props: CierrePeriodoEmailProps) {
+  const resend = getResend()
+  const { error } = await resend.emails.send({
+    from: FROM_ADDRESS,
+    to: [to],
+    subject: `Libreta de ${props.alumno_nombre} — ${props.periodo_nombre} cerrado`,
+    react: createElement(CierrePeriodoEmail, props),
+  })
+  if (error) console.error('[email] sendCierrePeriodo failed:', error.message)
   return !error
 }
