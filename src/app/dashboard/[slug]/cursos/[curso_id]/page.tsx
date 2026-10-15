@@ -180,6 +180,7 @@ export default async function CursoDetallePage({ params }: Params) {
                       materiaId={materia.id}
                       materiaNombre={nombre}
                       initialDimensiones={(materia.materias_dimensiones ?? []).sort((a, b) => a.orden - b.orden)}
+                      instId={inst.id}
                     />
                   )}
                 </CardFooter>

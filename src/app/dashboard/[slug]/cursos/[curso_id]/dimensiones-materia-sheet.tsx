@@ -6,6 +6,11 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 import { Layers, Trash2, Loader2, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -16,13 +21,19 @@ interface Dimension {
   orden: number
 }
 
+interface Plantilla {
+  id: string
+  nombre: string
+}
+
 interface Props {
   materiaId: string
   materiaNombre: string
   initialDimensiones: Dimension[]
+  instId: string
 }
 
-export default function DimensionesMateriaSheet({ materiaId, materiaNombre, initialDimensiones }: Props) {
+export default function DimensionesMateriaSheet({ materiaId, materiaNombre, initialDimensiones, instId }: Props) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [dimensiones, setDimensiones] = useState<Dimension[]>(initialDimensiones)
@@ -30,12 +41,47 @@ export default function DimensionesMateriaSheet({ materiaId, materiaNombre, init
   const [peso, setPeso] = useState('')
   const [adding, setAdding] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [plantillas, setPlantillas] = useState<Plantilla[]>([])
+  const [plantillaId, setPlantillaId] = useState('')
+  const [applying, setApplying] = useState(false)
 
   const totalPeso = dimensiones.reduce((sum, d) => sum + (d.peso ?? 0), 0)
 
-  function handleOpen(val: boolean) {
-    if (val) setDimensiones(initialDimensiones)
+  async function handleOpen(val: boolean) {
+    if (val) {
+      setDimensiones(initialDimensiones)
+      setPlantillaId('')
+      const res = await fetch(`/api/v1/instituciones/${instId}/dimension-plantillas`)
+      if (res.ok) {
+        const json = await res.json()
+        setPlantillas((json.data ?? []) as Plantilla[])
+      }
+    }
     setOpen(val)
+  }
+
+  async function handleApply() {
+    if (!plantillaId) return
+    setApplying(true)
+    const res = await fetch(`/api/v1/materias/${materiaId}/dimensiones/aplicar-plantilla`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ plantilla_id: plantillaId }),
+    })
+    const json = await res.json()
+    setApplying(false)
+    if (res.ok) {
+      toast.success('Plantilla aplicada')
+      const dimRes = await fetch(`/api/v1/materias/${materiaId}/dimensiones`)
+      if (dimRes.ok) {
+        const dimJson = await dimRes.json()
+        setDimensiones(dimJson.data ?? [])
+      }
+      setPlantillaId('')
+      router.refresh()
+    } else {
+      toast.error(json.error?.message ?? 'Error al aplicar plantilla')
+    }
   }
 
   async function handleAdd() {
@@ -154,6 +200,42 @@ export default function DimensionesMateriaSheet({ materiaId, materiaNombre, init
                 Agregar
               </Button>
             </div>
+
+            {plantillas.length > 0 && (
+              <div className="flex flex-col gap-3 border-t pt-4">
+                <p className="text-sm font-medium">Aplicar plantilla</p>
+                <select
+                  value={plantillaId}
+                  onChange={e => setPlantillaId(e.target.value)}
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
+                >
+                  <option value="">Seleccioná una plantilla</option>
+                  {plantillas.map(p => (
+                    <option key={p.id} value={p.id}>{p.nombre}</option>
+                  ))}
+                </select>
+                <AlertDialog>
+                  <AlertDialogTrigger render={<Button variant="secondary" disabled={!plantillaId || applying} />}>
+                    {applying && <Loader2 data-icon="inline-start" className="animate-spin" />}
+                    Aplicar
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>¿Reemplazar dimensiones?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Esto eliminará las dimensiones actuales de la materia y las reemplazará con las de la plantilla.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleApply}>
+                        Confirmar
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            )}
           </div>
         </SheetContent>
       </Sheet>
