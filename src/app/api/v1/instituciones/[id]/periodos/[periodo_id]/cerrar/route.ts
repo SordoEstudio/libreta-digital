@@ -32,13 +32,15 @@ export async function POST(request: NextRequest, { params }: Params) {
   if (periodoErr || !periodoRaw) return Err.notFound('Período no encontrado')
   const periodo = periodoRaw as { id: string; orden: number; año_lectivo_id: string; cerrado_at: string | null }
 
-  if (periodo.cerrado_at !== null) return Err.conflict('Período ya cerrado')
-
-  const { error: updateErr } = await supabase
+  // Atomic close: WHERE cerrado_at IS NULL prevents double-close race condition
+  const { data: closed, error: updateErr } = await supabase
     .from('periodos')
     .update({ cerrado_at: new Date().toISOString(), cerrado_por: session.persona_id })
     .eq('id', periodo_id)
+    .is('cerrado_at', null)
+    .select('id')
   if (updateErr) return Err.server(updateErr.message)
+  if (!closed || closed.length === 0) return Err.conflict('Período ya cerrado')
 
   let siguiente_activado = false
 
@@ -49,20 +51,22 @@ export async function POST(request: NextRequest, { params }: Params) {
       .eq('año_lectivo_id', periodo.año_lectivo_id)
       .eq('orden', periodo.orden + 1)
       .is('deleted_at', null)
-      .single()
+      .maybeSingle()
 
     if (siguiente) {
-      await supabase
+      const { error: deactivateErr } = await supabase
         .from('periodos')
         .update({ activo: false })
         .eq('año_lectivo_id', periodo.año_lectivo_id)
         .eq('activo', true)
         .is('deleted_at', null)
+      if (deactivateErr) return Err.server(deactivateErr.message)
 
-      await supabase
+      const { error: activateErr } = await supabase
         .from('periodos')
         .update({ activo: true })
         .eq('id', siguiente.id)
+      if (activateErr) return Err.server(activateErr.message)
 
       siguiente_activado = true
     }

@@ -32,6 +32,7 @@ export async function POST(request: NextRequest) {
     .from('evaluaciones')
     .select('id, nombre, tipo, periodo_id, institucion_id, materias(materias_catalogo(nombre), cursos(nombre))')
     .eq('id', evaluacion_id)
+    .is('deleted_at', null)
     .single()
 
   if (!evaluacion) return Err.notFound('Evaluación no encontrada')
