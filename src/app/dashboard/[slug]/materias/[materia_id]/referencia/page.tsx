@@ -9,6 +9,7 @@ import {
 import Link from 'next/link'
 import { BookMarked, ClipboardList } from 'lucide-react'
 import NuevaEvalRefSheet from './nueva-eval-ref-sheet'
+import EvalRefAcciones from './eval-ref-acciones'
 
 type Params = { params: Promise<{ slug: string; materia_id: string }> }
 
@@ -99,6 +100,7 @@ export default async function ReferenciaPage({ params }: Params) {
                 <TableHead>Tipo</TableHead>
                 <TableHead>Fecha</TableHead>
                 <TableHead className="w-28">Notas</TableHead>
+                <TableHead className="w-10" />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -120,6 +122,9 @@ export default async function ReferenciaPage({ params }: Params) {
                       <ClipboardList data-icon="inline-start" />
                       Cargar
                     </Button>
+                  </TableCell>
+                  <TableCell>
+                    <EvalRefAcciones evalRefId={ev.id} evalRefNombre={ev.nombre} />
                   </TableCell>
                 </TableRow>
               ))}
