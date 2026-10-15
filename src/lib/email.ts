@@ -3,6 +3,9 @@ import { createElement } from 'react'
 import { NotaNuevaEmail, type NotaNuevaEmailProps } from '@/emails/nota-nueva'
 import { BienvenidaEmail, type BienvenidaEmailProps } from '@/emails/bienvenida'
 import { CierrePeriodoEmail, type CierrePeriodoEmailProps } from '@/emails/cierre-periodo'
+import { ComunicadoEmail, type ComunicadoEmailProps } from '@/emails/comunicado'
+
+export type { ComunicadoEmailProps }
 
 const FROM_ADDRESS = process.env.EMAIL_FROM ?? 'Libreta Digital <notificaciones@libretadigital.app>'
 
@@ -48,5 +51,20 @@ export async function sendCierrePeriodo(to: string, props: CierrePeriodoEmailPro
     react: createElement(CierrePeriodoEmail, props),
   })
   if (error) console.error('[email] sendCierrePeriodo failed:', error.message)
+  return !error
+}
+
+export async function sendComunicado(to: string, props: ComunicadoEmailProps, confId: string) {
+  const resend = getResend()
+  const { error } = await resend.emails.send(
+    {
+      from: FROM_ADDRESS,
+      to: [to],
+      subject: `${props.titulo} — ${props.institucion_nombre}`,
+      react: createElement(ComunicadoEmail, props),
+    },
+    { idempotencyKey: `comunicado-confirm/${confId}/${to}` }
+  )
+  if (error) console.error('[email] sendComunicado failed:', error.message)
   return !error
 }
