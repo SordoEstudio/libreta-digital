@@ -1,7 +1,7 @@
 import { requireSession, isSuperadmin, hasAnyRole, hasRole } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -9,7 +9,6 @@ import Link from 'next/link'
 import { BookOpen, GraduationCap } from 'lucide-react'
 import NuevaMateriaSheet from './nueva-materia-sheet'
 import EditarMateriaSheet, { type HorarioSlot } from './editar-materia-sheet'
-import DimensionesMateriaSheet from './dimensiones-materia-sheet'
 import ExportAlumnosButton from './export-alumnos-button'
 import AlumnosCursoTabla from './alumnos-curso-tabla'
 
@@ -144,12 +143,13 @@ export default async function CursoDetallePage({ params }: Params) {
                         materiaNombre={nombre}
                         docenteActual={docenteActual}
                         horariosActuales={horarios as HorarioSlot[]}
+                        initialDimensiones={[...materia.materias_dimensiones].sort((a, b) => a.orden - b.orden)}
                         instId={inst.id}
                       />
                     )}
                   </div>
                 </CardHeader>
-                <CardContent className="flex flex-col gap-2 flex-1">
+                <CardContent className="flex flex-col gap-2">
                   {docenteNames.length > 0 ? (
                     <p className="text-xs text-muted-foreground">{docenteNames.join(', ')}</p>
                   ) : isAdminLevel ? (
@@ -165,36 +165,26 @@ export default async function CursoDetallePage({ params }: Params) {
                     </div>
                   )}
                   {materia.materias_dimensiones.length > 0 && (
-                    <div className="flex flex-wrap gap-1 pt-1">
+                    <div className="flex flex-col gap-0.5">
                       {[...materia.materias_dimensiones]
                         .sort((a, b) => a.orden - b.orden)
                         .map(d => (
-                          <span key={d.id} className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs text-muted-foreground">
+                          <span key={d.id} className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs text-muted-foreground w-fit">
                             {d.nombre}
                           </span>
                         ))}
                     </div>
                   )}
-                </CardContent>
-                <CardFooter className="mt-auto flex flex-col gap-2">
                   <Button
                     variant="secondary"
                     size="sm"
-                    className="w-full"
+                    className="w-full mt-auto"
                     render={<Link href={`/dashboard/${slug}/materias/${materia.id}/evaluaciones`} />}
                   >
                     <BookOpen data-icon="inline-start" />
                     Evaluaciones
                   </Button>
-                  {isAdminLevel && (
-                    <DimensionesMateriaSheet
-                      materiaId={materia.id}
-                      materiaNombre={nombre}
-                      initialDimensiones={(materia.materias_dimensiones ?? []).sort((a, b) => a.orden - b.orden)}
-                      instId={inst.id}
-                    />
-                  )}
-                </CardFooter>
+                </CardContent>
               </Card>
             )
           })}
