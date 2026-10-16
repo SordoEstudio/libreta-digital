@@ -102,11 +102,14 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
       id: string
       nombre: string
       tipo: 'numerica' | 'conceptual'
+      periodoId: string | null
+      dimensionIds: string[]
       dimensiones: Array<{ id: string; nombre: string }>
       notasMap: Record<string, string>
     }>
     notaDefinitivaEvalId: string | null
     notaDefinitivaMap: Record<string, string>
+    allMaterialDims: Array<{ id: string; nombre: string; orden: number }>
   } | null = null
 
   if (selectedMateria && selectedPeriodo) {
@@ -145,7 +148,7 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
     // Eval refs for this materia + period
     const { data: evalRefsRaw } = await supabase
       .from('evaluaciones_referencia')
-      .select('id, nombre, tipo, evaluacion_referencia_dimensiones(dimension_id)')
+      .select('id, nombre, tipo, periodo_id, evaluacion_referencia_dimensiones(dimension_id)')
       .eq('materia_id', materia_id!)
       .eq('periodo_id', periodo_id!)
       .is('deleted_at', null)
@@ -155,6 +158,7 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
       id: string
       nombre: string
       tipo: string
+      periodo_id: string | null
       evaluacion_referencia_dimensiones: Array<{ dimension_id: string }>
     }
 
@@ -188,6 +192,8 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
         id: ev.id,
         nombre: ev.nombre,
         tipo: ev.tipo as 'numerica' | 'conceptual',
+        periodoId: ev.periodo_id ?? null,
+        dimensionIds: ev.evaluacion_referencia_dimensiones.map(d => d.dimension_id),
         dimensiones: resolvedDims,
         notasMap: notasByRef.get(ev.id) ?? {},
       }
@@ -217,6 +223,7 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
       evalRefs,
       notaDefinitivaEvalId: definitiva?.id ?? null,
       notaDefinitivaMap,
+      allMaterialDims,
     }
   }
 
@@ -262,6 +269,8 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
           materiaId={selectedMateria!.id}
           periodoId={selectedPeriodo.id}
           periodoNombre={selectedPeriodo.nombre}
+          periodos={periodos}
+          todasDimensiones={tableData.allMaterialDims}
         />
       )}
     </div>

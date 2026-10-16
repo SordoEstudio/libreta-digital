@@ -9,10 +9,14 @@ import { Save, Loader2 } from 'lucide-react'
 
 interface Alumno { id: string; nombre: string; apellido: string | null }
 interface Dimension { id: string; nombre: string }
+interface Periodo { id: string; nombre: string; orden: number }
+
 interface EvalRefCol {
   id: string
   nombre: string
   tipo: 'numerica' | 'conceptual'
+  periodoId: string | null
+  dimensionIds: string[]
   dimensiones: Dimension[]
   notasMap: Record<string, string> // `${alumnoId}::${dimId|'__'}` → valor
 }
@@ -25,6 +29,8 @@ interface Props {
   materiaId: string
   periodoId: string
   periodoNombre: string
+  periodos: Periodo[]
+  todasDimensiones: Dimension[]
 }
 
 function notaKey(alumnoId: string, dimId: string | null) {
@@ -61,6 +67,8 @@ export default function CuadernoTabla({
   materiaId,
   periodoId,
   periodoNombre,
+  periodos,
+  todasDimensiones,
 }: Props) {
   const router = useRouter()
   const [showProceso, setShowProceso] = useState(true)
