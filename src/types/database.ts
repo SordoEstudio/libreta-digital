@@ -630,10 +630,41 @@ export type Database = {
           },
         ]
       }
+      evaluacion_referencia_dimensiones: {
+        Row: {
+          dimension_id: string
+          evaluacion_ref_id: string
+        }
+        Insert: {
+          dimension_id: string
+          evaluacion_ref_id: string
+        }
+        Update: {
+          dimension_id?: string
+          evaluacion_ref_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evaluacion_referencia_dimensiones_dimension_id_fkey"
+            columns: ["dimension_id"]
+            isOneToOne: false
+            referencedRelation: "materias_dimensiones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evaluacion_referencia_dimensiones_evaluacion_ref_id_fkey"
+            columns: ["evaluacion_ref_id"]
+            isOneToOne: false
+            referencedRelation: "evaluaciones_referencia"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       evaluaciones: {
         Row: {
           created_at: string
           deleted_at: string | null
+          es_definitiva_periodo: boolean
           fecha: string | null
           id: string
           institucion_id: string
@@ -651,6 +682,7 @@ export type Database = {
         Insert: {
           created_at?: string
           deleted_at?: string | null
+          es_definitiva_periodo?: boolean
           fecha?: string | null
           id?: string
           institucion_id: string
@@ -668,6 +700,7 @@ export type Database = {
         Update: {
           created_at?: string
           deleted_at?: string | null
+          es_definitiva_periodo?: boolean
           fecha?: string | null
           id?: string
           institucion_id?: string
@@ -730,6 +763,7 @@ export type Database = {
           institucion_id: string
           materia_id: string
           nombre: string
+          periodo_id: string | null
           tipo: string
         }
         Insert: {
@@ -741,6 +775,7 @@ export type Database = {
           institucion_id: string
           materia_id: string
           nombre: string
+          periodo_id?: string | null
           tipo?: string
         }
         Update: {
@@ -752,6 +787,7 @@ export type Database = {
           institucion_id?: string
           materia_id?: string
           nombre?: string
+          periodo_id?: string | null
           tipo?: string
         }
         Relationships: [
@@ -767,6 +803,13 @@ export type Database = {
             columns: ["materia_id"]
             isOneToOne: false
             referencedRelation: "materias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evaluaciones_referencia_periodo_id_fkey"
+            columns: ["periodo_id"]
+            isOneToOne: false
+            referencedRelation: "periodos"
             referencedColumns: ["id"]
           },
         ]
@@ -1283,6 +1326,7 @@ export type Database = {
         Row: {
           alumno_id: string
           created_at: string
+          dimension_id: string | null
           docente_id: string | null
           evaluacion_ref_id: string
           id: string
@@ -1294,6 +1338,7 @@ export type Database = {
         Insert: {
           alumno_id: string
           created_at?: string
+          dimension_id?: string | null
           docente_id?: string | null
           evaluacion_ref_id: string
           id?: string
@@ -1305,6 +1350,7 @@ export type Database = {
         Update: {
           alumno_id?: string
           created_at?: string
+          dimension_id?: string | null
           docente_id?: string | null
           evaluacion_ref_id?: string
           id?: string
@@ -1319,6 +1365,13 @@ export type Database = {
             columns: ["alumno_id"]
             isOneToOne: false
             referencedRelation: "alumnos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notas_referencia_dimension_id_fkey"
+            columns: ["dimension_id"]
+            isOneToOne: false
+            referencedRelation: "materias_dimensiones"
             referencedColumns: ["id"]
           },
           {

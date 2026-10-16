@@ -8,6 +8,7 @@ const BulkRefSchema = z.object({
   evaluacion_ref_id: z.string().uuid(),
   notas: z.array(z.object({
     alumno_id: z.string().uuid(),
+    dimension_id: z.string().uuid().nullable().optional(),
     valor_numerico: z.number().nullable().optional(),
     valor_literal: z.string().nullable().optional(),
     observacion: z.string().optional(),
@@ -54,6 +55,7 @@ export async function POST(request: NextRequest) {
     .map(n => ({
       evaluacion_ref_id,
       alumno_id: n.alumno_id,
+      dimension_id: n.dimension_id ?? null,
       institucion_id: evRef.institucion_id,
       valor_numerico: n.valor_numerico ?? null,
       valor_literal: n.valor_literal ?? null,
@@ -65,7 +67,7 @@ export async function POST(request: NextRequest) {
 
   const { error } = await supabase
     .from('notas_referencia')
-    .upsert(toUpsert, { onConflict: 'evaluacion_ref_id,alumno_id' })
+    .upsert(toUpsert, { onConflict: 'evaluacion_ref_id,alumno_id,dimension_id' })
 
   if (error) return Err.server(error.message)
   return ok({ upserted: toUpsert.length, skipped: notas.length - toUpsert.length })

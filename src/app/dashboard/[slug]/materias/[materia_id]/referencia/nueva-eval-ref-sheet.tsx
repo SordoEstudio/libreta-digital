@@ -15,17 +15,41 @@ const TIPOS = [
   { value: 'conceptual', label: 'Conceptual' },
 ]
 
+interface Periodo { id: string; nombre: string; orden: number }
+interface Dimension { id: string; nombre: string; orden: number }
+
 interface Props {
   materiaId: string
+  periodos: Periodo[]
+  dimensiones: Dimension[]
 }
 
-export default function NuevaEvalRefSheet({ materiaId }: Props) {
+export default function NuevaEvalRefSheet({ materiaId, periodos, dimensiones }: Props) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [nombre, setNombre] = useState('')
   const [tipo, setTipo] = useState('')
   const [fecha, setFecha] = useState('')
+  const [periodoId, setPeriodoId] = useState('')
+  const [selectedDims, setSelectedDims] = useState<Set<string>>(new Set())
+
+  function toggleDim(id: string) {
+    setSelectedDims(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  function handleClose() {
+    setOpen(false)
+    setNombre('')
+    setTipo('')
+    setFecha('')
+    setPeriodoId('')
+    setSelectedDims(new Set())
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -38,6 +62,8 @@ export default function NuevaEvalRefSheet({ materiaId }: Props) {
         nombre,
         tipo,
         ...(fecha ? { fecha } : {}),
+        ...(periodoId ? { periodo_id: periodoId } : {}),
+        ...(selectedDims.size > 0 ? { dimension_ids: [...selectedDims] } : {}),
       }),
     })
 
@@ -50,10 +76,7 @@ export default function NuevaEvalRefSheet({ materiaId }: Props) {
     }
 
     toast.success(`"${nombre}" creada`)
-    setOpen(false)
-    setNombre('')
-    setTipo('')
-    setFecha('')
+    handleClose()
     router.refresh()
   }
 
@@ -64,7 +87,7 @@ export default function NuevaEvalRefSheet({ materiaId }: Props) {
         Nueva evaluación
       </Button>
 
-      <Sheet open={open} onOpenChange={setOpen}>
+      <Sheet open={open} onOpenChange={v => { if (!v) handleClose(); else setOpen(true) }}>
         <SheetContent>
           <SheetHeader>
             <SheetTitle>Nueva evaluación de referencia</SheetTitle>
@@ -76,7 +99,7 @@ export default function NuevaEvalRefSheet({ materiaId }: Props) {
                 id="ref-nombre"
                 value={nombre}
                 onChange={e => setNombre(e.target.value)}
-                placeholder="Ej: Lecturas 1er bimestre"
+                placeholder="Ej: TPs 1er bimestre"
                 required
               />
             </div>
@@ -95,6 +118,46 @@ export default function NuevaEvalRefSheet({ materiaId }: Props) {
               </Select>
             </div>
 
+            {periodos.length > 0 && (
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="ref-periodo">Período</Label>
+                <Select value={periodoId} onValueChange={v => setPeriodoId(v ?? '')}>
+                  <SelectTrigger id="ref-periodo">
+                    <SelectValue placeholder="Sin período" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Sin período</SelectItem>
+                    {periodos.map(p => (
+                      <SelectItem key={p.id} value={p.id}>{p.nombre}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {dimensiones.length > 0 && (
+              <div className="flex flex-col gap-1.5">
+                <Label>Dimensiones</Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {dimensiones.map(d => (
+                    <button
+                      key={d.id}
+                      type="button"
+                      onClick={() => toggleDim(d.id)}
+                      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs transition-colors ${
+                        selectedDims.has(d.id)
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      {d.nombre}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">Sin selección = nota única sin dimensión</p>
+              </div>
+            )}
+
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="ref-fecha">Fecha (opcional)</Label>
               <input
@@ -110,11 +173,7 @@ export default function NuevaEvalRefSheet({ materiaId }: Props) {
               Las notas de referencia son internas — no se publican en la libreta del alumno.
             </p>
 
-            <Button
-              type="submit"
-              disabled={loading || !nombre || !tipo}
-              className="mt-2"
-            >
+            <Button type="submit" disabled={loading || !nombre || !tipo} className="mt-2">
               {loading && <Loader2 data-icon="inline-start" className="animate-spin" />}
               {loading ? 'Creando...' : 'Crear evaluación'}
             </Button>

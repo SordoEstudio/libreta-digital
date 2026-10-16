@@ -9,6 +9,8 @@ const PatchSchema = z.object({
   nombre: z.string().min(1).max(200).optional(),
   tipo: z.enum(['numerica', 'conceptual']).optional(),
   fecha: z.string().date().nullable().optional(),
+  periodo_id: z.string().uuid().nullable().optional(),
+  dimension_ids: z.array(z.string().uuid()).optional(),
 }).strict()
 
 type Params = { params: Promise<{ ref_id: string }> }
@@ -38,22 +40,37 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   const parsed = PatchSchema.safeParse(body)
   if (!parsed.success) return Err.validation(parsed.error.issues[0].message)
 
-  const updateData: { nombre?: string; tipo?: string; fecha?: string | null } = {}
+  const updateData: { nombre?: string; tipo?: string; fecha?: string | null; periodo_id?: string | null } = {}
   if (parsed.data.nombre !== undefined) updateData.nombre = parsed.data.nombre
   if (parsed.data.tipo !== undefined) updateData.tipo = parsed.data.tipo
   if (parsed.data.fecha !== undefined) updateData.fecha = parsed.data.fecha
+  if (parsed.data.periodo_id !== undefined) updateData.periodo_id = parsed.data.periodo_id
 
-  if (Object.keys(updateData).length === 0) return Err.validation('No hay campos para actualizar')
+  if (Object.keys(updateData).length === 0 && parsed.data.dimension_ids === undefined)
+    return Err.validation('No hay campos para actualizar')
 
-  const { data, error } = await supabase
-    .from('evaluaciones_referencia')
-    .update(updateData)
-    .eq('id', ref_id)
-    .select('id, nombre, tipo, fecha')
-    .single()
+  let data = null
+  if (Object.keys(updateData).length > 0) {
+    const { data: updated, error } = await supabase
+      .from('evaluaciones_referencia')
+      .update(updateData)
+      .eq('id', ref_id)
+      .select('id, nombre, tipo, fecha, periodo_id')
+      .single()
+    if (error) return Err.server(error.message)
+    data = updated
+  }
 
-  if (error) return Err.server(error.message)
-  return ok(data)
+  if (parsed.data.dimension_ids !== undefined) {
+    await supabase.from('evaluacion_referencia_dimensiones').delete().eq('evaluacion_ref_id', ref_id)
+    if (parsed.data.dimension_ids.length > 0) {
+      await supabase.from('evaluacion_referencia_dimensiones').insert(
+        parsed.data.dimension_ids.map(dimension_id => ({ evaluacion_ref_id: ref_id, dimension_id }))
+      )
+    }
+  }
+
+  return ok(data ?? { id: ref_id })
 }
 
 export async function DELETE(_request: NextRequest, { params }: Params) {

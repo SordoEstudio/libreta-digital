@@ -45,7 +45,7 @@ export default async function NotasReferenciaPage({ params }: Params) {
 
   const { data: evRef } = await supabase
     .from('evaluaciones_referencia')
-    .select('id, nombre, tipo, fecha')
+    .select('id, nombre, tipo, fecha, evaluacion_referencia_dimensiones(dimension_id, materias_dimensiones(id, nombre, orden))')
     .eq('id', ref_id)
     .is('deleted_at', null)
     .single()
@@ -88,7 +88,7 @@ export default async function NotasReferenciaPage({ params }: Params) {
 
   const { data: notasExistentes } = await supabase
     .from('notas_referencia')
-    .select('alumno_id, valor_numerico, valor_literal, observacion')
+    .select('alumno_id, dimension_id, valor_numerico, valor_literal, observacion')
     .eq('evaluacion_ref_id', ref_id)
 
   return (
@@ -112,7 +112,13 @@ export default async function NotasReferenciaPage({ params }: Params) {
         evalRefId={ref_id}
         tipo={evRef.tipo as 'numerica' | 'conceptual'}
         alumnos={alumnos ?? []}
-        notasExistentes={notasExistentes ?? []}
+        notasExistentes={(notasExistentes ?? []) as Array<{ alumno_id: string; dimension_id: string | null; valor_numerico: number | null; valor_literal: string | null; observacion: string | null }>}
+        dimensiones={
+          ([...(evRef.evaluacion_referencia_dimensiones as Array<{ materias_dimensiones: { id: string; nombre: string; orden: number } | null }> ?? [])]
+            .map(d => d.materias_dimensiones)
+            .filter((d): d is { id: string; nombre: string; orden: number } => d !== null)
+            .sort((a, b) => a.orden - b.orden))
+        }
       />
     </div>
   )

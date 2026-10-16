@@ -52,7 +52,7 @@ export default async function ReferenciaPage({ params }: Params) {
 
   const { data: materia } = await supabase
     .from('materias')
-    .select('id, materias_catalogo(nombre), cursos(id, nombre)')
+    .select('id, materias_catalogo(nombre), cursos(id, nombre), materias_dimensiones(id, nombre, orden)')
     .eq('id', materia_id)
     .eq('institucion_id', inst.id)
     .is('deleted_at', null)
@@ -65,12 +65,36 @@ export default async function ReferenciaPage({ params }: Params) {
   const cursoNombre = cursoRaw?.nombre ?? ''
   const cursoId = cursoRaw?.id ?? ''
 
+  type Dimension = { id: string; nombre: string; orden: number }
+  const dimensiones = ([...(materia.materias_dimensiones as Dimension[] ?? [])]).sort((a, b) => a.orden - b.orden)
+
+  // Periodos del año lectivo activo de este curso
+  type Periodo = { id: string; nombre: string; orden: number }
+  let periodos: Periodo[] = []
+  if (cursoId) {
+    const { data: curso } = await supabase
+      .from('cursos')
+      .select('*')
+      .eq('id', cursoId)
+      .single()
+    if (curso?.año_lectivo_id) {
+      const { data: periodoRows } = await supabase
+        .from('periodos')
+        .select('id, nombre, orden')
+        .eq('año_lectivo_id', curso.año_lectivo_id)
+        .order('orden')
+      periodos = (periodoRows ?? []) as Periodo[]
+    }
+  }
+
   const { data: evalRefs } = await supabase
     .from('evaluaciones_referencia')
-    .select('id, nombre, tipo, fecha, created_at')
+    .select('id, nombre, tipo, fecha, periodo_id, created_at, evaluacion_referencia_dimensiones(dimension_id)')
     .eq('materia_id', materia_id)
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
+
+  const periodoMap = new Map(periodos.map(p => [p.id, p.nombre]))
 
   return (
     <div className="flex flex-col gap-6">
@@ -88,7 +112,7 @@ export default async function ReferenciaPage({ params }: Params) {
           <h1 className="text-2xl font-semibold">Notas de referencia</h1>
           <p className="text-sm text-muted-foreground">{evalRefs?.length ?? 0} evaluaciones internas · No se publican en la libreta</p>
         </div>
-        <NuevaEvalRefSheet materiaId={materia_id} />
+        <NuevaEvalRefSheet materiaId={materia_id} periodos={periodos} dimensiones={dimensiones} />
       </div>
 
       {evalRefs && evalRefs.length > 0 ? (
@@ -98,36 +122,53 @@ export default async function ReferenciaPage({ params }: Params) {
               <TableRow>
                 <TableHead>Nombre</TableHead>
                 <TableHead>Tipo</TableHead>
+                <TableHead>Período</TableHead>
                 <TableHead>Fecha</TableHead>
                 <TableHead className="w-28">Notas</TableHead>
                 <TableHead className="w-10" />
               </TableRow>
             </TableHeader>
             <TableBody>
-              {evalRefs.map(ev => (
-                <TableRow key={ev.id}>
-                  <TableCell className="font-medium">{ev.nombre}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{TIPO_LABELS[ev.tipo] ?? ev.tipo}</Badge>
-                  </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {ev.fecha ?? '—'}
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      render={<Link href={`/dashboard/${slug}/materias/${materia_id}/referencia/${ev.id}`} />}
-                    >
-                      <ClipboardList data-icon="inline-start" />
-                      Cargar
-                    </Button>
-                  </TableCell>
-                  <TableCell>
-                    <EvalRefAcciones evalRefId={ev.id} evalRefNombre={ev.nombre} />
-                  </TableCell>
-                </TableRow>
-              ))}
+              {evalRefs.map(ev => {
+                type EvRefDim = { dimension_id: string }
+                const dimIds = (ev.evaluacion_referencia_dimensiones as EvRefDim[] ?? []).map(d => d.dimension_id)
+                return (
+                  <TableRow key={ev.id}>
+                    <TableCell className="font-medium">{ev.nombre}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{TIPO_LABELS[ev.tipo] ?? ev.tipo}</Badge>
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {ev.periodo_id ? (periodoMap.get(ev.periodo_id) ?? '—') : '—'}
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {ev.fecha ?? '—'}
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        render={<Link href={`/dashboard/${slug}/materias/${materia_id}/referencia/${ev.id}`} />}
+                      >
+                        <ClipboardList data-icon="inline-start" />
+                        Cargar
+                      </Button>
+                    </TableCell>
+                    <TableCell>
+                      <EvalRefAcciones
+                        evalRefId={ev.id}
+                        evalRefNombre={ev.nombre}
+                        evalRefTipo={ev.tipo as 'numerica' | 'conceptual'}
+                        evalRefFecha={ev.fecha ?? null}
+                        evalRefPeriodoId={ev.periodo_id ?? null}
+                        evalRefDimensionIds={dimIds}
+                        periodos={periodos}
+                        dimensiones={dimensiones}
+                      />
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
             </TableBody>
           </Table>
         </div>
