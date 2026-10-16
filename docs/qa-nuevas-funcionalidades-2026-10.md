@@ -1,6 +1,6 @@
 # QA — Nuevas funcionalidades (Octubre 2026)
 
-**Alcance:** Dimensiones por materia · Peso opcional (promedio directo) · Plantillas de dimensiones · Recuperatorios · Notas de referencia · Cierre de período · Comunicados con confirmación  
+**Alcance:** Dimensiones por materia · Notas por dimensión (multi-columna) · Peso opcional (promedio directo) · Plantillas de dimensiones · Recuperatorios por dimensión · Notas de referencia · Cierre de período · Comunicados con confirmación  
 **Roles necesarios:** superadmin, admin, docente, responsable (con email real para probar envíos)  
 **Entorno:** staging o local con Supabase + Resend en modo test
 
@@ -42,10 +42,27 @@
 - [ ] Eliminar dimensión → desaparece de la lista
 - [ ] Verificar que evaluaciones vinculadas a esa dimensión no se rompen
 
-### 1.5 Asignar evaluación a dimensión
+### 1.5 Asignar evaluación a dimensiones (multi-select)
 - [ ] Ir a Evaluaciones de la materia → crear nueva evaluación
-- [ ] Seleccionar dimensión en el formulario
-- [ ] **Esperado:** evaluación aparece con la dimensión en la lista
+- [ ] Si la materia tiene dimensiones, aparece sección "Dimensiones (opcional)" con checkboxes
+- [ ] Seleccionar 2 dimensiones → guardar
+- [ ] **Esperado:** evaluación aparece en la lista; al cargar notas, tabla tiene una columna por dimensión
+- [ ] Editar evaluación → checkboxes muestran las dimensiones asignadas → desmarcar una → guardar
+- [ ] **Esperado:** columna de esa dimensión desaparece en el editor de notas
+
+### 1.6 Cargar notas por dimensión
+- [ ] Abrir editor de notas de evaluación con 2 dimensiones asignadas (ej. Oral, Escrito)
+- [ ] **Esperado:** tabla tiene columnas Alumno · Oral · Escrito · Ausente
+- [ ] Ingresar nota 8 para Oral y 5 para Escrito en alumno García
+- [ ] Guardar → recargar
+- [ ] **Esperado:** notas persisten en las columnas correctas
+- [ ] Marcar alumno como Ausente → ambas columnas se vacían y deshabilitan
+- [ ] Guardar → **Esperado:** alumno queda con "A" en ambas dimensiones
+- [ ] Abrir libreta del alumno → nota de Escrito bajo dimensión "Escrito", nota de Oral bajo "Oral"
+
+### 1.7 Evaluación sin dimensiones asignadas
+- [ ] Evaluación sin dimensiones → editor muestra columna única "Nota" (comportamiento previo)
+- [ ] Sin regresión respecto a evaluaciones ya existentes
 
 ---
 
@@ -85,14 +102,15 @@
 - [ ] Materia con dimensiones A, B, C → aplicar plantilla con ítems X, Y
 - [ ] **Esperado:** dimensiones A, B, C eliminadas; X e Y presentes
 
-### 2.7 Aplicar plantilla a todo el curso (bulk)
-- [ ] Ir a página del curso → botón "Aplicar plantilla al curso" (junto a "Nueva materia")
-- [ ] Click → AlertDialog abre con select de plantilla
-- [ ] Seleccionar plantilla → Confirmar
-- [ ] **Esperado:** toast "Plantilla aplicada a N materia(s)", todas las materias del curso con nuevas dimensiones
+### 2.7 Aplicar plantilla a toda la institución (bulk)
+- [ ] Ir a `Configuración → Dim. plantillas`
+- [ ] Cada plantilla tiene botón "Aplicar a todas las materias"
+- [ ] Click → AlertDialog confirma: "dimensiones de todas las materias serán reemplazadas"
+- [ ] Confirmar
+- [ ] **Esperado:** toast "Plantilla aplicada a N materia(s)", todas las materias de todos los cursos con nuevas dimensiones
 
-### 2.8 Curso sin plantillas creadas
-- [ ] Institución sin ninguna plantilla → botón "Aplicar plantilla al curso" **no aparece**
+### 2.8 Sin plantillas creadas
+- [ ] Institución sin ninguna plantilla → no hay botones de aplicar
 - [ ] Sheet de dimensiones de materia → sección "Aplicar plantilla" **no aparece**
 
 ### 2.9 Aislamiento multi-tenant
@@ -103,25 +121,44 @@
 
 ## 3. Recuperatorios
 
-**Ruta:** `Materias → [materia] → Evaluaciones`
+**Ruta:** `Materias → [materia] → Evaluaciones` y editor de notas
 
 ### 3.1 Habilitar recuperatorio en evaluación
 - [ ] Crear evaluación con "Permite recuperatorio" activado
-- [ ] **Esperado:** evaluación marcada con badge o indicador visual
+- [ ] **Esperado:** en el editor de notas de esa evaluación aparece sección de recuperatorio al pie
 
-### 3.2 Generar recuperatorio
-- [ ] En evaluación con recuperatorio habilitado → botón "Generar recuperatorio"
-- [ ] Confirmar acción
-- [ ] **Esperado:** nueva evaluación tipo "Recuperatorio de [nombre original]" aparece en la lista
-- [ ] Intentar generar nuevamente → error (ya existe)
+### 3.2 Generar recuperatorio — requiere desaprobados
+- [ ] Cargar notas donde todos aprueban (todos ≥ nota_aprobacion) → botón "Generar recuperatorio" aparece **deshabilitado**
+- [ ] Modificar una nota por debajo del umbral → botón se habilita
+- [ ] Click → recuperatorio creado
+- [ ] **Esperado:** nueva evaluación "[nombre] — Recuperatorio" aparece en lista, badge "Recuperatorio"
+- [ ] Intentar generar nuevamente → error "Ya existe un recuperatorio"
 
-### 3.3 Cargar notas del recuperatorio
-- [ ] Abrir evaluación recuperatorio → cargar notas para 2 alumnos
-- [ ] Guardar → notas persisten
+### 3.3 Recuperatorio hereda dimensiones
+- [ ] Evaluación original tiene dimensiones asignadas (ej. Oral, Escrito)
+- [ ] Generar recuperatorio
+- [ ] Abrir editor de notas del recuperatorio
+- [ ] **Esperado:** tabla tiene columnas Oral y Escrito (mismas dimensiones que el original)
 
-### 3.4 Restricciones
+### 3.4 Filtro de alumnos elegibles
+- [ ] Evaluación con 4 alumnos: 2 aprobaron, 2 desaprobaron
+- [ ] Generar recuperatorio → abrir editor
+- [ ] **Esperado:** solo aparecen los 2 alumnos desaprobados
+- [ ] Los 2 aprobados **no aparecen** en el recuperatorio
+
+### 3.5 Bloqueo por dimensión
+- [ ] Evaluación con dims Oral y Escrito. Alumno aprobó Oral (8) pero reprobó Escrito (3)
+- [ ] En recuperatorio → alumno aparece
+- [ ] Columna Oral: muestra "✓ Aprobado" (bloqueada, no editable)
+- [ ] Columna Escrito: input habilitado para cargar nota
+
+### 3.6 Alumno ausente en original
+- [ ] Alumno marcado como ausente en la evaluación original
+- [ ] **Esperado:** aparece en el recuperatorio (ausente = desaprobado)
+
+### 3.7 Restricciones
 - [ ] Evaluación sin "permite_recuperatorio" → botón no aparece
-- [ ] Eliminar evaluación original → recuperatorio no se ve afectado (o advertencia)
+- [ ] No se puede crear recuperatorio de un recuperatorio
 
 ---
 
