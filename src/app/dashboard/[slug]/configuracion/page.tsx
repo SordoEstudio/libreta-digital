@@ -69,7 +69,7 @@ export default async function ConfiguracionPage({ params, searchParams }: Props)
   const { data: materias } = selectedCurso
     ? await admin
         .from('materias')
-        .select('id, catalogo_id, materias_catalogo(id, nombre), materia_docentes(personas(id, nombre, apellido)), materia_horarios(id, dia_semana, hora_inicio, hora_fin, aula, deleted_at)')
+        .select('id, catalogo_id, materias_catalogo(id, nombre), materia_docentes(personas(id, nombre, apellido)), materia_horarios(id, dia_semana, hora_inicio, hora_fin, aula, deleted_at), materias_dimensiones(id, nombre, peso, orden)')
         .eq('curso_id', selectedCurso.id)
         .is('deleted_at', null)
         .order('materias_catalogo(nombre)')
@@ -236,6 +236,7 @@ export default async function ConfiguracionPage({ params, searchParams }: Props)
                                     materiaNombre={materiaNombre}
                                     docenteActual={docenteActual}
                                     horariosActuales={horariosActuales}
+                                    initialDimensiones={([...(m.materias_dimensiones ?? [])] as Array<{ id: string; nombre: string; peso: number | null; orden: number }>).sort((a, b) => a.orden - b.orden)}
                                     instId={inst.id}
                                   />
                                   <EliminarMateriaButton
