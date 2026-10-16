@@ -36,6 +36,33 @@ export async function POST(_req: NextRequest, { params }: Params) {
 
   if (existing) return Err.conflict('Ya existe un recuperatorio para esta evaluación')
 
+  // Validate at least one failed student
+  const { data: instData } = await supabase
+    .from('instituciones')
+    .select('nota_aprobacion')
+    .eq('id', ev.institucion_id)
+    .single()
+
+  const notaAprobacion = instData?.nota_aprobacion ?? null
+
+  const { data: notas } = await supabase
+    .from('notas')
+    .select('alumno_id, dimension_id, valor_numerico, valor_literal')
+    .eq('evaluacion_id', id)
+    .is('deleted_at', null)
+
+  const hayDesaprobados = (notas ?? []).some(n => {
+    if (n.valor_literal === 'A') return true
+    if (notaAprobacion !== null && n.valor_numerico !== null) {
+      return n.valor_numerico < notaAprobacion
+    }
+    return false
+  })
+
+  if (!hayDesaprobados) {
+    return Err.validation('No hay alumnos desaprobados — no es necesario generar recuperatorio')
+  }
+
   const { data: nuevo, error } = await supabase
     .from('evaluaciones')
     .insert({
@@ -53,5 +80,18 @@ export async function POST(_req: NextRequest, { params }: Params) {
     .single()
 
   if (error) return Err.server(error.message)
+
+  // Copy dimensions from original to recuperatorio
+  const { data: dims } = await supabase
+    .from('evaluacion_dimensiones')
+    .select('dimension_id')
+    .eq('evaluacion_id', id)
+
+  if (dims && dims.length > 0) {
+    await supabase.from('evaluacion_dimensiones').insert(
+      dims.map(d => ({ evaluacion_id: nuevo.id, dimension_id: d.dimension_id }))
+    )
+  }
+
   return created(nuevo)
 }

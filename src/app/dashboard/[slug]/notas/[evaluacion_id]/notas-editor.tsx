@@ -43,6 +43,9 @@ interface NotasEditorProps {
   permiteRecuperatorio: boolean
   recuperatorioId: string | null
   esRecuperatorio: boolean
+  // For recuperatorios: Map<alumno_id, Set<dim_id | '__none__'>> of eligible (failed) cells
+  // null = not a recuperatorio, show all students
+  eligibles?: Map<string, Set<string>> | null
 }
 
 type SortDir = 'asc' | 'desc'
@@ -58,7 +61,7 @@ function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
     : <ChevronDown className="size-3 ml-1" />
 }
 
-export function NotasEditor({ evaluacionId, evaluacionNombre, alumnos, notasExistentes, dimensiones, slug, notaAprobacion, permiteRecuperatorio, recuperatorioId, esRecuperatorio }: NotasEditorProps) {
+export function NotasEditor({ evaluacionId, evaluacionNombre, alumnos, notasExistentes, dimensiones, slug, notaAprobacion, permiteRecuperatorio, recuperatorioId, esRecuperatorio, eligibles }: NotasEditorProps) {
   const hasDims = dimensiones.length > 0
 
   // Multi-dim state: valores[alumnoId][dimId] = value string
@@ -122,11 +125,12 @@ export function NotasEditor({ evaluacionId, evaluacionNombre, alumnos, notasExis
   const router = useRouter()
 
   const sortedAlumnos = useMemo(() => {
-    return [...alumnos].sort((a, b) => {
+    const filtered = eligibles ? alumnos.filter(a => eligibles.has(a.id)) : alumnos
+    return [...filtered].sort((a, b) => {
       const cmp = displayNombre(a).localeCompare(displayNombre(b), 'es')
       return sortDir === 'asc' ? cmp : -cmp
     })
-  }, [alumnos, sortDir])
+  }, [alumnos, sortDir, eligibles])
 
   function handleChange(alumnoId: string, value: string) {
     setValores(prev => ({ ...prev, [alumnoId]: value }))
@@ -236,7 +240,15 @@ export function NotasEditor({ evaluacionId, evaluacionNombre, alumnos, notasExis
 
   const countBelowThreshold = notaAprobacion !== null && !hasDims
     ? alumnos.filter(a => !ausentes[a.id] && valores[a.id] !== '' && parseFloat(valores[a.id]) < notaAprobacion!).length
-    : 0
+    : notaAprobacion !== null && hasDims
+      ? alumnos.filter(a =>
+          ausentes[a.id] ||
+          dimensiones.some(dim => {
+            const raw = valoresDim[a.id]?.[dim.id] ?? ''
+            return raw !== '' && parseFloat(raw) < notaAprobacion!
+          })
+        ).length
+      : 0
 
   async function handleGenerar() {
     setGenerando(true)
@@ -283,21 +295,28 @@ export function NotasEditor({ evaluacionId, evaluacionNombre, alumnos, notasExis
               <TableRow key={alumno.id}>
                 <TableCell className="font-medium">{displayNombre(alumno)}</TableCell>
                 {hasDims ? (
-                  dimensiones.map(dim => (
-                    <TableCell key={dim.id}>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        max="10"
-                        placeholder="—"
-                        value={valoresDim[alumno.id]?.[dim.id] ?? ''}
-                        onChange={e => handleChangeDim(alumno.id, dim.id, e.target.value)}
-                        disabled={ausentes[alumno.id]}
-                        className="w-24"
-                      />
-                    </TableCell>
-                  ))
+                  dimensiones.map(dim => {
+                    const dimEligible = !eligibles || eligibles.get(alumno.id)?.has(dim.id)
+                    return (
+                      <TableCell key={dim.id}>
+                        {dimEligible ? (
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            max="10"
+                            placeholder="—"
+                            value={valoresDim[alumno.id]?.[dim.id] ?? ''}
+                            onChange={e => handleChangeDim(alumno.id, dim.id, e.target.value)}
+                            disabled={ausentes[alumno.id]}
+                            className="w-24"
+                          />
+                        ) : (
+                          <span className="text-xs text-green-600 font-medium">✓ Aprobado</span>
+                        )}
+                      </TableCell>
+                    )
+                  })
                 ) : (
                   <TableCell>
                     <Input
@@ -374,7 +393,13 @@ export function NotasEditor({ evaluacionId, evaluacionNombre, alumnos, notasExis
               </Button>
             )
             : (
-              <Button variant="outline" size="sm" onClick={handleGenerar} disabled={generando}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleGenerar}
+                disabled={generando || countBelowThreshold === 0}
+                title={countBelowThreshold === 0 ? 'Sin alumnos desaprobados' : undefined}
+              >
                 {generando ? 'Generando...' : 'Generar recuperatorio'}
               </Button>
             )

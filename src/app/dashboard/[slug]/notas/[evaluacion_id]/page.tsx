@@ -91,6 +91,63 @@ export default async function NotasPage({ params }: Params) {
     .filter(d => d.materias_dimensiones)
     .map(d => ({ id: d.materias_dimensiones!.id, nombre: d.materias_dimensiones!.nombre }))
 
+  const notaAprobacion = instData?.nota_aprobacion ?? null
+
+  // For recuperatorios: compute which (alumno, dim) pairs are eligible (failed original)
+  // eligibles: Map<alumno_id, Set<dim_id | '__none__'>>
+  //   '__none__' = no-dimension evaluacion
+  //   null key not used in Map — use '__none__' sentinel
+  let eligibles: Map<string, Set<string>> | null = null
+
+  const recuperatorio_de_id = (evaluacion as { recuperatorio_de_evaluacion_id?: string | null }).recuperatorio_de_evaluacion_id ?? null
+
+  if (esRecuperatorio && recuperatorio_de_id && notaAprobacion !== null) {
+    const { data: notasOriginales } = await supabase
+      .from('notas')
+      .select('alumno_id, dimension_id, valor_numerico, valor_literal')
+      .eq('evaluacion_id', recuperatorio_de_id)
+      .is('deleted_at', null)
+
+    eligibles = new Map<string, Set<string>>()
+
+    const hasDims = dimensiones.length > 0
+
+    if (hasDims) {
+      // Per (alumno, dim): eligible if nota < aprobacion OR ausente OR sin nota
+      const notasMap = new Map<string, { valor_numerico: number | null; valor_literal: string | null }>()
+      for (const n of notasOriginales ?? []) {
+        notasMap.set(`${n.alumno_id}:${n.dimension_id ?? '__none__'}`, {
+          valor_numerico: n.valor_numerico,
+          valor_literal: n.valor_literal,
+        })
+      }
+
+      for (const alumno of alumnos ?? []) {
+        const dimsFailed = new Set<string>()
+        for (const dim of dimensiones) {
+          const nota = notasMap.get(`${alumno.id}:${dim.id}`)
+          const fallo = !nota || nota.valor_literal === 'A' ||
+            (nota.valor_numerico !== null && nota.valor_numerico < notaAprobacion)
+          if (fallo) dimsFailed.add(dim.id)
+        }
+        if (dimsFailed.size > 0) eligibles.set(alumno.id, dimsFailed)
+      }
+    } else {
+      // No dimensions: eligible if nota < aprobacion OR ausente OR sin nota
+      const notasMap = new Map<string, { valor_numerico: number | null; valor_literal: string | null }>()
+      for (const n of notasOriginales ?? []) {
+        notasMap.set(n.alumno_id, { valor_numerico: n.valor_numerico, valor_literal: n.valor_literal })
+      }
+
+      for (const alumno of alumnos ?? []) {
+        const nota = notasMap.get(alumno.id)
+        const fallo = !nota || nota.valor_literal === 'A' ||
+          (nota.valor_numerico !== null && nota.valor_numerico < notaAprobacion)
+        if (fallo) eligibles.set(alumno.id, new Set(['__none__']))
+      }
+    }
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -110,10 +167,11 @@ export default async function NotasPage({ params }: Params) {
         notasExistentes={notasExistentes ?? []}
         dimensiones={dimensiones}
         slug={slug}
-        notaAprobacion={instData?.nota_aprobacion ?? null}
+        notaAprobacion={notaAprobacion}
         permiteRecuperatorio={permiteRecuperatorio}
         recuperatorioId={recuperatorioExistente?.id ?? null}
         esRecuperatorio={esRecuperatorio}
+        eligibles={eligibles}
       />
     </div>
   )
