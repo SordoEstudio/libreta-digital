@@ -1,6 +1,6 @@
 # QA — Nuevas funcionalidades (Octubre 2026)
 
-**Alcance:** Dimensiones por materia · Notas por dimensión (multi-columna) · Peso opcional (promedio directo) · Plantillas de dimensiones · Recuperatorios por dimensión · Notas de referencia · Cierre de período · Comunicados con confirmación  
+**Alcance:** Dimensiones por materia · Notas por dimensión (multi-columna) · Peso opcional (promedio directo) · Plantillas de dimensiones · Recuperatorios por dimensión · Notas de referencia (con dimensiones y período) · Cuaderno del docente · Cierre de período · Comunicados con confirmación  
 **Roles necesarios:** superadmin, admin, docente, responsable (con email real para probar envíos)  
 **Entorno:** staging o local con Supabase + Resend en modo test
 
@@ -18,13 +18,22 @@
 
 ## 1. Dimensiones por materia
 
-**Ruta:** `Configuración → Materias → [materia] → Dimensiones`
+**Ruta:** `Configuración → Cursos → [curso] → click ✏️ en materia (sheet unificado)`
+
+> Las dimensiones se gestionan ahora dentro del sheet de edición de materia. No hay botón separado de "Dimensiones" en la tarjeta.
+
+### 1.0 Edición unificada de materia
+- [ ] Admin abre curso → tarjeta de materia muestra badges de dimensiones apilados (uno por línea)
+- [ ] Click ✏️ en tarjeta → sheet abre con sección "Dimensiones" al pie
+- [ ] **Esperado:** no hay botón "Dimensiones" separado en la tarjeta (eliminado)
+- [ ] Dimensiones existentes aparecen en lista dentro del sheet
+- [ ] Dimensiones en la tarjeta muestran nombre, sin peso
 
 ### 1.1 Crear dimensiones
-- [ ] Admin abre materia → pestaña/sección Dimensiones
-- [ ] Crear dimensión "Trabajo en clase" peso 40
-- [ ] Crear dimensión "Examen" peso 60
-- **Esperado:** suma de pesos = 100, ambas aparecen en lista
+- [ ] Admin abre sheet de materia → sección Dimensiones → campo "Nueva dimensión"
+- [ ] Escribir "Trabajo en clase" → Enter o click "Agregar"
+- [ ] Escribir "Examen" → Enter
+- **Esperado:** ambas aparecen en lista dentro del sheet
 
 ### 1.2 Peso opcional — promedio directo
 - [ ] Crear dimensión sin ingresar peso → campo queda vacío, se guarda como "Promedio directo"
@@ -287,10 +296,121 @@
 
 ---
 
+## 7. Notas de referencia — dimensiones y período
+
+**Ruta:** `Materias → [materia] → Referencia`
+
+> Extiende la sección 4. Verifica las nuevas capacidades: período y dimensiones en eval-refs.
+
+### 7.1 Crear eval-ref con período
+- [ ] Docente abre Referencia → "Nueva evaluación"
+- [ ] Completar nombre "TP Diagnóstico", tipo "Numérica"
+- [ ] Seleccionar período en el dropdown "Período" (debe listar los períodos del año lectivo del curso)
+- [ ] Guardar
+- [ ] **Esperado:** eval-ref aparece en tabla con columna Período correcta
+
+### 7.2 Crear eval-ref con dimensiones
+- [ ] Nueva evaluación de referencia
+- [ ] Con la materia teniendo dimensiones (ej. Oral, Escrito), aparece sección con chips de dimensiones
+- [ ] Seleccionar "Oral" y "Escrito" (chips se activan con borde primario)
+- [ ] Guardar
+- [ ] **Esperado:** eval-ref guardada. Abrir editor de notas → tabla con columnas Alumno · Oral · Escrito
+
+### 7.3 Cargar notas multi-dim en referencia
+- [ ] Abrir editor de eval-ref con dims Oral y Escrito
+- [ ] Ingresar nota 8 en Oral y 6 en Escrito para alumno García
+- [ ] Guardar
+- [ ] Recargar → **Esperado:** notas persisten en las columnas correctas
+- [ ] Promedio del grupo se calcula solo con valores numéricos válidos
+
+### 7.4 Editar eval-ref existente
+- [ ] En lista de Referencia → click ícono ✏️ de una eval-ref
+- [ ] **Esperado:** sheet de edición abre con valores precargados (nombre, tipo, fecha, período, dims)
+- [ ] Cambiar nombre, cambiar período, desmarcar una dimensión → Guardar
+- [ ] **Esperado:** cambios reflejados en la tabla; en editor de notas, la columna de la dimensión desmarcada desaparece
+
+### 7.5 Eval-ref sin dimensiones (caso legacy / materia sin dims)
+- [ ] Materia sin dimensiones configuradas → nueva eval-ref no muestra selector de dims
+- [ ] Editor de notas → columna única "Nota" + "Observación" (comportamiento previo sin regresión)
+
+### 7.6 Eval-ref sin período seleccionado
+- [ ] Crear eval-ref sin seleccionar período → se guarda con período "—"
+- [ ] **Esperado:** columna Período muestra "—" (no error)
+
+### 7.7 Aislamiento por institución
+- [ ] Eval-refs de materia de institución A no accesibles desde institución B
+
+---
+
+## 8. Cuaderno del docente
+
+**Ruta:** `Cuaderno` (sidebar, visible para admin y docente)
+
+> Vista unificada: seguimiento (eval-refs del período) + promedio automático + nota definitiva editable.
+
+### 8.1 Acceso desde sidebar
+- [ ] Admin y docente ven "Cuaderno" en sidebar (grupo Institución)
+- [ ] Responsable **no ve** "Cuaderno" en sidebar
+- [ ] Click → página `/dashboard/[slug]/cuaderno`
+
+### 8.2 Selección de materia y período
+- [ ] Sin materia seleccionada → icono + "Seleccioná una materia para comenzar."
+- [ ] Dropdown "Materia" lista todas las materias accesibles (admin: todas; docente: solo sus asignadas)
+- [ ] Seleccionar materia sin período → dropdown "Período" aparece; si el curso no tiene períodos: "Esta materia no tiene períodos configurados."
+- [ ] Seleccionar materia + período → tabla carga
+
+### 8.3 Tabla de proceso (eval-refs)
+- [ ] Con eval-refs de referencia para esa materia y período, columnas aparecen
+- [ ] Eval-ref con dimensiones → sub-columnas (una por dimensión, nombre abajo del nombre de eval)
+- [ ] Eval-ref sin dimensiones → columna simple
+- [ ] Notas cargadas previamente aparecen como texto (solo lectura) — "—" si vacía
+- [ ] Sin eval-refs en ese período → tabla aparece sin columnas de proceso
+
+### 8.4 Columna Promedio
+- [ ] Con al menos una eval-ref numérica → columna "Prom." aparece al final de las columnas de proceso
+- [ ] Promedio calcula correctamente: todas las notas numéricas del alumno / cantidad
+- [ ] Alumno sin ninguna nota → "—"
+- [ ] Solo eval-refs conceptuales → columna Prom. no aparece
+
+### 8.5 Columna Nota definitiva
+- [ ] Columna "Nota definitiva" aparece con inputs editables (fondo ámbar suave)
+- [ ] Si ya hay una nota definitiva del período cargada → valor precargado en input
+- [ ] Si no hay nota definitiva → input vacío
+- [ ] Ingresar valores (ej. 8, 9, 7) → click "Guardar nota definitiva"
+- [ ] **Primera vez (sin eval definitiva creada):** se crea evaluación `es_definitiva_periodo=true` y luego se guardan las notas — toast "Notas definitivas guardadas"
+- [ ] Recargar página → valores persisten en inputs
+- [ ] **Segunda vez (eval ya existe):** notas se actualizan directamente sin crear nueva eval — toast igual
+
+### 8.6 Toggle chips
+- [ ] Chip "Proceso (N)" activo por defecto → click → columnas de eval-refs se ocultan
+- [ ] Chip "Nota definitiva" activo por defecto → click → columna definitiva y botón guardar se ocultan
+- [ ] Re-activar chips → columnas reaparecen
+- [ ] Con ambos ocultos → tabla muestra solo columna Alumno
+
+### 8.7 Alumnos ordenados
+- [ ] Alumnos aparecen ordenados por apellido, luego nombre (A→Z)
+- [ ] Filas alternas con fondo levemente diferente
+
+### 8.8 Sin alumnos inscriptos
+- [ ] Curso sin alumnos → mensaje "Sin alumnos inscriptos en este curso."
+
+### 8.9 URL shareable
+- [ ] Navegar a `/dashboard/[slug]/cuaderno?materia_id=[id]&periodo_id=[id]` directamente
+- [ ] **Esperado:** página carga con selects en estado correcto y tabla visible
+
+### 8.10 Restricción de acceso (docente)
+- [ ] Docente sin materias asignadas → "No tenés materias asignadas."
+- [ ] Docente con materias asignadas → solo ve sus materias en el selector
+- [ ] Dropdown Materia no lista materias de otros docentes
+
+---
+
 ## Regresiones a verificar
 
 Después de QA de nuevas funcionalidades, verificar que lo siguiente sigue funcionando:
 
+- [ ] Editar materia (sheet unificado) → dimensiones se mantienen, no se pierden al guardar nombre/docente
+- [ ] Notas de referencia sin dimensiones siguen funcionando (sin regresión)
 - [ ] Crear alumno, asignar responsable, enviar invitación → responsable puede hacer login
 - [ ] Cargar notas en evaluación normal → aparece en libreta del alumno
 - [ ] Cerrar período → notas bloqueadas → reabrir → notas desbloqueadas
