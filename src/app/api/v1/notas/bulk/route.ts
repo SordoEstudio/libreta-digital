@@ -66,12 +66,34 @@ export async function POST(request: NextRequest) {
 
   if (toUpsert.length === 0) return ok({ upserted: 0, skipped: notas.length })
 
+  // Validate against active scale if one exists
+  const { data: escala } = await supabase
+    .from('escalas')
+    .select('min_valor, max_valor')
+    .eq('institucion_id', evaluacion.institucion_id)
+    .eq('activa', true)
+    .maybeSingle()
+
+  if (escala?.min_valor !== null && escala?.min_valor !== undefined && escala?.max_valor !== null && escala?.max_valor !== undefined) {
+    const fueraDeEscala = toUpsert.find(n =>
+      n.valor_numerico !== null && (n.valor_numerico < escala.min_valor! || n.valor_numerico > escala.max_valor!)
+    )
+    if (fueraDeEscala) {
+      return Err.validation(`Nota ${fueraDeEscala.valor_numerico} fuera de escala (${escala.min_valor}–${escala.max_valor})`)
+    }
+  }
+
   const { data, error } = await supabase
     .from('notas')
     .upsert(toUpsert, { onConflict: 'evaluacion_id,dimension_id,alumno_id' })
     .select('id, alumno_id, valor_numerico, valor_literal')
 
-  if (error) return Err.server(error.message)
+  if (error) {
+    if (error.code === '23505') {
+      return Err.validation('Nota duplicada: ya existe una nota para ese alumno y dimensión en esta evaluación')
+    }
+    return Err.server(error.message)
+  }
 
   const uniqueAlumnoIds = [...new Set(data.map(n => n.alumno_id))]
   const { data: alumnos } = await supabase

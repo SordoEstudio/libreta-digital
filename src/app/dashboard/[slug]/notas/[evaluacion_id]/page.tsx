@@ -93,6 +93,13 @@ export default async function NotasPage({ params }: Params) {
 
   const notaAprobacion = instData?.nota_aprobacion ?? null
 
+  const { data: escala } = await supabase
+    .from('escalas')
+    .select('min_valor, max_valor')
+    .eq('institucion_id', inst.id)
+    .eq('activa', true)
+    .maybeSingle()
+
   // For recuperatorios: compute which (alumno, dim) pairs are eligible (failed original)
   // eligibles: Map<alumno_id, Set<dim_id | '__none__'>>
   //   '__none__' = no-dimension evaluacion
@@ -172,6 +179,8 @@ export default async function NotasPage({ params }: Params) {
         recuperatorioId={recuperatorioExistente?.id ?? null}
         esRecuperatorio={esRecuperatorio}
         eligibles={eligibles}
+        escalaMin={escala?.min_valor ?? null}
+        escalaMax={escala?.max_valor ?? null}
       />
     </div>
   )

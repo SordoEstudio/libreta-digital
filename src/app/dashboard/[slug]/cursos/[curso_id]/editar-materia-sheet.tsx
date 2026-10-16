@@ -71,7 +71,7 @@ export default function EditarMateriaSheet({
     setLoadingDocentes(true)
     fetch(`/api/v1/instituciones/${instId}/usuarios?rol=docente`)
       .then(r => r.json())
-      .then(json => setDocentes(json.data ?? []))
+      .then(json => setDocentes((json.data ?? []).filter((d: { activo: boolean }) => d.activo)))
       .catch(() => {})
       .finally(() => setLoadingDocentes(false))
   }, [open, instId])

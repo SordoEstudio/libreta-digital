@@ -15,7 +15,6 @@ interface Props {
 
 interface ItemDraft {
   nombre: string
-  peso: string
 }
 
 export default function NuevaPlantillaSheet({ instId }: Props) {
@@ -23,16 +22,16 @@ export default function NuevaPlantillaSheet({ instId }: Props) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [nombre, setNombre] = useState('')
-  const [items, setItems] = useState<ItemDraft[]>([{ nombre: '', peso: '' }])
+  const [items, setItems] = useState<ItemDraft[]>([{ nombre: '' }])
 
   function handleOpen() {
     setNombre('')
-    setItems([{ nombre: '', peso: '' }])
+    setItems([{ nombre: '' }])
     setOpen(true)
   }
 
   function addItem() {
-    setItems(prev => [...prev, { nombre: '', peso: '' }])
+    setItems(prev => [...prev, { nombre: '' }])
   }
 
   function removeItem(idx: number) {
@@ -43,23 +42,13 @@ export default function NuevaPlantillaSheet({ instId }: Props) {
     setItems(prev => prev.map((item, i) => i === idx ? { ...item, [field]: value } : item))
   }
 
-  const totalPeso = items.reduce((sum, item) => {
-    const n = parseFloat(item.peso)
-    return sum + (isNaN(n) ? 0 : n)
-  }, 0)
-
-  const hasExplicitPeso = items.some(item => item.peso.trim() !== '')
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
 
     const body = {
       nombre,
-      items: items.map(item => ({
-        nombre: item.nombre,
-        peso: item.peso.trim() !== '' ? parseFloat(item.peso) : null,
-      })),
+      items: items.map(item => ({ nombre: item.nombre })),
     }
 
     const res = await fetch(`/api/v1/instituciones/${instId}/dimension-plantillas`, {
@@ -120,15 +109,6 @@ export default function NuevaPlantillaSheet({ instId }: Props) {
                     className="flex-1"
                     required
                   />
-                  <Input
-                    value={item.peso}
-                    onChange={e => updateItem(idx, 'peso', e.target.value)}
-                    placeholder="Peso %"
-                    type="number"
-                    min="0"
-                    step="any"
-                    className="w-24"
-                  />
                   {items.length > 1 && (
                     <Button
                       type="button"
@@ -147,10 +127,6 @@ export default function NuevaPlantillaSheet({ instId }: Props) {
                 <Plus className="size-3.5" />
                 Agregar dimensión
               </Button>
-
-              {hasExplicitPeso && (
-                <p className="text-sm text-muted-foreground">Total: {totalPeso}%</p>
-              )}
             </div>
 
             <Button type="submit" disabled={loading || !canSubmit} className="mt-2">

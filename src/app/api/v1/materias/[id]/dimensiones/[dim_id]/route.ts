@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { getSession, isSuperadmin, hasAnyRole } from '@/lib/auth'
@@ -72,7 +72,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   return ok(data)
 }
 
-export async function DELETE(_request: NextRequest, { params }: Params) {
+export async function DELETE(request: NextRequest, { params }: Params) {
   const { id: materia_id, dim_id } = await params
   const session = await getSession()
   if (!session) return Err.unauthorized()
@@ -82,6 +82,22 @@ export async function DELETE(_request: NextRequest, { params }: Params) {
   if (!dimension) return Err.notFound('Dimensión no encontrada')
   if (!isSuperadmin(session) && !hasAnyRole(session, materia.institucion_id, ['admin']))
     return Err.forbidden()
+
+  const confirm = new URL(request.url).searchParams.get('confirm') === 'true'
+
+  if (!confirm) {
+    const { count } = await supabase
+      .from('notas')
+      .select('*', { count: 'exact', head: true })
+      .eq('dimension_id', dim_id)
+      .is('deleted_at', null)
+    if ((count ?? 0) > 0) {
+      return NextResponse.json(
+        { error: { code: 'HAS_NOTAS', message: `Hay ${count} nota(s) vinculadas a esta dimensión`, notasCount: count } },
+        { status: 409 }
+      )
+    }
+  }
 
   const { error } = await supabase
     .from('materias_dimensiones')

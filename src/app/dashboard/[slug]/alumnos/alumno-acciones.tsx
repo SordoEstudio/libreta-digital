@@ -7,11 +7,12 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { MoreHorizontal, BookOpen, Users, ArrowRightLeft, UserCheck, UserX } from 'lucide-react'
+import { MoreHorizontal, BookOpen, Users, ArrowRightLeft, UserCheck, UserX, Pencil } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
 import ResponsablesSheet from './responsables-sheet'
 import CambiarCursoSheet from './cambiar-curso-sheet'
+import EditarAlumnoSheet from './editar-alumno-sheet'
 
 interface Props {
   alumnoId: string
@@ -24,6 +25,7 @@ interface Props {
 
 export default function AlumnoAcciones({ alumnoId, alumnoNombre, activo, instId, slug, cursos }: Props) {
   const router = useRouter()
+  const [editOpen, setEditOpen] = useState(false)
   const [respOpen, setRespOpen] = useState(false)
   const [cursoOpen, setCursoOpen] = useState(false)
   const [toggling, setToggling] = useState(false)
@@ -61,6 +63,10 @@ export default function AlumnoAcciones({ alumnoId, alumnoNombre, activo, instId,
             <BookOpen className="size-4" />
             Ver libreta
           </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setEditOpen(true)}>
+            <Pencil className="size-4" />
+            Editar datos
+          </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setRespOpen(true)}>
             <Users className="size-4" />
             Responsables
@@ -80,6 +86,12 @@ export default function AlumnoAcciones({ alumnoId, alumnoNombre, activo, instId,
         </DropdownMenuContent>
       </DropdownMenu>
 
+      <EditarAlumnoSheet
+        alumnoId={alumnoId}
+        alumnoNombre={alumnoNombre}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+      />
       <ResponsablesSheet
         alumnoId={alumnoId}
         alumnoNombre={alumnoNombre}

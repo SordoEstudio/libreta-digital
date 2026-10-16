@@ -174,7 +174,7 @@ export default async function LibretaPage({ params }: Params) {
                     {Array.from(dimMap2.values()).map(({ dim, notas: dimNotas }) => (
                       <div key={dim.id}>
                         <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">
-                          {dim.nombre}{dim.peso !== null ? ` · ${dim.peso}%` : ' · Promedio directo'}
+                          {dim.nombre}
                         </p>
                         <Table className="table-fixed">
                           <TableHeader><TableRow>

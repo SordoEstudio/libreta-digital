@@ -164,6 +164,17 @@ export default async function CursoDetallePage({ params }: Params) {
                       ))}
                     </div>
                   )}
+                  {materia.materias_dimensiones.length > 0 && (
+                    <div className="flex flex-wrap gap-1 pt-1">
+                      {[...materia.materias_dimensiones]
+                        .sort((a, b) => a.orden - b.orden)
+                        .map(d => (
+                          <span key={d.id} className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs text-muted-foreground">
+                            {d.nombre}
+                          </span>
+                        ))}
+                    </div>
+                  )}
                 </CardContent>
                 <CardFooter className="mt-auto flex flex-col gap-2">
                   <Button

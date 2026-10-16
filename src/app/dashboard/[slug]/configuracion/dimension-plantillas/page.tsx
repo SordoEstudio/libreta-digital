@@ -63,7 +63,7 @@ export default async function DimensionPlantillasPage({ params }: Props) {
                 <p className="font-medium">{p.nombre}</p>
                 <p className="text-sm text-muted-foreground">
                   {p.items.length} dimensión{p.items.length !== 1 ? 'es' : ''}
-                  {p.items.length > 0 && ': ' + p.items.map(i => i.peso !== null ? `${i.nombre} (${i.peso}%)` : i.nombre).join(', ')}
+                  {p.items.length > 0 && ': ' + p.items.map(i => i.nombre).join(', ')}
                 </p>
               </div>
               <div className="flex items-center gap-1">
