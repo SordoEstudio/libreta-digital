@@ -25,6 +25,22 @@ interface EvalRefCol {
   notasMap: Record<string, string> // `${alumnoId}::${dimId|'__'}` → valor
 }
 
+interface EvalLibretaColTabla {
+  id: string
+  nombre: string
+  tipo: string
+  dimensionIds: string[]
+  dimensiones: Dimension[]
+  notasMap: Record<string, string>
+  recuperatorio: {
+    id: string
+    nombre: string
+    dimensionIds: string[]
+    dimensiones: Dimension[]
+    notasMap: Record<string, string>
+  } | null
+}
+
 interface Props {
   alumnos: Alumno[]
   evalRefs: EvalRefCol[]
@@ -37,6 +53,8 @@ interface Props {
   todasDimensiones: Dimension[]
   todasUnidades: Unidad[]
   periodoCerrado?: boolean
+  evalsLibreta?: EvalLibretaColTabla[]
+  notaAprobacion?: number | null
 }
 
 function notaKey(alumnoId: string, dimId: string | null) {

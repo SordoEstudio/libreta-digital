@@ -17,7 +17,7 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
   const supabase = await createClient()
   const { data: inst } = await supabase
     .from('instituciones')
-    .select('id')
+    .select('id, nota_aprobacion')
     .eq('slug', slug)
     .is('deleted_at', null)
     .single()
@@ -30,6 +30,8 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
     redirect(`/dashboard/${slug}`)
 
   const isAdminLevel = isSuperadmin(session) || hasRole(session, inst.id, 'admin')
+
+  const notaAprobacion: number | null = (inst as { nota_aprobacion?: number | null }).nota_aprobacion ?? null
 
   // Fetch materias accessible by this user
   let materiasQuery = supabase
@@ -119,6 +121,22 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
     : { data: [] }
   const unidades = (unidadesRaw ?? []) as Unidad[]
 
+  type EvalLibretaCol = {
+    id: string
+    nombre: string
+    tipo: string
+    dimensionIds: string[]
+    dimensiones: Array<{ id: string; nombre: string; orden: number }>
+    notasMap: Record<string, string>
+    recuperatorio: {
+      id: string
+      nombre: string
+      dimensionIds: string[]
+      dimensiones: Array<{ id: string; nombre: string; orden: number }>
+      notasMap: Record<string, string>
+    } | null
+  }
+
   // Only fetch table data when both materia + periodo selected
   let tableData: {
     alumnos: Array<{ id: string; nombre: string; apellido: string | null }>
@@ -136,6 +154,8 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
     notaDefinitivaMap: Record<string, string>
     allMaterialDims: Array<{ id: string; nombre: string; orden: number }>
     periodoCerrado: boolean
+    evalsLibreta: EvalLibretaCol[]
+    notaAprobacion: number | null
   } | null = null
 
   if (selectedMateria && selectedPeriodo) {
@@ -246,6 +266,78 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
       notaDefinitivaMap[n.alumno_id] = n.valor_numerico?.toString() ?? n.valor_literal ?? ''
     }
 
+    // Fetch all evaluaciones for this materia+período (including recuperatorios)
+    const { data: evalsRaw } = await supabase
+      .from('evaluaciones')
+      .select('id, nombre, tipo, permite_recuperatorio, recuperatorio_de_evaluacion_id, orden, evaluacion_dimensiones(dimension_id)')
+      .eq('materia_id', selectedMateria.id)
+      .eq('periodo_id', selectedPeriodo.id)
+      .is('deleted_at', null)
+      .order('orden')
+
+    type EvalRaw = NonNullable<typeof evalsRaw>[number]
+    const allEvalsFiltered = (evalsRaw ?? []).filter(
+      (ev: EvalRaw) => !(ev as { es_definitiva_periodo?: boolean }).es_definitiva_periodo
+    )
+    const primaryEvals = allEvalsFiltered.filter((ev: EvalRaw) => !ev.recuperatorio_de_evaluacion_id)
+    const recuperatorioEvals = allEvalsFiltered.filter((ev: EvalRaw) => !!ev.recuperatorio_de_evaluacion_id)
+    const recuperatorioByParent = new Map(
+      recuperatorioEvals.map((ev: EvalRaw) => [ev.recuperatorio_de_evaluacion_id!, ev])
+    )
+
+    // Fetch notas for all eval IDs
+    const libretaEvalIds = allEvalsFiltered.map((ev: EvalRaw) => ev.id)
+    let notasLibretaRaw: Array<{ evaluacion_id: string; alumno_id: string; dimension_id: string | null; valor_numerico: number | null; valor_literal: string | null }> = []
+    if (libretaEvalIds.length > 0) {
+      const { data: nl } = await supabase
+        .from('notas')
+        .select('evaluacion_id, alumno_id, dimension_id, valor_numerico, valor_literal')
+        .in('evaluacion_id', libretaEvalIds)
+        .in('alumno_id', alumnoIds)
+      notasLibretaRaw = nl ?? []
+    }
+
+    // Build notasMap per eval
+    const notasByEval = new Map<string, Record<string, string>>()
+    for (const n of notasLibretaRaw) {
+      if (!notasByEval.has(n.evaluacion_id)) notasByEval.set(n.evaluacion_id, {})
+      const key = `${n.alumno_id}::${n.dimension_id ?? '__'}`
+      notasByEval.get(n.evaluacion_id)![key] =
+        n.valor_numerico?.toString() ?? n.valor_literal ?? ''
+    }
+
+    // Build evalsLibreta
+    const evalsLibreta: EvalLibretaCol[] = primaryEvals.map((ev: EvalRaw) => {
+      const dims = (ev.evaluacion_dimensiones as Array<{ dimension_id: string }>)
+        .map(d => dimMap.get(d.dimension_id))
+        .filter((d): d is { id: string; nombre: string; orden: number } => d != null)
+        .sort((a, b) => a.orden - b.orden)
+
+      const recup = recuperatorioByParent.get(ev.id) ?? null
+      const recupDims = recup
+        ? (recup.evaluacion_dimensiones as Array<{ dimension_id: string }>)
+            .map(d => dimMap.get(d.dimension_id))
+            .filter((d): d is { id: string; nombre: string; orden: number } => d != null)
+            .sort((a, b) => a.orden - b.orden)
+        : []
+
+      return {
+        id: ev.id,
+        nombre: ev.nombre,
+        tipo: ev.tipo,
+        dimensionIds: (ev.evaluacion_dimensiones as Array<{ dimension_id: string }>).map(d => d.dimension_id),
+        dimensiones: dims,
+        notasMap: notasByEval.get(ev.id) ?? {},
+        recuperatorio: recup ? {
+          id: recup.id,
+          nombre: recup.nombre,
+          dimensionIds: (recup.evaluacion_dimensiones as Array<{ dimension_id: string }>).map(d => d.dimension_id),
+          dimensiones: recupDims,
+          notasMap: notasByEval.get(recup.id) ?? {},
+        } : null,
+      }
+    })
+
     tableData = {
       alumnos,
       evalRefs,
@@ -253,6 +345,8 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
       notaDefinitivaMap,
       allMaterialDims,
       periodoCerrado,
+      evalsLibreta,
+      notaAprobacion,
     }
   }
 
