@@ -6,9 +6,10 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Save, Loader2 } from 'lucide-react'
+import CuadernoAccionesCol from './cuaderno-acciones-col'
 
 interface Alumno { id: string; nombre: string; apellido: string | null }
-interface Dimension { id: string; nombre: string }
+interface Dimension { id: string; nombre: string; orden: number }
 interface Periodo { id: string; nombre: string; orden: number }
 
 interface EvalRefCol {
@@ -187,13 +188,29 @@ export default function CuadernoTabla({
               {/* Proceso headers */}
               {showProceso && evalRefs.map(ev => {
                 const cols = ev.dimensiones.length > 0 ? ev.dimensiones : [null]
-                return cols.map(dim => (
+                return cols.map((dim, dimIdx) => (
                   <th
                     key={`${ev.id}::${dim?.id ?? '__'}`}
                     className="text-center px-2 py-2 font-medium text-xs text-muted-foreground min-w-24"
                   >
-                    <div className="truncate max-w-24">{ev.nombre}</div>
-                    {dim && <div className="text-[10px] font-normal opacity-70">{dim.nombre}</div>}
+                    {dimIdx === 0 ? (
+                      <div className="flex flex-col items-center gap-0.5">
+                        <div className="flex items-center gap-0.5">
+                          <span className="truncate max-w-20">{ev.nombre}</span>
+                          <CuadernoAccionesCol
+                            evalRef={{ id: ev.id, nombre: ev.nombre, tipo: ev.tipo, periodoId: ev.periodoId, dimensionIds: ev.dimensionIds }}
+                            periodos={periodos}
+                            dimensiones={todasDimensiones}
+                          />
+                        </div>
+                        {dim && <div className="text-[10px] font-normal opacity-70">{dim.nombre}</div>}
+                      </div>
+                    ) : (
+                      <>
+                        <div className="truncate max-w-24">{ev.nombre}</div>
+                        {dim && <div className="text-[10px] font-normal opacity-70">{dim.nombre}</div>}
+                      </>
+                    )}
                   </th>
                 ))
               })}

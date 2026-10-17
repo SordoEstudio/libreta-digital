@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Loader2, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
-import EditarEvalRefSheet from './editar-eval-ref-sheet'
+import EditarEvalRefSheet from '@/components/eval-ref/editar-eval-ref-sheet'
 
 interface Periodo { id: string; nombre: string; orden: number }
 interface Dimension { id: string; nombre: string; orden: number }

@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/table'
 import Link from 'next/link'
 import { BookMarked, ClipboardList } from 'lucide-react'
-import NuevaEvalRefSheet from './nueva-eval-ref-sheet'
+import NuevaEvalRefSheet from '@/components/eval-ref/nueva-eval-ref-sheet'
 import EvalRefAcciones from './eval-ref-acciones'
 
 type Params = { params: Promise<{ slug: string; materia_id: string }> }

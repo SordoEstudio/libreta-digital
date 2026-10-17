@@ -104,7 +104,7 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
       tipo: 'numerica' | 'conceptual'
       periodoId: string | null
       dimensionIds: string[]
-      dimensiones: Array<{ id: string; nombre: string }>
+      dimensiones: Array<{ id: string; nombre: string; orden: number }>
       notasMap: Record<string, string>
     }>
     notaDefinitivaEvalId: string | null
