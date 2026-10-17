@@ -660,6 +660,66 @@ export type Database = {
           },
         ]
       }
+      evaluacion_referencia_unidades: {
+        Row: {
+          evaluacion_ref_id: string
+          unidad_id: string
+        }
+        Insert: {
+          evaluacion_ref_id: string
+          unidad_id: string
+        }
+        Update: {
+          evaluacion_ref_id?: string
+          unidad_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evaluacion_referencia_unidades_evaluacion_ref_id_fkey"
+            columns: ["evaluacion_ref_id"]
+            isOneToOne: false
+            referencedRelation: "evaluaciones_referencia"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evaluacion_referencia_unidades_unidad_id_fkey"
+            columns: ["unidad_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      evaluacion_unidades: {
+        Row: {
+          evaluacion_id: string
+          unidad_id: string
+        }
+        Insert: {
+          evaluacion_id: string
+          unidad_id: string
+        }
+        Update: {
+          evaluacion_id?: string
+          unidad_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evaluacion_unidades_evaluacion_id_fkey"
+            columns: ["evaluacion_id"]
+            isOneToOne: false
+            referencedRelation: "evaluaciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evaluacion_unidades_unidad_id_fkey"
+            columns: ["unidad_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       evaluaciones: {
         Row: {
           created_at: string
@@ -1558,6 +1618,60 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      unidades: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          descripcion: string | null
+          fecha_fin: string | null
+          fecha_inicio: string | null
+          id: string
+          institucion_id: string
+          materia_id: string
+          nombre: string
+          orden: number
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          descripcion?: string | null
+          fecha_fin?: string | null
+          fecha_inicio?: string | null
+          id?: string
+          institucion_id: string
+          materia_id: string
+          nombre: string
+          orden?: number
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          descripcion?: string | null
+          fecha_fin?: string | null
+          fecha_inicio?: string | null
+          id?: string
+          institucion_id?: string
+          materia_id?: string
+          nombre?: string
+          orden?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "unidades_institucion_id_fkey"
+            columns: ["institucion_id"]
+            isOneToOne: false
+            referencedRelation: "instituciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "unidades_materia_id_fkey"
+            columns: ["materia_id"]
+            isOneToOne: false
+            referencedRelation: "materias"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
