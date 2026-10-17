@@ -422,6 +422,8 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
             todasDimensiones={tableData.allMaterialDims}
             todasUnidades={unidades.map(u => ({ id: u.id, nombre: u.nombre }))}
             periodoCerrado={tableData.periodoCerrado}
+            evalsLibreta={tableData.evalsLibreta}
+            notaAprobacion={tableData.notaAprobacion}
           />
         </>
       )}
