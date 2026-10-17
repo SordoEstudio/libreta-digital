@@ -368,7 +368,7 @@ export default function CuadernoTabla({
               showProceso ? 'bg-primary text-primary-foreground border-primary' : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            Proceso ({evalRefsFiltradas.length})
+            Referencia ({evalRefsFiltradas.length})
           </button>
         )}
         <button
