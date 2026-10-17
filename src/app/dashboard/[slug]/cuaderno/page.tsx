@@ -5,6 +5,7 @@ import { NotebookPen } from 'lucide-react'
 import CuadernoSelectores from './cuaderno-selectores'
 import CuadernoTabla from './cuaderno-tabla'
 import CuadernoNuevaInstanciaBtn from './cuaderno-nueva-instancia-btn'
+import CuadernoUnidadesSheet from './cuaderno-unidades-sheet'
 
 type Params = { params: Promise<{ slug: string }>; searchParams: Promise<{ materia_id?: string; periodo_id?: string }> }
 
@@ -95,6 +96,18 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
   }
 
   const selectedPeriodo = periodo_id ? periodos.find(p => p.id === periodo_id) : null
+
+  // Fetch unidades for the selected materia
+  type Unidad = { id: string; nombre: string; orden: number; fecha_inicio: string | null; fecha_fin: string | null }
+  const { data: unidadesRaw } = selectedMateria
+    ? await supabase
+        .from('unidades')
+        .select('id, nombre, orden, fecha_inicio, fecha_fin')
+        .eq('materia_id', selectedMateria.id)
+        .is('deleted_at', null)
+        .order('orden')
+    : { data: [] }
+  const unidades = (unidadesRaw ?? []) as Unidad[]
 
   // Only fetch table data when both materia + periodo selected
   let tableData: {
@@ -263,11 +276,28 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
 
       {tableData && selectedPeriodo && (
         <>
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-2">
+            <CuadernoUnidadesSheet
+              materiaId={selectedMateria!.id}
+              unidades={unidades.map(u => ({
+                id: u.id,
+                nombre: u.nombre,
+                orden: u.orden,
+                fechaInicio: u.fecha_inicio,
+                fechaFin: u.fecha_fin,
+              }))}
+            />
             <CuadernoNuevaInstanciaBtn
               materiaId={selectedMateria!.id}
               periodos={periodos}
               dimensiones={tableData.allMaterialDims}
+              unidades={unidades.map(u => ({
+                id: u.id,
+                nombre: u.nombre,
+                orden: u.orden,
+                fecha_inicio: u.fecha_inicio,
+                fecha_fin: u.fecha_fin,
+              }))}
             />
           </div>
 
