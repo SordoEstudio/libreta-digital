@@ -82,10 +82,17 @@ export default async function EvaluacionesPage({ params }: Params) {
       .map(ev => [ev.recuperatorio_de_evaluacion_id!, ev.id])
   )
 
+  // Separate query to get año_lectivo_id without ñ in select string
+  const { data: cursoData } = await supabase
+    .from('cursos')
+    .select('*')
+    .eq('id', cursoId)
+    .single()
+
   const { data: periodos } = await supabase
     .from('periodos')
     .select('id, nombre, activo, cerrado_at')
-    .eq('institucion_id', inst.id)
+    .eq('año_lectivo_id', cursoData?.año_lectivo_id ?? '')
     .is('deleted_at', null)
     .order('orden')
 

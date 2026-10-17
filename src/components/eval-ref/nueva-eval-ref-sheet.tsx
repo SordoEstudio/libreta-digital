@@ -136,7 +136,9 @@ export default function NuevaEvalRefSheet({ materiaId, periodos, dimensiones, un
                 <Label htmlFor="ref-periodo">Período</Label>
                 <Select value={periodoId} onValueChange={v => setPeriodoId(v ?? '')}>
                   <SelectTrigger id="ref-periodo">
-                    <SelectValue placeholder="Sin período" />
+                    <SelectValue placeholder="Sin período">
+                    {periodoId ? periodos.find(p => p.id === periodoId)?.nombre : undefined}
+                  </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="">Sin período</SelectItem>

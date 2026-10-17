@@ -152,7 +152,9 @@ export default function EditarEvalRefSheet({
                 <Label htmlFor="edit-ref-periodo">Período</Label>
                 <Select value={periodoId} onValueChange={v => setPeriodoId(v ?? '')}>
                   <SelectTrigger id="edit-ref-periodo">
-                    <SelectValue placeholder="Sin período" />
+                    <SelectValue placeholder="Sin período">
+                    {periodoId ? periodos.find(p => p.id === periodoId)?.nombre : undefined}
+                  </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="">Sin período</SelectItem>
