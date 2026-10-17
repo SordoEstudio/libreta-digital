@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Pencil, Save, Plus, Trash2, Loader2, X } from 'lucide-react'
 import { toast } from 'sonner'
+import { createClient } from '@/lib/supabase/client'
 
 const DIAS = ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
 
@@ -43,6 +44,12 @@ interface Plantilla {
   nombre: string
 }
 
+interface Unidad {
+  id: string
+  nombre: string
+  orden: number
+}
+
 function displayNombre(d: Docente) {
   return d.apellido ? `${d.apellido}, ${d.nombre}` : d.nombre
 }
@@ -54,6 +61,7 @@ interface Props {
   horariosActuales: HorarioSlot[]
   initialDimensiones: Dimension[]
   instId: string
+  initialUnidades?: Unidad[]
 }
 
 export default function EditarMateriaSheet({
@@ -63,6 +71,7 @@ export default function EditarMateriaSheet({
   horariosActuales,
   initialDimensiones,
   instId,
+  initialUnidades = [],
 }: Props) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
@@ -95,6 +104,13 @@ export default function EditarMateriaSheet({
   const [plantillaId, setPlantillaId] = useState('')
   const [applyingPlantilla, setApplyingPlantilla] = useState(false)
 
+  // Unidades
+  const [unidades, setUnidades] = useState<Unidad[]>(initialUnidades)
+  const [unidadNombre, setUnidadNombre] = useState('')
+  const [unidadAdding, setUnidadAdding] = useState(false)
+  const [unidadDeletingId, setUnidadDeletingId] = useState<string | null>(null)
+  const [confirmDeleteUnidad, setConfirmDeleteUnidad] = useState<Unidad | null>(null)
+
   useEffect(() => {
     if (!open) return
     setDimensiones(initialDimensiones)
@@ -108,6 +124,16 @@ export default function EditarMateriaSheet({
       .then(r => r.ok ? r.json() : { data: [] })
       .then(json => setPlantillas((json.data ?? []) as Plantilla[]))
       .catch(() => {})
+    const supabase = createClient()
+    supabase
+      .from('unidades')
+      .select('id, nombre, orden')
+      .eq('materia_id', materiaId)
+      .is('deleted_at', null)
+      .order('orden')
+      .then(({ data: uniData }) => {
+        setUnidades((uniData ?? []) as Unidad[])
+      })
   }, [open, instId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSaveDocente() {
@@ -239,6 +265,43 @@ export default function EditarMateriaSheet({
       router.refresh()
     } else {
       toast.error(json.error?.message ?? 'Error al aplicar plantilla')
+    }
+  }
+
+  async function handleAddUnidad() {
+    if (!unidadNombre.trim()) return
+    setUnidadAdding(true)
+    const res = await fetch(`/api/v1/materias/${materiaId}/unidades`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nombre: unidadNombre.trim() }),
+    })
+    if (res.ok) {
+      const created = await res.json()
+      const nueva: Unidad = {
+        id: created.data.id,
+        nombre: created.data.nombre,
+        orden: created.data.orden,
+      }
+      setUnidades(prev => [...prev, nueva])
+      setUnidadNombre('')
+      toast.success('Unidad agregada')
+    } else {
+      toast.error('Error al agregar unidad')
+    }
+    setUnidadAdding(false)
+  }
+
+  async function handleDeleteUnidad(unidad: Unidad) {
+    setUnidadDeletingId(unidad.id)
+    const res = await fetch(`/api/v1/unidades/${unidad.id}`, { method: 'DELETE' })
+    setUnidadDeletingId(null)
+    setConfirmDeleteUnidad(null)
+    if (res.ok) {
+      setUnidades(prev => prev.filter(u => u.id !== unidad.id))
+      toast.success('Unidad eliminada')
+    } else {
+      toast.error('Error al eliminar unidad')
     }
   }
 
@@ -490,6 +553,53 @@ export default function EditarMateriaSheet({
                 </div>
               )}
             </div>
+
+            {/* Unidades */}
+            <div className="flex flex-col gap-3 border-t pt-5">
+              <p className="text-sm font-semibold">Unidades</p>
+
+              {unidades.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Sin unidades configuradas.</p>
+              ) : (
+                <div className="flex flex-col gap-1">
+                  {unidades.map(u => (
+                    <div key={u.id} className="flex items-center justify-between rounded-md border px-3 py-2">
+                      <p className="text-sm font-medium">{u.nombre}</p>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-7"
+                        onClick={() => setConfirmDeleteUnidad(u)}
+                        disabled={unidadDeletingId === u.id}
+                      >
+                        {unidadDeletingId === u.id
+                          ? <Loader2 className="size-3.5 animate-spin" />
+                          : <Trash2 className="size-3.5 text-destructive" />}
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Nueva unidad"
+                  value={unidadNombre}
+                  onChange={e => setUnidadNombre(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); void handleAddUnidad() } }}
+                  className="h-8 text-sm"
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => void handleAddUnidad()}
+                  disabled={unidadAdding || !unidadNombre.trim()}
+                  className="shrink-0"
+                >
+                  {unidadAdding ? <Loader2 className="size-3.5 animate-spin" /> : <Plus className="size-3.5" />}
+                </Button>
+              </div>
+            </div>
           </div>
 
           {confirmDelete && (
@@ -509,6 +619,30 @@ export default function EditarMateriaSheet({
                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   >
                     Eliminar de todas formas
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+
+          {confirmDeleteUnidad && (
+            <AlertDialog open onOpenChange={v => { if (!v) setConfirmDeleteUnidad(null) }}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>¿Eliminar &quot;{confirmDeleteUnidad.nombre}&quot;?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Se quitará la unidad de todas las evaluaciones asignadas.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => void handleDeleteUnidad(confirmDeleteUnidad)}
+                    disabled={unidadDeletingId === confirmDeleteUnidad.id}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {unidadDeletingId === confirmDeleteUnidad.id && <Loader2 data-icon="inline-start" className="animate-spin" />}
+                    Eliminar
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
