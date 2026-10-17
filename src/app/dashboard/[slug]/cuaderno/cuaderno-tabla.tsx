@@ -38,6 +38,10 @@ function notaKey(alumnoId: string, dimId: string | null) {
   return `${alumnoId}::${dimId ?? '__'}`
 }
 
+function procesoKey(evalRefId: string, alumnoId: string, dimId: string | null) {
+  return `${evalRefId}::${alumnoId}::${dimId ?? '__'}`
+}
+
 function displayNombre(a: Alumno) {
   return a.apellido ? `${a.apellido}, ${a.nombre}` : a.nombre
 }
@@ -74,6 +78,18 @@ export default function CuadernoTabla({
   const router = useRouter()
   const [showProceso, setShowProceso] = useState(true)
   const [showDefinitiva, setShowDefinitiva] = useState(true)
+
+  // Proceso state
+  const [valoresProceso, setValoresProceso] = useState<Record<string, string>>(() => {
+    const init: Record<string, string> = {}
+    for (const ev of evalRefs) {
+      for (const [k, v] of Object.entries(ev.notasMap)) {
+        init[`${ev.id}::${k}`] = v   // key = `${evalRefId}::${alumnoId}::${dimId|'__'}`
+      }
+    }
+    return init
+  })
+  const [savingProceso, setSavingProceso] = useState(false)
 
   // Definitiva state
   const [definitivaEvalId, setDefinitivaEvalId] = useState<string | null>(initialDefinitivaId)
@@ -144,6 +160,37 @@ export default function CuadernoTabla({
       return
     }
     toast.success(`Notas definitivas guardadas`)
+    router.refresh()
+  }
+
+  async function handleSaveProceso() {
+    setSavingProceso(true)
+    let errorCount = 0
+    for (const ev of evalRefs) {
+      const notas = alumnos.flatMap(a => {
+        const cols = ev.dimensiones.length > 0 ? ev.dimensiones : [null as null]
+        return cols.map(dim => {
+          const val = valoresProceso[procesoKey(ev.id, a.id, dim?.id ?? null)]?.trim() ?? ''
+          const num = parseFloat(val)
+          return {
+            alumno_id: a.id,
+            dimension_id: dim?.id ?? null,
+            valor_numerico: ev.tipo === 'numerica' && Number.isFinite(num) ? num : null,
+            valor_literal: ev.tipo === 'conceptual' && val ? val : null,
+          }
+        })
+      }).filter(n => n.valor_numerico !== null || n.valor_literal !== null)
+      if (notas.length === 0) continue
+      const res = await fetch('/api/v1/notas-referencia/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ evaluacion_ref_id: ev.id, notas }),
+      })
+      if (!res.ok) errorCount++
+    }
+    setSavingProceso(false)
+    if (errorCount > 0) toast.error(`${errorCount} evaluación(es) no se pudieron guardar`)
+    else toast.success(`Seguimiento guardado`)
     router.refresh()
   }
 
@@ -241,14 +288,19 @@ export default function CuadernoTabla({
 
                   {/* Proceso cells */}
                   {showProceso && evalRefs.map(ev => {
-                    const cols = ev.dimensiones.length > 0 ? ev.dimensiones : [null]
+                    const cols = ev.dimensiones.length > 0 ? ev.dimensiones : [null as null]
                     return cols.map(dim => {
-                      const val = ev.notasMap[notaKey(alumno.id, dim?.id ?? null)] ?? ''
                       return (
                         <td key={`${ev.id}::${dim?.id ?? '__'}`} className="px-2 py-1 text-center">
-                          <span className={`text-sm ${val === '' ? 'text-muted-foreground' : ''}`}>
-                            {val === '' ? '—' : val}
-                          </span>
+                          <Input
+                            value={valoresProceso[procesoKey(ev.id, alumno.id, dim?.id ?? null)] ?? ''}
+                            onChange={e => setValoresProceso(prev => ({
+                              ...prev,
+                              [procesoKey(ev.id, alumno.id, dim?.id ?? null)]: e.target.value
+                            }))}
+                            className="h-7 w-20 text-sm text-center mx-auto"
+                            placeholder="—"
+                          />
                         </td>
                       )
                     })
@@ -281,14 +333,24 @@ export default function CuadernoTabla({
         </table>
       </div>
 
-      {showDefinitiva && (
-        <div className="flex justify-end">
-          <Button onClick={handleSaveDefinitiva} disabled={savingDefinitiva} size="sm">
-            {savingDefinitiva
-              ? <><Loader2 data-icon="inline-start" className="animate-spin size-3.5" />Guardando...</>
-              : <><Save data-icon="inline-start" className="size-3.5" />Guardar nota definitiva</>
-            }
-          </Button>
+      {(showProceso || showDefinitiva) && (
+        <div className="flex justify-end gap-2">
+          {showProceso && evalRefs.length > 0 && (
+            <Button onClick={handleSaveProceso} disabled={savingProceso} size="sm" variant="secondary">
+              {savingProceso
+                ? <><Loader2 data-icon="inline-start" className="animate-spin size-3.5" />Guardando...</>
+                : <><Save data-icon="inline-start" className="size-3.5" />Guardar seguimiento</>
+              }
+            </Button>
+          )}
+          {showDefinitiva && (
+            <Button onClick={handleSaveDefinitiva} disabled={savingDefinitiva} size="sm">
+              {savingDefinitiva
+                ? <><Loader2 data-icon="inline-start" className="animate-spin size-3.5" />Guardando...</>
+                : <><Save data-icon="inline-start" className="size-3.5" />Guardar nota definitiva</>
+              }
+            </Button>
+          )}
         </div>
       )}
     </div>
