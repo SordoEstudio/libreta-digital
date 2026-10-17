@@ -83,6 +83,13 @@ export default function CuadernoTabla({
   const router = useRouter()
   const [showProceso, setShowProceso] = useState(true)
   const [showDefinitiva, setShowDefinitiva] = useState(true)
+  const [selectedUnidad, setSelectedUnidad] = useState<string>('todas')
+
+  const evalRefsFiltradas = useMemo(() => {
+    if (selectedUnidad === 'todas') return evalRefs
+    if (selectedUnidad === 'sin_unidad') return evalRefs.filter(ev => ev.unidadIds.length === 0)
+    return evalRefs.filter(ev => ev.unidadIds.includes(selectedUnidad))
+  }, [evalRefs, selectedUnidad])
 
   // Proceso state
   const [valoresProceso, setValoresProceso] = useState<Record<string, string>>(() => {
@@ -205,6 +212,36 @@ export default function CuadernoTabla({
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Unidad filter chips */}
+      {todasUnidades.length > 0 && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs text-muted-foreground">Unidad:</span>
+          <button
+            key="todas"
+            onClick={() => setSelectedUnidad('todas')}
+            className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors ${selectedUnidad === 'todas' ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:text-foreground'}`}
+          >
+            Todas
+          </button>
+          {todasUnidades.map(u => (
+            <button
+              key={u.id}
+              onClick={() => setSelectedUnidad(u.id)}
+              className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors ${selectedUnidad === u.id ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:text-foreground'}`}
+            >
+              {u.nombre}
+            </button>
+          ))}
+          <button
+            key="sin_unidad"
+            onClick={() => setSelectedUnidad('sin_unidad')}
+            className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors ${selectedUnidad === 'sin_unidad' ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:text-foreground'}`}
+          >
+            Sin unidad
+          </button>
+        </div>
+      )}
+
       {/* Toggle chips */}
       <div className="flex items-center gap-2">
         <span className="text-xs text-muted-foreground mr-1">Mostrar:</span>
@@ -215,7 +252,7 @@ export default function CuadernoTabla({
               showProceso ? 'bg-primary text-primary-foreground border-primary' : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            Proceso ({evalRefs.length})
+            Proceso ({evalRefsFiltradas.length})
           </button>
         )}
         <button
@@ -238,7 +275,7 @@ export default function CuadernoTabla({
               </th>
 
               {/* Proceso headers */}
-              {showProceso && evalRefs.map(ev => {
+              {showProceso && evalRefsFiltradas.map(ev => {
                 const cols = ev.dimensiones.length > 0 ? ev.dimensiones : [null]
                 return cols.map((dim, dimIdx) => (
                   <th
@@ -269,7 +306,7 @@ export default function CuadernoTabla({
               })}
 
               {/* Promedio header */}
-              {showProceso && evalRefs.some(ev => ev.tipo === 'numerica') && (
+              {showProceso && evalRefsFiltradas.some(ev => ev.tipo === 'numerica') && (
                 <th className="text-center px-2 py-2 font-medium text-xs text-muted-foreground min-w-20 border-l">
                   Prom.
                 </th>
@@ -285,7 +322,7 @@ export default function CuadernoTabla({
           </thead>
           <tbody>
             {sorted.map((alumno, idx) => {
-              const promedio = showProceso ? calcPromedio(alumno.id, evalRefs) : null
+              const promedio = showProceso ? calcPromedio(alumno.id, evalRefsFiltradas) : null
               return (
                 <tr key={alumno.id} className={idx % 2 === 0 ? '' : 'bg-muted/10'}>
                   <td className="px-3 py-1.5 font-medium sticky left-0 bg-inherit border-r">
@@ -293,7 +330,7 @@ export default function CuadernoTabla({
                   </td>
 
                   {/* Proceso cells */}
-                  {showProceso && evalRefs.map(ev => {
+                  {showProceso && evalRefsFiltradas.map(ev => {
                     const cols = ev.dimensiones.length > 0 ? ev.dimensiones : [null as null]
                     return cols.map(dim => {
                       return (
@@ -313,7 +350,7 @@ export default function CuadernoTabla({
                   })}
 
                   {/* Promedio */}
-                  {showProceso && evalRefs.some(ev => ev.tipo === 'numerica') && (
+                  {showProceso && evalRefsFiltradas.some(ev => ev.tipo === 'numerica') && (
                     <td className="px-2 py-1 text-center border-l">
                       <span className="text-sm font-semibold">
                         {promedio !== null ? promedio : '—'}
@@ -341,7 +378,7 @@ export default function CuadernoTabla({
 
       {(showProceso || showDefinitiva) && (
         <div className="flex justify-end gap-2">
-          {showProceso && evalRefs.length > 0 && (
+          {showProceso && evalRefsFiltradas.length > 0 && (
             <Button onClick={handleSaveProceso} disabled={savingProceso} size="sm" variant="secondary">
               {savingProceso
                 ? <><Loader2 data-icon="inline-start" className="animate-spin size-3.5" />Guardando...</>
