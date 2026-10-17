@@ -580,13 +580,17 @@ export default function CuadernoTabla({
                       : null
                     return cols.flatMap((dim, dimIdx) => {
                       const k = procesoKey(ev.id, alumno.id, dim?.id ?? null)
+                      const rawVal = parseFloat(valoresLibreta[k] ?? ev.notasMap[notaKey(alumno.id, dim?.id ?? null)] ?? '')
+                      const mainBg = notaAprobacion != null && Number.isFinite(rawVal)
+                        ? rawVal >= notaAprobacion ? 'bg-green-50/50 dark:bg-green-950/20' : 'bg-red-50/40 dark:bg-red-950/20'
+                        : 'bg-sky-50/20'
                       const mainCell = (
-                        <td key={`lib::${k}`} className={`px-1 py-1 bg-sky-50/20 ${dimIdx === 0 && evIdx > 0 ? 'border-l-2 border-border/30' : ''}`}>
+                        <td key={`lib::${k}`} className={`px-1 py-1 ${mainBg} ${dimIdx === 0 && evIdx > 0 ? 'border-l-2 border-border/30' : ''}`}>
                           <Input
                             value={valoresLibreta[k] ?? ''}
                             onChange={e => setValoresLibreta(prev => ({ ...prev, [k]: e.target.value }))}
                             disabled={!!periodoCerrado}
-                            className="h-7 w-16 text-center text-xs p-1"
+                            className="h-7 w-16 text-center text-xs p-1 bg-transparent"
                             placeholder="—"
                           />
                         </td>
@@ -596,18 +600,20 @@ export default function CuadernoTabla({
                       const rk = procesoKey(ev.recuperatorio!.id, alumno.id, rDim?.id ?? null)
                       const parentNota = parseFloat(valoresLibreta[k] ?? ev.notasMap[notaKey(alumno.id, dim?.id ?? null)] ?? '')
                       const dimApproved = notaAprobacion != null && !isNaN(parentNota) && parentNota >= notaAprobacion
+                      const recupRaw = parseFloat(valoresLibreta[rk] ?? ev.recuperatorio!.notasMap[notaKey(alumno.id, rDim?.id ?? null)] ?? '')
+                      const recupBg = !dimApproved && notaAprobacion != null && Number.isFinite(recupRaw)
+                        ? recupRaw >= notaAprobacion ? 'bg-green-50/40 dark:bg-green-950/20' : 'bg-red-50/30 dark:bg-red-950/20'
+                        : 'bg-sky-50/10'
                       const recupCell = (
-                        <td key={`lib::recup::${rk}`} className="px-1 py-1 bg-sky-50/10 border-l border-border/20">
+                        <td key={`lib::recup::${rk}`} className={`px-1 py-1 ${recupBg} border-l border-border/20`}>
                           {dimApproved ? (
-                            <span className="flex h-7 w-14 items-center justify-center text-xs text-green-600/60">
-                              ✓
-                            </span>
+                            <span className="flex h-7 w-14 items-center justify-center text-xs text-muted-foreground/40">—</span>
                           ) : (
                             <Input
                               value={valoresLibreta[rk] ?? ''}
                               onChange={e => setValoresLibreta(prev => ({ ...prev, [rk]: e.target.value }))}
                               disabled={!!periodoCerrado}
-                              className="h-7 w-14 text-center text-xs p-1"
+                              className="h-7 w-14 text-center text-xs p-1 bg-transparent"
                               placeholder="—"
                             />
                           )}
@@ -621,15 +627,19 @@ export default function CuadernoTabla({
                   {showProceso && evalRefsFiltradas.map((ev, evIdx) => {
                     const cols = ev.dimensiones.length > 0 ? ev.dimensiones : [null as null]
                     return cols.map((dim, dimIdx) => {
+                      const pv = parseFloat(valoresProceso[procesoKey(ev.id, alumno.id, dim?.id ?? null)] ?? '')
+                      const procBg = ev.tipo === 'numerica' && notaAprobacion != null && Number.isFinite(pv)
+                        ? pv >= notaAprobacion ? 'bg-green-50/50 dark:bg-green-950/20' : 'bg-red-50/40 dark:bg-red-950/20'
+                        : ''
                       return (
-                        <td key={`${ev.id}::${dim?.id ?? '__'}`} className={`px-2 py-1 text-center ${dimIdx === 0 && evIdx > 0 ? 'border-l-2 border-border/30' : ''}`}>
+                        <td key={`${ev.id}::${dim?.id ?? '__'}`} className={`px-2 py-1 text-center ${procBg} ${dimIdx === 0 && evIdx > 0 ? 'border-l-2 border-border/30' : ''}`}>
                           <Input
                             value={valoresProceso[procesoKey(ev.id, alumno.id, dim?.id ?? null)] ?? ''}
                             onChange={e => setValoresProceso(prev => ({
                               ...prev,
                               [procesoKey(ev.id, alumno.id, dim?.id ?? null)]: e.target.value
                             }))}
-                            className="h-7 w-20 text-sm text-center mx-auto"
+                            className="h-7 w-20 text-sm text-center mx-auto bg-transparent"
                             placeholder="—"
                           />
                         </td>

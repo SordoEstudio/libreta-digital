@@ -336,10 +336,14 @@ export function NotasEditor({
                   dimensiones.map(dim => {
                     const dimEligible = !eligibles || eligibles.get(alumno.id)?.has(dim.id)
                     const isAusente = ausentesDim[alumno.id]?.[dim.id] ?? false
+                    const cellVal = parseFloat(valoresDim[alumno.id]?.[dim.id] ?? '')
+                    const cellBg = dimEligible && !isAusente && notaAprobacion != null && Number.isFinite(cellVal)
+                      ? cellVal >= notaAprobacion ? 'bg-green-50/60 dark:bg-green-950/20' : 'bg-red-50/50 dark:bg-red-950/20'
+                      : ''
                     return (
-                      <TableCell key={dim.id}>
+                      <TableCell key={dim.id} className={cellBg}>
                         {!dimEligible ? (
-                          <span className="text-xs text-green-600 font-medium">✓ Aprobado</span>
+                          <span className="text-xs text-muted-foreground/50">—</span>
                         ) : isAusente ? (
                           <div className="flex items-center gap-1.5">
                             <span className="font-bold text-orange-600 text-sm w-8">A</span>
