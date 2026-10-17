@@ -350,41 +350,18 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Cuaderno del docente</h1>
-        <p className="text-sm text-muted-foreground">Vista unificada de seguimiento y nota definitiva por período</p>
-      </div>
-
-      <CuadernoSelectores
-        slug={slug}
-        materias={materias.map(m => ({ id: m.id, nombre: m.nombre, cursoNombre: m.cursoNombre }))}
-        periodos={periodos.map(p => ({ id: p.id, nombre: p.nombre }))}
-        selectedMateriaId={selectedMateria?.id ?? null}
-        selectedPeriodoId={selectedPeriodo?.id ?? null}
-      />
-
-      {!selectedMateria && (
-        <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-          <NotebookPen className="size-12 text-muted-foreground/40" />
-          <p className="text-muted-foreground">Seleccioná una materia para comenzar.</p>
-        </div>
-      )}
-
-      {selectedMateria && !selectedPeriodo && (
-        <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-          <NotebookPen className="size-12 text-muted-foreground/40" />
-          <p className="text-muted-foreground">
-            {periodos.length === 0
-              ? 'Esta materia no tiene períodos configurados.'
-              : 'Seleccioná un período para ver el cuaderno.'}
-          </p>
-        </div>
-      )}
-
-      {tableData && selectedPeriodo && (
-        <>
-          <div className="flex justify-end gap-2">
+    <div className="flex flex-col gap-4 min-w-0">
+      {/* Toolbar: selectors + actions */}
+      <div className="flex items-end justify-between gap-4 flex-wrap">
+        <CuadernoSelectores
+          slug={slug}
+          materias={materias.map(m => ({ id: m.id, nombre: m.nombre, cursoNombre: m.cursoNombre }))}
+          periodos={periodos.map(p => ({ id: p.id, nombre: p.nombre }))}
+          selectedMateriaId={selectedMateria?.id ?? null}
+          selectedPeriodoId={selectedPeriodo?.id ?? null}
+        />
+        {tableData && selectedPeriodo && (
+          <div className="flex gap-2 shrink-0">
             <CuadernoUnidadesSheet
               materiaId={selectedMateria!.id}
               unidades={unidades.map(u => ({
@@ -408,8 +385,29 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
               }))}
             />
           </div>
+        )}
+      </div>
 
-          <CuadernoTabla
+      {!selectedMateria && (
+        <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+          <NotebookPen className="size-12 text-muted-foreground/40" />
+          <p className="text-muted-foreground">Seleccioná una materia para comenzar.</p>
+        </div>
+      )}
+
+      {selectedMateria && !selectedPeriodo && (
+        <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+          <NotebookPen className="size-12 text-muted-foreground/40" />
+          <p className="text-muted-foreground">
+            {periodos.length === 0
+              ? 'Esta materia no tiene períodos configurados.'
+              : 'Seleccioná un período para ver el cuaderno.'}
+          </p>
+        </div>
+      )}
+
+      {tableData && selectedPeriodo && (
+        <CuadernoTabla
             key={`${selectedMateria!.id}:${selectedPeriodo.id}`}
             alumnos={tableData.alumnos}
             evalRefs={tableData.evalRefs}
@@ -426,7 +424,6 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
             notaAprobacion={tableData.notaAprobacion}
             slug={slug}
           />
-        </>
       )}
     </div>
   )

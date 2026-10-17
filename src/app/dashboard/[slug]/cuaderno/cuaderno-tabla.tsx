@@ -59,6 +59,8 @@ interface Props {
   slug: string
 }
 
+const UNIT_COLORS = ['#f97316','#8b5cf6','#14b8a6','#f43f5e','#6366f1','#f59e0b','#10b981']
+
 function notaKey(alumnoId: string, dimId: string | null) {
   return `${alumnoId}::${dimId ?? '__'}`
 }
@@ -106,6 +108,18 @@ export default function CuadernoTabla({
   slug,
 }: Props) {
   const router = useRouter()
+
+  const unitColorMap = useMemo(() => {
+    const m: Record<string, string> = {}
+    todasUnidades.forEach((u, i) => { m[u.id] = UNIT_COLORS[i % UNIT_COLORS.length] })
+    return m
+  }, [todasUnidades])
+
+  function getEvalColor(unidadIds: string[]): string | null {
+    if (unidadIds.length === 0) return null
+    return unitColorMap[unidadIds[0]] ?? null
+  }
+
   const [showProceso, setShowProceso] = useState(true)
   const [showDefinitiva, setShowDefinitiva] = useState(true)
   const [showLibreta, setShowLibreta] = useState(true)
@@ -317,40 +331,42 @@ export default function CuadernoTabla({
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Unidad filter chips */}
-      {todasUnidades.length > 0 && (
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs text-muted-foreground">Unidad:</span>
-          <button
-            key="todas"
-            onClick={() => setSelectedUnidad('todas')}
-            className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors ${selectedUnidad === 'todas' ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:text-foreground'}`}
-          >
-            Todas
-          </button>
-          {todasUnidades.map(u => (
+    <div className="flex flex-col gap-4 min-w-0">
+      {/* Combined filter + toggle chips */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {todasUnidades.length > 0 && (
+          <>
+            <span className="text-xs text-muted-foreground shrink-0">Unidad:</span>
             <button
-              key={u.id}
-              onClick={() => setSelectedUnidad(u.id)}
-              className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors ${selectedUnidad === u.id ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:text-foreground'}`}
+              onClick={() => setSelectedUnidad('todas')}
+              className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors ${selectedUnidad === 'todas' ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:text-foreground'}`}
             >
-              {u.nombre}
+              Todas
             </button>
-          ))}
-          <button
-            key="sin_unidad"
-            onClick={() => setSelectedUnidad('sin_unidad')}
-            className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors ${selectedUnidad === 'sin_unidad' ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:text-foreground'}`}
-          >
-            Sin unidad
-          </button>
-        </div>
-      )}
-
-      {/* Toggle chips */}
-      <div className="flex items-center gap-2">
-        <span className="text-xs text-muted-foreground mr-1">Mostrar:</span>
+            {todasUnidades.map((u, i) => {
+              const color = UNIT_COLORS[i % UNIT_COLORS.length]
+              const active = selectedUnidad === u.id
+              return (
+                <button
+                  key={u.id}
+                  onClick={() => setSelectedUnidad(u.id)}
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors ${active ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:text-foreground'}`}
+                >
+                  <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: active ? 'currentColor' : color }} />
+                  {u.nombre}
+                </button>
+              )
+            })}
+            <button
+              onClick={() => setSelectedUnidad('sin_unidad')}
+              className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors ${selectedUnidad === 'sin_unidad' ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:text-foreground'}`}
+            >
+              Sin unidad
+            </button>
+            <span className="w-px h-4 bg-border shrink-0 mx-1" />
+          </>
+        )}
+        <span className="text-xs text-muted-foreground shrink-0">Ver:</span>
         {(evalsLibreta ?? []).length > 0 && (
           <button
             onClick={() => setShowLibreta(v => !v)}
@@ -412,12 +428,12 @@ export default function CuadernoTabla({
               </th>
 
               {/* Libreta headers */}
-              {showLibreta && (evalsLibreta ?? []).map(ev => {
+              {showLibreta && (evalsLibreta ?? []).map((ev, evIdx) => {
                 const cols = ev.dimensiones.length > 0 ? ev.dimensiones : [null as null]
                 const drillUrl = `/dashboard/${slug}/notas/${ev.id}?from=cuaderno&materia_id=${materiaId}&periodo_id=${periodoId}`
                 const mainCols = cols.map((dim, idx) => (
                   <th key={`lib::${ev.id}::${dim?.id ?? '__'}`}
-                      className="group text-center px-2 py-2 font-medium text-xs text-sky-700 bg-sky-50/30 min-w-20">
+                      className={`group text-center px-2 py-2 font-medium text-xs text-sky-700 bg-sky-50/30 min-w-20 ${idx === 0 && evIdx > 0 ? 'border-l-2 border-border/50' : ''}`}>
                     {idx === 0 ? (
                       <div className="flex flex-col items-center gap-0.5">
                         <div className="flex items-center gap-0.5">
@@ -459,12 +475,14 @@ export default function CuadernoTabla({
               })}
 
               {/* Proceso headers */}
-              {showProceso && evalRefsFiltradas.map(ev => {
+              {showProceso && evalRefsFiltradas.map((ev, evIdx) => {
                 const cols = ev.dimensiones.length > 0 ? ev.dimensiones : [null]
+                const evalColor = getEvalColor(ev.unidadIds)
                 return cols.map((dim, dimIdx) => (
                   <th
                     key={`${ev.id}::${dim?.id ?? '__'}`}
-                    className="group text-center px-2 py-2 font-medium text-xs text-muted-foreground min-w-24"
+                    style={dimIdx === 0 && evalColor ? { borderTop: `3px solid ${evalColor}` } : undefined}
+                    className={`group text-center px-2 py-2 font-medium text-xs text-muted-foreground min-w-24 ${dimIdx === 0 && evIdx > 0 ? 'border-l-2 border-border/50' : ''}`}
                   >
                     {dimIdx === 0 ? (
                       <div className="flex flex-col items-center gap-0.5">
@@ -514,12 +532,12 @@ export default function CuadernoTabla({
                   </td>
 
                   {/* Libreta cells */}
-                  {showLibreta && (evalsLibreta ?? []).map(ev => {
+                  {showLibreta && (evalsLibreta ?? []).map((ev, evIdx) => {
                     const cols = ev.dimensiones.length > 0 ? ev.dimensiones : [null as null]
-                    const evalCells = cols.map(dim => {
+                    const evalCells = cols.map((dim, dimIdx) => {
                       const k = procesoKey(ev.id, alumno.id, dim?.id ?? null)
                       return (
-                        <td key={`lib::${k}`} className="px-1 py-1 bg-sky-50/20">
+                        <td key={`lib::${k}`} className={`px-1 py-1 bg-sky-50/20 ${dimIdx === 0 && evIdx > 0 ? 'border-l-2 border-border/30' : ''}`}>
                           <Input
                             value={valoresLibreta[k] ?? ''}
                             onChange={e => setValoresLibreta(prev => ({ ...prev, [k]: e.target.value }))}
@@ -560,11 +578,11 @@ export default function CuadernoTabla({
                   })}
 
                   {/* Proceso cells */}
-                  {showProceso && evalRefsFiltradas.map(ev => {
+                  {showProceso && evalRefsFiltradas.map((ev, evIdx) => {
                     const cols = ev.dimensiones.length > 0 ? ev.dimensiones : [null as null]
-                    return cols.map(dim => {
+                    return cols.map((dim, dimIdx) => {
                       return (
-                        <td key={`${ev.id}::${dim?.id ?? '__'}`} className="px-2 py-1 text-center">
+                        <td key={`${ev.id}::${dim?.id ?? '__'}`} className={`px-2 py-1 text-center ${dimIdx === 0 && evIdx > 0 ? 'border-l-2 border-border/30' : ''}`}>
                           <Input
                             value={valoresProceso[procesoKey(ev.id, alumno.id, dim?.id ?? null)] ?? ''}
                             onChange={e => setValoresProceso(prev => ({
