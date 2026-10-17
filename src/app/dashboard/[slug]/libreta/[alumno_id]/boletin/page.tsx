@@ -199,7 +199,7 @@ export default async function BoletinPage({ params }: Params) {
     <div>
       {/* Toolbar — hidden on print */}
       <div className="flex items-center justify-between mb-6 print:hidden">
-        <Button variant="ghost" size="sm" render={<Link href={`/dashboard/${slug}/libreta/${alumno_id}`} />}>
+        <Button variant="ghost" size="sm" render={<Link href={`/dashboard/${slug}/alumnos`} />}>
           <ArrowLeft data-icon="inline-start" />
           Volver
         </Button>
