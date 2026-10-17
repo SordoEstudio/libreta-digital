@@ -48,13 +48,13 @@ export function AppSidebar({ session }: AppSidebarProps) {
   }
 
   return (
-    <Sidebar>
+    <Sidebar collapsible="icon">
       <SidebarHeader>
         <div className="flex items-center gap-2.5 px-2 py-2">
           <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-harvi-green-lime">
             <span className="text-[11px] font-black text-harvi-dark leading-none">LD</span>
           </div>
-          <div className="flex flex-col min-w-0">
+          <div className="flex flex-col min-w-0 group-data-[collapsible=icon]:hidden">
             <span className="text-sm font-bold leading-tight text-white truncate">Libreta.digital</span>
             <span className="text-[10px] text-white/50 leading-tight">by Harvi</span>
           </div>
@@ -253,11 +253,11 @@ export function AppSidebar({ session }: AppSidebarProps) {
             <SidebarTrigger className="w-full justify-start text-white/60 hover:text-white hover:bg-white/10" />
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <div className="flex items-center gap-2 px-2 py-1">
-              <Avatar className="size-7">
+            <div className="flex items-center gap-2 px-2 py-1 overflow-hidden">
+              <Avatar className="size-7 shrink-0">
                 <AvatarFallback className="text-xs bg-harvi-green-lime text-harvi-dark font-semibold">{initials}</AvatarFallback>
               </Avatar>
-              <div className="flex flex-col flex-1 min-w-0">
+              <div className="flex flex-col flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
                 <span className="text-xs font-medium text-white truncate">{session.nombre ?? session.email}</span>
                 <span className="text-xs text-white/60 truncate">{session.email}</span>
               </div>

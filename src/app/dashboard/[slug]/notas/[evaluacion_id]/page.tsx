@@ -204,7 +204,7 @@ export default async function NotasPage({ params, searchParams }: Params) {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="sticky top-12 z-10 bg-background border-b -mx-6 px-6 py-3">
+      <div className="sticky top-0 z-10 bg-background border-b -mx-6 px-6 py-3">
         {backUrl && (
           <Link href={backUrl} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 mb-1.5">
             <ChevronLeft className="size-4" />
