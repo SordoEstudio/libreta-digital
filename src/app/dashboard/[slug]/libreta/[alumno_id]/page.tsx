@@ -87,7 +87,6 @@ export default async function LibretaPage({ params }: Params) {
   for (const nota of (notas ?? [])) {
     const ev = nota.evaluaciones as Evaluacion | null
     if (!ev?.materias) continue
-    if (ev.tipo === 'referencia') continue
     const matId = ev.materias.id
     const nombre = (ev.materias.materias_catalogo as { nombre: string } | null)?.nombre ?? ''
     if (!materiaMap.has(matId)) {

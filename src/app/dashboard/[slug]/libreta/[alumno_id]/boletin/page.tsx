@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Printer } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import PrintButton from './print-button'
 
 type Params = { params: Promise<{ slug: string; alumno_id: string }> }
@@ -39,10 +39,11 @@ export default async function BoletinPage({ params }: Params) {
     .from('notas')
     .select(`
       id, valor_numerico, valor_literal, observacion, dimension_id,
-      materias_dimensiones(id, nombre, peso),
-      evaluaciones(id, nombre, peso, tipo, periodo_id,
+      materias_dimensiones(id, nombre, peso, orden),
+      evaluaciones(id, nombre, tipo, peso, periodo_id, template_id,
         periodos(nombre, orden),
-        materias(id, materias_catalogo(nombre))
+        materias(id, materias_catalogo(nombre)),
+        evaluaciones_template(id, nombre, tipo, orden)
       )
     `)
     .eq('alumno_id', alumno_id)
@@ -53,7 +54,11 @@ export default async function BoletinPage({ params }: Params) {
     .select('materia_id, total_clases, inasistencias_justificadas, inasistencias_injustificadas')
     .eq('alumno_id', alumno_id)
 
-  type AsistenciaTotales = { total_clases: number; inasistencias_justificadas: number; inasistencias_injustificadas: number }
+  type AsistenciaTotales = {
+    total_clases: number
+    inasistencias_justificadas: number
+    inasistencias_injustificadas: number
+  }
   const asistenciaMap = new Map<string, AsistenciaTotales>()
   for (const a of (asistencias ?? [])) {
     if (!a.materia_id) continue
@@ -71,49 +76,121 @@ export default async function BoletinPage({ params }: Params) {
     }
   }
 
-  type Dimension = { id: string; nombre: string; peso: number | null }
+  // ── Types ────────────────────────────────────────────────────────────────
+  type Dimension = { id: string; nombre: string; peso: number | null; orden: number }
+  type EvalTemplate = { id: string; nombre: string; tipo: string; orden: number }
   type Evaluacion = {
-    id: string; nombre: string; peso: number; tipo: string; periodo_id: string | null
+    id: string; nombre: string; tipo: string; peso: number; periodo_id: string | null
+    template_id: string | null
     periodos: { nombre: string; orden: number } | null
     materias: { id: string; materias_catalogo: { nombre: string } | null } | null
+    evaluaciones_template: EvalTemplate | null
   }
   type NotaRow = NonNullable<typeof notas>[number]
+  type NotaWithEv = NotaRow & { _ev: Evaluacion }
 
-  type MateriaEntry = {
+  // ── Column schema (from template_id) ────────────────────────────────────
+  type TemplateCol = {
+    templateId: string
     nombre: string
-    notas: Array<NotaRow & { _ev: Evaluacion }>
+    orden: number
+    periodoId: string | null
+    periodoNombre: string
+    periodoOrden: number
   }
 
-  const materiaMap = new Map<string, MateriaEntry>()
+  // ── Materia data ─────────────────────────────────────────────────────────
+  type MateriaData = {
+    nombre: string
+    // templateId → dimId|null → nota
+    notasMap: Map<string, Map<string | null, NotaWithEv>>
+    // definitiva_anual: dimId|null → nota
+    definitivaMap: Map<string | null, NotaWithEv>
+    dimensions: Map<string, Dimension>
+  }
+
+  const templateColMap = new Map<string, TemplateCol>()
+  const materiaDataMap = new Map<string, MateriaData>()
+
   for (const nota of (notas ?? [])) {
     const ev = nota.evaluaciones as Evaluacion | null
     if (!ev?.materias) continue
-    if (ev.tipo === 'referencia') continue
     const matId = ev.materias.id
-    const nombre = (ev.materias.materias_catalogo as { nombre: string } | null)?.nombre ?? ''
-    if (!materiaMap.has(matId)) materiaMap.set(matId, { nombre, notas: [] })
-    materiaMap.get(matId)!.notas.push({ ...nota, _ev: ev })
+    const matNombre = (ev.materias.materias_catalogo as { nombre: string } | null)?.nombre ?? ''
+
+    if (!materiaDataMap.has(matId)) {
+      materiaDataMap.set(matId, {
+        nombre: matNombre,
+        notasMap: new Map(),
+        definitivaMap: new Map(),
+        dimensions: new Map(),
+      })
+    }
+    const matData = materiaDataMap.get(matId)!
+
+    if (nota.materias_dimensiones) {
+      const dim = nota.materias_dimensiones as Dimension
+      matData.dimensions.set(dim.id, dim)
+    }
+
+    const notaWithEv: NotaWithEv = { ...nota, _ev: ev }
+    const dimId = nota.dimension_id ?? null
+
+    if (ev.tipo === 'definitiva_anual') {
+      matData.definitivaMap.set(dimId, notaWithEv)
+    } else if (ev.template_id) {
+      if (!templateColMap.has(ev.template_id)) {
+        const tpl = ev.evaluaciones_template as EvalTemplate | null
+        templateColMap.set(ev.template_id, {
+          templateId: ev.template_id,
+          nombre: tpl?.nombre ?? ev.nombre,
+          orden: tpl?.orden ?? 0,
+          periodoId: ev.periodo_id,
+          periodoNombre: ev.periodos?.nombre ?? 'Sin período',
+          periodoOrden: ev.periodos?.orden ?? 9999,
+        })
+      }
+      if (!matData.notasMap.has(ev.template_id)) matData.notasMap.set(ev.template_id, new Map())
+      matData.notasMap.get(ev.template_id)!.set(dimId, notaWithEv)
+    }
   }
 
-  type Inscripcion = { curso_id: string; activo: boolean; deleted_at: string | null }
-  const inscripcion = ((alumno.alumno_inscripciones ?? []) as Inscripcion[])
-    .find(i => i.activo && !i.deleted_at)
+  // Sort columns: período.orden → template.orden
+  const sortedCols = [...templateColMap.values()].sort((a, b) =>
+    a.periodoOrden !== b.periodoOrden ? a.periodoOrden - b.periodoOrden : a.orden - b.orden
+  )
 
+  // Group columns by período for row-1 headers
+  type PeriodoGroup = { id: string | null; nombre: string; orden: number; cols: TemplateCol[] }
+  const periodoGroups: PeriodoGroup[] = []
+  for (const col of sortedCols) {
+    const existing = periodoGroups.find(g => g.id === col.periodoId)
+    if (existing) {
+      existing.cols.push(col)
+    } else {
+      periodoGroups.push({ id: col.periodoId, nombre: col.periodoNombre, orden: col.periodoOrden, cols: [col] })
+    }
+  }
+
+  const hasDefinitiva = [...materiaDataMap.values()].some(m => m.definitivaMap.size > 0)
+  const noData = materiaDataMap.size === 0 && sortedCols.length === 0
+
+  function formatNota(nota: NotaWithEv | undefined): string {
+    if (!nota) return '—'
+    if (nota.valor_literal === 'A') return 'Ausente'
+    return nota.valor_numerico?.toString() ?? nota.valor_literal ?? '—'
+  }
+
+  // Curso / año lectivo
+  type Inscripcion = { curso_id: string; activo: boolean; deleted_at: string | null }
+  const inscripcion = ((alumno.alumno_inscripciones ?? []) as Inscripcion[]).find(i => i.activo && !i.deleted_at)
   let cursoNombre: string | undefined
   let añoNombre: string | undefined
   if (inscripcion?.curso_id) {
-    const { data: cursoRow } = await supabase
-      .from('cursos')
-      .select('*')
-      .eq('id', inscripcion.curso_id)
-      .single()
+    const { data: cursoRow } = await supabase.from('cursos').select('*').eq('id', inscripcion.curso_id).single()
     cursoNombre = cursoRow?.nombre
     if (cursoRow?.año_lectivo_id) {
-      const { data: añoRow } = await supabase
-        .from('años_lectivos')
-        .select('*')
-        .eq('id', cursoRow.año_lectivo_id)
-        .single()
+      const { data: añoRow } = await supabase.from('años_lectivos').select('*').eq('id', cursoRow.año_lectivo_id).single()
       añoNombre = añoRow?.nombre
     }
   }
@@ -124,13 +201,12 @@ export default async function BoletinPage({ params }: Params) {
       <div className="flex items-center justify-between mb-6 print:hidden">
         <Button variant="ghost" size="sm" render={<Link href={`/dashboard/${slug}/libreta/${alumno_id}`} />}>
           <ArrowLeft data-icon="inline-start" />
-          Volver a notas
+          Volver
         </Button>
         <PrintButton />
       </div>
 
-      {/* Boletín content */}
-      <div className="max-w-2xl mx-auto print:max-w-none">
+      <div className="max-w-5xl mx-auto print:max-w-none">
         {/* Header */}
         <div className="text-center mb-6 pb-4 border-b">
           <p className="text-sm text-muted-foreground print:text-gray-600">{inst.nombre}</p>
@@ -142,91 +218,151 @@ export default async function BoletinPage({ params }: Params) {
           </div>
         </div>
 
-        {/* Notas por materia */}
-        {materiaMap.size === 0 ? (
+        {/* Notas — tabla unificada */}
+        {noData ? (
           <p className="text-center text-muted-foreground py-8">Sin notas registradas.</p>
         ) : (
-          <div className="flex flex-col gap-6">
-            {Array.from(materiaMap.entries()).map(([matId, mat]) => {
-              const sorted = [...mat.notas].sort((a, b) => {
-                const oa = a._ev.periodos?.orden ?? 9999
-                const ob = b._ev.periodos?.orden ?? 9999
-                return oa !== ob ? oa - ob : a._ev.nombre.localeCompare(b._ev.nombre)
-              })
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                {/* Fila 1: períodos */}
+                <tr className="text-xs uppercase tracking-wide text-muted-foreground print:text-gray-600">
+                  <th className="text-left pb-1 pr-4 font-medium border-b-2 border-border" rowSpan={2}>
+                    Materia
+                  </th>
+                  {periodoGroups.map(pg => (
+                    <th
+                      key={pg.id ?? 'sin-periodo'}
+                      colSpan={pg.cols.length}
+                      className="text-center pb-1 px-1 font-semibold border-b border-border/50 capitalize"
+                    >
+                      {pg.nombre}
+                    </th>
+                  ))}
+                  {hasDefinitiva && (
+                    <th
+                      className="text-center pb-1 px-2 font-semibold border-b-2 border-border"
+                      rowSpan={2}
+                    >
+                      Definitiva
+                    </th>
+                  )}
+                </tr>
+                {/* Fila 2: nombres de template */}
+                <tr className="text-xs text-muted-foreground print:text-gray-600">
+                  {sortedCols.map(col => (
+                    <th
+                      key={col.templateId}
+                      className="text-center pb-1 px-2 font-medium border-b-2 border-border capitalize whitespace-nowrap"
+                    >
+                      {col.nombre}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {[...materiaDataMap.entries()].map(([matId, matData]) => {
+                  const sortedDims = [...matData.dimensions.values()].sort((a, b) => a.orden - b.orden)
+                  const hasDims = sortedDims.length > 0
+                  const asist = asistenciaMap.get(matId)
+                  const asistInfo = asist && asist.total_clases > 0
+                    ? (() => {
+                        const presentes = asist.total_clases - asist.inasistencias_justificadas - asist.inasistencias_injustificadas
+                        const pct = Math.round((presentes / asist.total_clases) * 1000) / 10
+                        return `${asist.inasistencias_justificadas}J / ${asist.inasistencias_injustificadas}I · ${pct}% asistencia`
+                      })()
+                    : null
 
-              // Group by período
-              const periodoMap = new Map<string | null, { nombre: string; orden: number; notas: typeof sorted }>()
-              for (const nota of sorted) {
-                const pid = nota._ev.periodo_id
-                if (!periodoMap.has(pid)) {
-                  periodoMap.set(pid, {
-                    nombre: nota._ev.periodos?.nombre ?? 'Sin período',
-                    orden: nota._ev.periodos?.orden ?? 9999,
-                    notas: [],
-                  })
-                }
-                periodoMap.get(pid)!.notas.push(nota)
-              }
-              const sortedPeriodos = [...periodoMap.entries()].sort((a, b) => a[1].orden - b[1].orden)
+                  if (hasDims) {
+                    return sortedDims.map((dim, dimIdx) => (
+                      <tr
+                        key={dim.id}
+                        className={`print:border-gray-200 ${
+                          dimIdx === 0
+                            ? 'border-t-2 border-border/60'
+                            : 'border-t border-muted/40'
+                        }`}
+                      >
+                        {/* Materia name cell — spans all dim rows */}
+                        {dimIdx === 0 && (
+                          <td
+                            className="py-1.5 pr-4 font-medium align-top"
+                            rowSpan={sortedDims.length}
+                          >
+                            {matData.nombre}
+                            {asistInfo && (
+                              <span className="block text-xs font-normal text-muted-foreground print:text-gray-500 mt-0.5">
+                                {asistInfo}
+                              </span>
+                            )}
+                          </td>
+                        )}
+                        {/* Template columns for this dimension */}
+                        {sortedCols.map(col => {
+                          const nota = matData.notasMap.get(col.templateId)?.get(dim.id)
+                          const isAusente = nota?.valor_literal === 'A'
+                          return (
+                            <td key={col.templateId} className="text-center py-1.5 px-2">
+                              <span className={isAusente ? 'text-orange-600 font-medium' : 'font-semibold'}>
+                                {formatNota(nota)}
+                              </span>
+                              {nota?.observacion && (
+                                <span className="block text-xs italic font-normal text-muted-foreground print:text-gray-500">
+                                  {nota.observacion}
+                                </span>
+                              )}
+                            </td>
+                          )
+                        })}
+                        {/* Definitiva — only on first dim row */}
+                        {hasDefinitiva && (
+                          <td className={`text-center py-1.5 px-2 ${dimIdx === 0 ? 'font-semibold' : 'text-muted-foreground/40'}`}>
+                            {dimIdx === 0
+                              ? formatNota(matData.definitivaMap.get(null) ?? matData.definitivaMap.get(dim.id))
+                              : ''}
+                          </td>
+                        )}
+                      </tr>
+                    ))
+                  }
 
-              return (
-                <div key={matId}>
-                  <h2 className="font-semibold text-base mb-2 pb-1 border-b">{mat.nombre}</h2>
-
-                  <div className="flex flex-col gap-3">
-                    {sortedPeriodos.map(([pid, periodoData]) => {
-                      const hasDims = periodoData.notas.some(n => n.materias_dimensiones)
-                      return (
-                        <div key={pid ?? 'anual'}>
-                          <p className="text-xs font-semibold text-muted-foreground uppercase mb-1 capitalize print:text-gray-600">
-                            {periodoData.nombre}
-                          </p>
-                          <table className="w-full text-sm border-collapse">
-                            <thead>
-                              <tr className="text-left text-muted-foreground print:text-gray-600">
-                                <th className="pb-1 pr-4 font-medium">Evaluación</th>
-                                {hasDims && <th className="pb-1 pr-4 font-medium">Dimensión</th>}
-                                <th className="pb-1 font-medium">Nota</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {periodoData.notas.map(nota => (
-                                <tr key={nota.id} className="border-t border-muted print:border-gray-200">
-                                  <td className="py-1.5 pr-4">{nota._ev.nombre}</td>
-                                  {hasDims && (
-                                    <td className="py-1.5 pr-4 text-muted-foreground print:text-gray-600">
-                                      {(nota.materias_dimensiones as Dimension | null)?.nombre ?? '—'}
-                                    </td>
-                                  )}
-                                  <td className="py-1.5 font-semibold">
-                                    {nota.valor_literal === 'A' ? 'Ausente' : (nota.valor_numerico ?? nota.valor_literal ?? '—')}
-                                    {nota.observacion && (
-                                      <span className="block text-xs font-normal text-muted-foreground print:text-gray-500 italic">{nota.observacion}</span>
-                                    )}
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      )
-                    })}
-                  </div>
-
-                  {(() => {
-                    const a = asistenciaMap.get(matId)
-                    if (!a || a.total_clases === 0) return null
-                    const presentes = a.total_clases - a.inasistencias_justificadas - a.inasistencias_injustificadas
-                    const pct = Math.round((presentes / a.total_clases) * 1000) / 10
-                    return (
-                      <p className="text-sm text-muted-foreground mt-3 print:text-gray-600">
-                        Inasistencias: {a.inasistencias_justificadas} just. / {a.inasistencias_injustificadas} injust. ({pct}% asistencia)
-                      </p>
-                    )
-                  })()}
-                </div>
-              )
-            })}
+                  // Single row — no dimensions
+                  return (
+                    <tr key={matId} className="border-t-2 border-border/60 print:border-gray-300">
+                      <td className="py-1.5 pr-4 font-medium">
+                        {matData.nombre}
+                        {asistInfo && (
+                          <span className="block text-xs font-normal text-muted-foreground print:text-gray-500 mt-0.5">
+                            {asistInfo}
+                          </span>
+                        )}
+                      </td>
+                      {sortedCols.map(col => {
+                        const nota = matData.notasMap.get(col.templateId)?.get(null)
+                        const isAusente = nota?.valor_literal === 'A'
+                        return (
+                          <td key={col.templateId} className="text-center py-1.5 px-2">
+                            <span className={isAusente ? 'text-orange-600 font-medium' : 'font-semibold'}>
+                              {formatNota(nota)}
+                            </span>
+                            {nota?.observacion && (
+                              <span className="block text-xs italic font-normal text-muted-foreground print:text-gray-500">
+                                {nota.observacion}
+                              </span>
+                            )}
+                          </td>
+                        )
+                      })}
+                      {hasDefinitiva && (
+                        <td className="text-center py-1.5 px-2 font-semibold">
+                          {formatNota(matData.definitivaMap.get(null))}
+                        </td>
+                      )}
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
           </div>
         )}
 
