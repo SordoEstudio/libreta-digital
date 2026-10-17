@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup,
   SidebarGroupContent, SidebarGroupLabel, SidebarHeader,
-  SidebarMenu, SidebarMenuButton, SidebarMenuItem,
+  SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarTrigger,
 } from '@/components/ui/sidebar'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import type { SessionUser } from '@/lib/auth'
@@ -249,6 +249,9 @@ export function AppSidebar({ session }: AppSidebarProps) {
 
       <SidebarFooter>
         <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarTrigger className="w-full justify-start text-white/60 hover:text-white hover:bg-white/10" />
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <div className="flex items-center gap-2 px-2 py-1">
               <Avatar className="size-7">

@@ -1,9 +1,10 @@
-import { requireSession, isSuperadmin, hasAnyRole } from '@/lib/auth'
+import { requireSession, isSuperadmin, hasAnyRole, hasRole } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
 import { NotasEditor } from './notas-editor'
+import EditarEvaluacionSheet from '@/app/dashboard/[slug]/materias/[materia_id]/evaluaciones/editar-evaluacion-sheet'
 
 type Params = {
   params: Promise<{ slug: string; evaluacion_id: string }>
@@ -35,7 +36,7 @@ export default async function NotasPage({ params, searchParams }: Params) {
 
   const { data: evaluacion } = await supabase
     .from('evaluaciones')
-    .select('id, nombre, tipo, peso, permite_recuperatorio, recuperatorio_de_evaluacion_id, materias(id, materias_catalogo(nombre), cursos(id, nombre)), evaluacion_dimensiones(dimension_id, materias_dimensiones(id, nombre))')
+    .select('id, nombre, tipo, peso, periodo_id, fecha, template_id, permite_recuperatorio, recuperatorio_de_evaluacion_id, materias(id, materias_catalogo(nombre), cursos(id, nombre)), evaluacion_dimensiones(dimension_id, materias_dimensiones(id, nombre))')
     .eq('id', evaluacion_id)
     .single()
 
@@ -51,14 +52,38 @@ export default async function NotasPage({ params, searchParams }: Params) {
   const materiaNombre = mat.materias_catalogo?.nombre ?? ''
   const cursoId = mat.cursos?.id ?? ''
 
+  const isAdminLevel = isSuperadmin(session) || hasRole(session, inst.id, 'admin')
+
+  // Fetch periodos for the edit sheet (need año_lectivo_id from curso)
+  const { data: cursoData } = await supabase
+    .from('cursos')
+    .select('*')
+    .eq('id', cursoId)
+    .single()
+
+  const { data: periodos } = cursoData?.año_lectivo_id
+    ? await supabase
+        .from('periodos')
+        .select('id, nombre, activo, cerrado_at')
+        .eq('año_lectivo_id', cursoData.año_lectivo_id)
+        .is('deleted_at', null)
+        .order('orden')
+    : { data: [] }
+
+  const { data: todasDimensiones } = await supabase
+    .from('materias_dimensiones')
+    .select('id, nombre')
+    .eq('materia_id', mat.id)
+    .order('orden')
+
   const { data: instData } = await supabase
     .from('instituciones')
     .select('nota_aprobacion')
     .eq('id', inst.id)
     .single()
 
-  const permiteRecuperatorio = !!(evaluacion as { permite_recuperatorio?: boolean }).permite_recuperatorio
-  const esRecuperatorio = !!(evaluacion as { recuperatorio_de_evaluacion_id?: string | null }).recuperatorio_de_evaluacion_id
+  const permiteRecuperatorio = !!evaluacion.permite_recuperatorio
+  const esRecuperatorio = !!evaluacion.recuperatorio_de_evaluacion_id
 
   const { data: recuperatorioExistente } = permiteRecuperatorio
     ? await supabase
@@ -117,7 +142,7 @@ export default async function NotasPage({ params, searchParams }: Params) {
   //   null key not used in Map — use '__none__' sentinel
   let eligibles: Map<string, Set<string>> | null = null
 
-  const recuperatorio_de_id = (evaluacion as { recuperatorio_de_evaluacion_id?: string | null }).recuperatorio_de_evaluacion_id ?? null
+  const recuperatorio_de_id = evaluacion.recuperatorio_de_evaluacion_id ?? null
 
   if (esRecuperatorio && recuperatorio_de_id && notaAprobacion !== null) {
     const { data: notasOriginales } = await supabase
@@ -166,22 +191,45 @@ export default async function NotasPage({ params, searchParams }: Params) {
     }
   }
 
+  const evalForSheet = {
+    id: evaluacion_id,
+    nombre: evaluacion.nombre,
+    tipo: evaluacion.tipo,
+    periodo_id: evaluacion.periodo_id ?? null,
+    fecha: evaluacion.fecha ?? null,
+    template_id: evaluacion.template_id ?? null,
+    permite_recuperatorio: permiteRecuperatorio,
+    dimension_ids: dimensiones.map(d => d.id),
+  }
+
   return (
     <div className="flex flex-col gap-6">
-      <div>
+      <div className="sticky top-12 z-10 bg-background border-b -mx-6 px-6 py-3">
         {backUrl && (
-          <Link href={backUrl} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 mb-2">
+          <Link href={backUrl} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 mb-1.5">
             <ChevronLeft className="size-4" />
             Cuaderno
           </Link>
         )}
-        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-          <span>{mat.cursos?.nombre}</span>
-          <span>/</span>
-          <span>{materiaNombre}</span>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-0.5">
+              <span>{mat.cursos?.nombre}</span>
+              <span>/</span>
+              <span>{materiaNombre}</span>
+            </div>
+            <h1 className="text-2xl font-semibold">{evaluacion.nombre}</h1>
+            <p className="text-sm text-muted-foreground capitalize">{evaluacion.tipo}</p>
+          </div>
+          <div className="pt-1">
+            <EditarEvaluacionSheet
+              evaluacion={evalForSheet}
+              periodos={periodos ?? []}
+              dimensiones={todasDimensiones ?? []}
+              isAdmin={isAdminLevel}
+            />
+          </div>
         </div>
-        <h1 className="text-2xl font-semibold">{evaluacion.nombre}</h1>
-        <p className="text-sm text-muted-foreground capitalize">{evaluacion.tipo}</p>
       </div>
 
       <NotasEditor
