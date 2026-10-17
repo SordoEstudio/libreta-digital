@@ -424,6 +424,7 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
             periodoCerrado={tableData.periodoCerrado}
             evalsLibreta={tableData.evalsLibreta}
             notaAprobacion={tableData.notaAprobacion}
+            slug={slug}
           />
         </>
       )}

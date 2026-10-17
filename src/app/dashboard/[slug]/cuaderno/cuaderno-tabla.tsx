@@ -3,9 +3,10 @@
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Save, Loader2 } from 'lucide-react'
+import { Save, Loader2, ExternalLink } from 'lucide-react'
 import CuadernoAccionesCol from './cuaderno-acciones-col'
 
 interface Alumno { id: string; nombre: string; apellido: string | null }
@@ -55,6 +56,7 @@ interface Props {
   periodoCerrado?: boolean
   evalsLibreta?: EvalLibretaColTabla[]
   notaAprobacion?: number | null
+  slug: string
 }
 
 function notaKey(alumnoId: string, dimId: string | null) {
@@ -98,10 +100,15 @@ export default function CuadernoTabla({
   periodos,
   todasDimensiones,
   todasUnidades,
+  periodoCerrado,
+  evalsLibreta,
+  notaAprobacion,
+  slug,
 }: Props) {
   const router = useRouter()
   const [showProceso, setShowProceso] = useState(true)
   const [showDefinitiva, setShowDefinitiva] = useState(true)
+  const [showLibreta, setShowLibreta] = useState(true)
   const [selectedUnidad, setSelectedUnidad] = useState<string>('todas')
 
   const evalRefsFiltradas = useMemo(() => {
@@ -121,6 +128,29 @@ export default function CuadernoTabla({
     return init
   })
   const [savingProceso, setSavingProceso] = useState(false)
+
+  // Libreta state — notasMap keys are `${alumnoId}::${dimId|'__'}`, procesoKey = `${evalId}::${alumnoId}::${dimId|'__'}`
+  const [valoresLibreta, setValoresLibreta] = useState<Record<string, string>>(() => {
+    const init: Record<string, string> = {}
+    for (const ev of evalsLibreta ?? []) {
+      for (const [k, v] of Object.entries(ev.notasMap)) init[`${ev.id}::${k}`] = v
+      if (ev.recuperatorio) {
+        for (const [k, v] of Object.entries(ev.recuperatorio.notasMap))
+          init[`${ev.recuperatorio.id}::${k}`] = v
+      }
+    }
+    return init
+  })
+
+  const libretaColCount = useMemo(() =>
+    (evalsLibreta ?? []).reduce((sum, ev) => {
+      return sum + (ev.dimensiones.length || 1) + (ev.recuperatorio ? (ev.recuperatorio.dimensiones.length || 1) : 0)
+    }, 0)
+  , [evalsLibreta])
+
+  const procesoColCount = useMemo(() =>
+    evalRefsFiltradas.reduce((sum, ev) => sum + (ev.dimensiones.length || 1), 0)
+  , [evalRefsFiltradas])
 
   // Definitiva state
   const [definitivaEvalId, setDefinitivaEvalId] = useState<string | null>(initialDefinitivaId)
@@ -264,6 +294,16 @@ export default function CuadernoTabla({
       {/* Toggle chips */}
       <div className="flex items-center gap-2">
         <span className="text-xs text-muted-foreground mr-1">Mostrar:</span>
+        {(evalsLibreta ?? []).length > 0 && (
+          <button
+            onClick={() => setShowLibreta(v => !v)}
+            className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+              showLibreta ? 'bg-sky-600 text-white border-sky-600' : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Libreta ({(evalsLibreta ?? []).length})
+          </button>
+        )}
         {evalRefs.length > 0 && (
           <button
             onClick={() => setShowProceso(v => !v)}
@@ -287,11 +327,79 @@ export default function CuadernoTabla({
       <div className="overflow-x-auto rounded-md border">
         <table className="w-full text-sm border-collapse">
           <thead>
+            {/* Group header row */}
+            <tr className="border-b bg-muted/20">
+              <th className="min-w-44 sticky left-0 bg-muted/20" />
+              {showLibreta && (evalsLibreta ?? []).length > 0 && (
+                <th colSpan={libretaColCount} className="text-xs font-semibold text-sky-700 bg-sky-50/50 px-2 py-1 text-left border-b">
+                  Libreta {periodoCerrado && <span className="ml-1 text-[10px] font-normal text-amber-600">(período cerrado)</span>}
+                </th>
+              )}
+              {showProceso && evalRefsFiltradas.length > 0 && (
+                <th colSpan={procesoColCount} className="text-xs font-semibold text-muted-foreground px-2 py-1 text-left border-b border-l">
+                  Referencia
+                </th>
+              )}
+              {showProceso && evalRefsFiltradas.some(ev => ev.tipo === 'numerica') && (
+                <th className="border-b border-l" />
+              )}
+              {showDefinitiva && (
+                <th className="border-b border-l bg-amber-50/50 dark:bg-amber-950/20" />
+              )}
+            </tr>
+
             <tr className="border-b bg-muted/30">
               {/* Alumno header */}
               <th className="text-left px-3 py-2 font-medium text-xs text-muted-foreground min-w-44 sticky left-0 bg-muted/30">
                 Alumno
               </th>
+
+              {/* Libreta headers */}
+              {showLibreta && (evalsLibreta ?? []).map(ev => {
+                const cols = ev.dimensiones.length > 0 ? ev.dimensiones : [null as null]
+                const drillUrl = `/dashboard/${slug}/notas/${ev.id}?from=cuaderno&materia_id=${materiaId}&periodo_id=${periodoId}`
+                const mainCols = cols.map((dim, idx) => (
+                  <th key={`lib::${ev.id}::${dim?.id ?? '__'}`}
+                      className="group text-center px-2 py-2 font-medium text-xs text-sky-700 bg-sky-50/30 min-w-20">
+                    {idx === 0 ? (
+                      <div className="flex flex-col items-center gap-0.5">
+                        <div className="flex items-center gap-0.5">
+                          <span className="truncate max-w-20">{ev.nombre}</span>
+                          <Link href={drillUrl} className="opacity-0 group-hover:opacity-100 transition-opacity">
+                            <ExternalLink className="size-3" />
+                          </Link>
+                        </div>
+                        {dim && <span className="text-[10px] font-normal opacity-70">{dim.nombre}</span>}
+                      </div>
+                    ) : (
+                      <>
+                        <div className="truncate max-w-20">{ev.nombre}</div>
+                        {dim && <div className="text-[10px] font-normal opacity-70">{dim.nombre}</div>}
+                      </>
+                    )}
+                  </th>
+                ))
+                const recupCols = ev.recuperatorio ? (() => {
+                  const rDrillUrl = `/dashboard/${slug}/notas/${ev.recuperatorio!.id}?from=cuaderno&materia_id=${materiaId}&periodo_id=${periodoId}`
+                  const rCols = ev.recuperatorio.dimensiones.length > 0 ? ev.recuperatorio.dimensiones : [null as null]
+                  return rCols.map((dim, idx) => (
+                    <th key={`lib::${ev.recuperatorio!.id}::${dim?.id ?? '__'}`}
+                        className="group text-center px-1 py-2 font-medium text-xs text-sky-600/70 bg-sky-50/20 min-w-16"
+                        title={ev.recuperatorio!.nombre}>
+                      {idx === 0 && (
+                        <div className="flex items-center justify-center gap-0.5">
+                          <span>R</span>
+                          <Link href={rDrillUrl} className="opacity-0 group-hover:opacity-100 transition-opacity">
+                            <ExternalLink className="size-3" />
+                          </Link>
+                        </div>
+                      )}
+                      {dim && <div className="text-[10px] font-normal opacity-70">{dim.nombre}</div>}
+                    </th>
+                  ))
+                })() : []
+                return [...mainCols, ...recupCols]
+              })}
 
               {/* Proceso headers */}
               {showProceso && evalRefsFiltradas.map(ev => {
@@ -347,6 +455,52 @@ export default function CuadernoTabla({
                   <td className="px-3 py-1.5 font-medium sticky left-0 bg-inherit border-r">
                     {displayNombre(alumno)}
                   </td>
+
+                  {/* Libreta cells */}
+                  {showLibreta && (evalsLibreta ?? []).map(ev => {
+                    const cols = ev.dimensiones.length > 0 ? ev.dimensiones : [null as null]
+                    const evalCells = cols.map(dim => {
+                      const k = procesoKey(ev.id, alumno.id, dim?.id ?? null)
+                      return (
+                        <td key={`lib::${k}`} className="px-1 py-1 bg-sky-50/20">
+                          <Input
+                            value={valoresLibreta[k] ?? ''}
+                            onChange={e => setValoresLibreta(prev => ({ ...prev, [k]: e.target.value }))}
+                            disabled={!!periodoCerrado}
+                            className="h-7 w-16 text-center text-xs p-1"
+                            placeholder="—"
+                          />
+                        </td>
+                      )
+                    })
+                    const recupCells = ev.recuperatorio ? (() => {
+                      const rCols = ev.recuperatorio.dimensiones.length > 0 ? ev.recuperatorio.dimensiones : [null as null]
+                      return rCols.map(dim => {
+                        const k = procesoKey(ev.recuperatorio!.id, alumno.id, dim?.id ?? null)
+                        const parentNotaKey = procesoKey(ev.id, alumno.id, dim?.id ?? null)
+                        const parentNota = parseFloat(valoresLibreta[parentNotaKey] ?? ev.notasMap[notaKey(alumno.id, dim?.id ?? null)] ?? '')
+                        const dimApproved = notaAprobacion != null && !isNaN(parentNota) && parentNota >= notaAprobacion
+                        return (
+                          <td key={`lib::recup::${k}`} className="px-1 py-1 bg-sky-50/10">
+                            {dimApproved ? (
+                              <span className="flex h-7 w-14 items-center justify-center text-xs text-muted-foreground">
+                                ✓ {parentNota}
+                              </span>
+                            ) : (
+                              <Input
+                                value={valoresLibreta[k] ?? ''}
+                                onChange={e => setValoresLibreta(prev => ({ ...prev, [k]: e.target.value }))}
+                                disabled={!!periodoCerrado}
+                                className="h-7 w-14 text-center text-xs p-1"
+                                placeholder="—"
+                              />
+                            )}
+                          </td>
+                        )
+                      })
+                    })() : []
+                    return [...evalCells, ...recupCells]
+                  })}
 
                   {/* Proceso cells */}
                   {showProceso && evalRefsFiltradas.map(ev => {
