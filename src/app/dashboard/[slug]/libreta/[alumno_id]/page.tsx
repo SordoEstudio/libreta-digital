@@ -45,6 +45,7 @@ export default async function LibretaPage({ params }: Params) {
       id, valor_numerico, valor_literal, observacion, dimension_id,
       materias_dimensiones(id, nombre, peso),
       evaluaciones(id, nombre, peso, tipo, periodo_id,
+        periodos(nombre, orden),
         materias(id, materias_catalogo(nombre))
       )
     `)
@@ -77,6 +78,7 @@ export default async function LibretaPage({ params }: Params) {
   type Dimension = { id: string; nombre: string; peso: number | null }
   type Evaluacion = {
     id: string; nombre: string; peso: number; tipo: string; periodo_id: string | null
+    periodos: { nombre: string; orden: number } | null
     materias: { id: string; materias_catalogo: { nombre: string } | null } | null
   }
 
@@ -85,6 +87,7 @@ export default async function LibretaPage({ params }: Params) {
   for (const nota of (notas ?? [])) {
     const ev = nota.evaluaciones as Evaluacion | null
     if (!ev?.materias) continue
+    if (ev.tipo === 'referencia') continue
     const matId = ev.materias.id
     const nombre = (ev.materias.materias_catalogo as { nombre: string } | null)?.nombre ?? ''
     if (!materiaMap.has(matId)) {
@@ -131,101 +134,96 @@ export default async function LibretaPage({ params }: Params) {
       ) : (
         <div className="flex flex-col gap-4">
           {Array.from(materiaMap.entries()).map(([matId, mat]) => {
-            const notasConEv = mat.notas.map(n => ({ ...n, _ev: n.evaluaciones as Evaluacion | null })).filter(n => n._ev)
-            const conDimension = notasConEv.filter(n => n.materias_dimensiones)
-            const sinDimension = notasConEv.filter(n => !n.materias_dimensiones)
-            const dimMap2 = new Map<string, { dim: Dimension; notas: typeof notasConEv }>()
-            for (const n of conDimension) {
-              const dim = n.materias_dimensiones as Dimension
-              if (!dimMap2.has(dim.id)) dimMap2.set(dim.id, { dim, notas: [] })
-              dimMap2.get(dim.id)!.notas.push(n)
-            }
-            const hasDimensiones = dimMap2.size > 0
+            const notasConEv = mat.notas
+              .map(n => ({ ...n, _ev: n.evaluaciones as Evaluacion | null }))
+              .filter(n => n._ev)
+              .sort((a, b) => {
+                const oa = a._ev!.periodos?.orden ?? 9999
+                const ob = b._ev!.periodos?.orden ?? 9999
+                return oa !== ob ? oa - ob : a._ev!.nombre.localeCompare(b._ev!.nombre)
+              })
 
-            function NotasRows({ rows }: { rows: typeof notasConEv }) {
-              return (
-                <>
-                  {rows.map(nota => (
-                    <TableRow key={nota.id}>
-                      <TableCell className="font-medium">{nota._ev?.nombre}</TableCell>
-                      <TableCell><Badge variant="outline">{nota._ev?.tipo}</Badge></TableCell>
-                      <TableCell className="font-semibold">
-                        <div className="flex flex-col gap-0.5">
-                          <span>{nota.valor_literal === 'A' ? 'Ausente' : (nota.valor_numerico ?? nota.valor_literal ?? '—')}</span>
-                          {nota.observacion && (
-                            <span className="text-xs font-normal text-muted-foreground italic">{nota.observacion}</span>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </>
-              )
+            // Group by período
+            const periodoMap = new Map<string | null, { nombre: string; orden: number; notas: typeof notasConEv }>()
+            for (const nota of notasConEv) {
+              const pid = nota._ev!.periodo_id
+              if (!periodoMap.has(pid)) {
+                periodoMap.set(pid, {
+                  nombre: nota._ev!.periodos?.nombre ?? 'Sin período',
+                  orden: nota._ev!.periodos?.orden ?? 9999,
+                  notas: [],
+                })
+              }
+              periodoMap.get(pid)!.notas.push(nota)
             }
+            const sortedPeriodos = [...periodoMap.entries()].sort((a, b) => a[1].orden - b[1].orden)
 
             return (
-            <Card key={matId}>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base">{mat.nombre}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {hasDimensiones ? (
-                  <div className="flex flex-col gap-4">
-                    {Array.from(dimMap2.values()).map(({ dim, notas: dimNotas }) => (
-                      <div key={dim.id}>
-                        <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">
-                          {dim.nombre}
-                        </p>
-                        <Table className="table-fixed">
-                          <TableHeader><TableRow>
-                            <TableHead>Evaluación</TableHead>
-                            <TableHead className="w-28">Tipo</TableHead>
-                            <TableHead className="w-28">Nota</TableHead>
-                          </TableRow></TableHeader>
-                          <TableBody><NotasRows rows={dimNotas} /></TableBody>
-                        </Table>
-                      </div>
-                    ))}
-                    {sinDimension.length > 0 && (
-                      <div>
-                        <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Sin dimensión</p>
-                        <Table className="table-fixed">
-                          <TableHeader><TableRow>
-                            <TableHead>Evaluación</TableHead>
-                            <TableHead className="w-28">Tipo</TableHead>
-                            <TableHead className="w-28">Nota</TableHead>
-                          </TableRow></TableHeader>
-                          <TableBody><NotasRows rows={sinDimension} /></TableBody>
-                        </Table>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                <Table className="table-fixed">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Evaluación</TableHead>
-                      <TableHead className="w-28">Tipo</TableHead>
-                      <TableHead className="w-28">Nota</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody><NotasRows rows={notasConEv} /></TableBody>
-                </Table>
-                )}
-                {(() => {
-                  const a = asistenciaMap.get(matId)
-                  if (!a || a.total_clases === 0) return null
-                  const presentes = a.total_clases - a.inasistencias_justificadas - a.inasistencias_injustificadas
-                  const pct = Math.round((presentes / a.total_clases) * 1000) / 10
-                  return (
-                    <p className="text-sm text-muted-foreground mt-3">
-                      Inasistencias: {a.inasistencias_justificadas} just. / {a.inasistencias_injustificadas} injust. ({pct}% asistencia)
-                    </p>
-                  )
-                })()}
-              </CardContent>
-            </Card>
-          )})}
+              <Card key={matId}>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base">{mat.nombre}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {notasConEv.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Sin notas</p>
+                  ) : (
+                    <div className="flex flex-col gap-4">
+                      {sortedPeriodos.map(([pid, periodoData]) => {
+                        const hasDims = periodoData.notas.some(n => n.materias_dimensiones)
+                        return (
+                          <div key={pid ?? 'anual'}>
+                            <p className="text-xs font-semibold text-muted-foreground uppercase mb-1 capitalize">
+                              {periodoData.nombre}
+                            </p>
+                            <Table className="table-fixed">
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>Evaluación</TableHead>
+                                  {hasDims && <TableHead className="w-32">Dimensión</TableHead>}
+                                  <TableHead className="w-28">Nota</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {periodoData.notas.map(nota => (
+                                  <TableRow key={nota.id}>
+                                    <TableCell className="font-medium">{nota._ev?.nombre}</TableCell>
+                                    {hasDims && (
+                                      <TableCell className="text-muted-foreground">
+                                        {(nota.materias_dimensiones as Dimension | null)?.nombre ?? '—'}
+                                      </TableCell>
+                                    )}
+                                    <TableCell className="font-semibold">
+                                      <div className="flex flex-col gap-0.5">
+                                        <span>{nota.valor_literal === 'A' ? 'Ausente' : (nota.valor_numerico ?? nota.valor_literal ?? '—')}</span>
+                                        {nota.observacion && (
+                                          <span className="text-xs font-normal text-muted-foreground italic">{nota.observacion}</span>
+                                        )}
+                                      </div>
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                  {(() => {
+                    const a = asistenciaMap.get(matId)
+                    if (!a || a.total_clases === 0) return null
+                    const presentes = a.total_clases - a.inasistencias_justificadas - a.inasistencias_injustificadas
+                    const pct = Math.round((presentes / a.total_clases) * 1000) / 10
+                    return (
+                      <p className="text-sm text-muted-foreground mt-3">
+                        Inasistencias: {a.inasistencias_justificadas} just. / {a.inasistencias_injustificadas} injust. ({pct}% asistencia)
+                      </p>
+                    )
+                  })()}
+                </CardContent>
+              </Card>
+            )
+          })}
         </div>
       )}
     </div>

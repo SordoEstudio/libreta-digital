@@ -88,6 +88,7 @@ export default async function BoletinPage({ params }: Params) {
   for (const nota of (notas ?? [])) {
     const ev = nota.evaluaciones as Evaluacion | null
     if (!ev?.materias) continue
+    if (ev.tipo === 'referencia') continue
     const matId = ev.materias.id
     const nombre = (ev.materias.materias_catalogo as { nombre: string } | null)?.nombre ?? ''
     if (!materiaMap.has(matId)) materiaMap.set(matId, { nombre, notas: [] })
@@ -153,76 +154,74 @@ export default async function BoletinPage({ params }: Params) {
                 return oa !== ob ? oa - ob : a._ev.nombre.localeCompare(b._ev.nombre)
               })
 
-              const conDimension = sorted.filter(n => n.materias_dimensiones)
-              const sinDimension = sorted.filter(n => !n.materias_dimensiones)
-              const dimMap = new Map<string, { dim: Dimension; notas: typeof sorted }>()
-              for (const nota of conDimension) {
-                const dim = nota.materias_dimensiones as Dimension
-                if (!dimMap.has(dim.id)) dimMap.set(dim.id, { dim, notas: [] })
-                dimMap.get(dim.id)!.notas.push(nota)
+              // Group by período
+              const periodoMap = new Map<string | null, { nombre: string; orden: number; notas: typeof sorted }>()
+              for (const nota of sorted) {
+                const pid = nota._ev.periodo_id
+                if (!periodoMap.has(pid)) {
+                  periodoMap.set(pid, {
+                    nombre: nota._ev.periodos?.nombre ?? 'Sin período',
+                    orden: nota._ev.periodos?.orden ?? 9999,
+                    notas: [],
+                  })
+                }
+                periodoMap.get(pid)!.notas.push(nota)
               }
-              const hasDimensiones = dimMap.size > 0
-
-              function NotasTable({ rows }: { rows: typeof sorted }) {
-                return (
-                  <table className="w-full text-sm border-collapse">
-                    <thead>
-                      <tr className="text-left text-muted-foreground print:text-gray-600">
-                        <th className="pb-1 pr-4 font-medium">Evaluación</th>
-                        <th className="pb-1 pr-4 font-medium">Período</th>
-                        <th className="pb-1 pr-4 font-medium">Tipo</th>
-                        <th className="pb-1 font-medium">Nota</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {rows.map(nota => (
-                        <tr key={nota.id} className="border-t border-muted print:border-gray-200">
-                          <td className="py-1.5 pr-4">{nota._ev.nombre}</td>
-                          <td className="py-1.5 pr-4 text-muted-foreground print:text-gray-600 capitalize">{nota._ev.periodos?.nombre ?? 'Anual'}</td>
-                          <td className="py-1.5 pr-4 text-muted-foreground print:text-gray-600 capitalize">{nota._ev.tipo}</td>
-                          <td className="py-1.5 font-semibold">
-                            {nota.valor_literal === 'A' ? 'Ausente' : (nota.valor_numerico ?? nota.valor_literal ?? '—')}
-                            {nota.observacion && (
-                              <span className="block text-xs font-normal text-muted-foreground print:text-gray-500 italic">{nota.observacion}</span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )
-              }
+              const sortedPeriodos = [...periodoMap.entries()].sort((a, b) => a[1].orden - b[1].orden)
 
               return (
                 <div key={matId}>
                   <h2 className="font-semibold text-base mb-2 pb-1 border-b">{mat.nombre}</h2>
 
-                  {hasDimensiones ? (
-                    <div className="flex flex-col gap-4">
-                      {Array.from(dimMap.values()).map(({ dim, notas: dimNotas }) => {
-                        const numNotas = dimNotas.filter(n => n.valor_numerico !== null && n.valor_literal !== 'A')
-                        const prom = numNotas.length > 0
-                          ? Math.round((numNotas.reduce((s, n) => s + n.valor_numerico!, 0) / numNotas.length) * 100) / 100
-                          : null
-                        return (
-                          <div key={dim.id}>
-                            <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">
-                              {dim.nombre}{prom !== null ? ` · Promedio: ${prom}` : ''}
+                  <div className="flex flex-col gap-3">
+                    {sortedPeriodos.map(([pid, periodoData]) => {
+                      const hasDims = periodoData.notas.some(n => n.materias_dimensiones)
+                      const numNotas = periodoData.notas.filter(n => n.valor_numerico !== null && n.valor_literal !== 'A')
+                      const prom = numNotas.length > 0
+                        ? Math.round((numNotas.reduce((s, n) => s + n.valor_numerico!, 0) / numNotas.length) * 100) / 100
+                        : null
+                      return (
+                        <div key={pid ?? 'anual'}>
+                          <p className="text-xs font-semibold text-muted-foreground uppercase mb-1 capitalize print:text-gray-600">
+                            {periodoData.nombre}
+                          </p>
+                          <table className="w-full text-sm border-collapse">
+                            <thead>
+                              <tr className="text-left text-muted-foreground print:text-gray-600">
+                                <th className="pb-1 pr-4 font-medium">Evaluación</th>
+                                {hasDims && <th className="pb-1 pr-4 font-medium">Dimensión</th>}
+                                <th className="pb-1 font-medium">Nota</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {periodoData.notas.map(nota => (
+                                <tr key={nota.id} className="border-t border-muted print:border-gray-200">
+                                  <td className="py-1.5 pr-4">{nota._ev.nombre}</td>
+                                  {hasDims && (
+                                    <td className="py-1.5 pr-4 text-muted-foreground print:text-gray-600">
+                                      {(nota.materias_dimensiones as Dimension | null)?.nombre ?? '—'}
+                                    </td>
+                                  )}
+                                  <td className="py-1.5 font-semibold">
+                                    {nota.valor_literal === 'A' ? 'Ausente' : (nota.valor_numerico ?? nota.valor_literal ?? '—')}
+                                    {nota.observacion && (
+                                      <span className="block text-xs font-normal text-muted-foreground print:text-gray-500 italic">{nota.observacion}</span>
+                                    )}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                          {prom !== null && (
+                            <p className="text-xs text-muted-foreground mt-1 print:text-gray-600 text-right">
+                              Promedio: <strong>{prom}</strong>
                             </p>
-                            <NotasTable rows={dimNotas} />
-                          </div>
-                        )
-                      })}
-                      {sinDimension.length > 0 && (
-                        <div>
-                          <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Sin dimensión</p>
-                          <NotasTable rows={sinDimension} />
+                          )}
                         </div>
-                      )}
-                    </div>
-                  ) : (
-                    <NotasTable rows={sorted} />
-                  )}
+                      )
+                    })}
+                  </div>
+
                   {(() => {
                     const a = asistenciaMap.get(matId)
                     if (!a || a.total_clases === 0) return null
