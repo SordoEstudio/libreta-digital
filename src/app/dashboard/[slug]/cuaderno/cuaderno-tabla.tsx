@@ -277,7 +277,7 @@ export default function CuadernoTabla({
             return {
               alumno_id: a.id,
               dimension_id: dim?.id ?? null,
-              valor_numerico: isAusente ? null : (parseFloat(raw) || null),
+              valor_numerico: isAusente ? null : (isNaN(parseFloat(raw)) ? null : parseFloat(raw)),
               valor_literal: isAusente ? 'A' : null,
             }
           }).filter((n): n is NonNullable<typeof n> => n !== null)
