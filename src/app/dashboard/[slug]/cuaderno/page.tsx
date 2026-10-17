@@ -118,6 +118,7 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
       tipo: 'numerica' | 'conceptual'
       periodoId: string | null
       dimensionIds: string[]
+      unidadIds: string[]
       dimensiones: Array<{ id: string; nombre: string; orden: number }>
       notasMap: Record<string, string>
     }>
@@ -162,7 +163,7 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
     // Eval refs for this materia + period
     const { data: evalRefsRaw } = await supabase
       .from('evaluaciones_referencia')
-      .select('id, nombre, tipo, periodo_id, evaluacion_referencia_dimensiones(dimension_id)')
+      .select('id, nombre, tipo, periodo_id, evaluacion_referencia_dimensiones(dimension_id), evaluacion_referencia_unidades(unidad_id)')
       .eq('materia_id', materia_id!)
       .eq('periodo_id', periodo_id!)
       .is('deleted_at', null)
@@ -174,6 +175,7 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
       tipo: string
       periodo_id: string | null
       evaluacion_referencia_dimensiones: Array<{ dimension_id: string }>
+      evaluacion_referencia_unidades: Array<{ unidad_id: string }>
     }
 
     const evalRefIds = (evalRefsRaw ?? []).map((ev: EvalRefRaw) => ev.id)
@@ -208,6 +210,7 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
         tipo: ev.tipo as 'numerica' | 'conceptual',
         periodoId: ev.periodo_id ?? null,
         dimensionIds: ev.evaluacion_referencia_dimensiones.map(d => d.dimension_id),
+        unidadIds: ev.evaluacion_referencia_unidades.map(u => u.unidad_id),
         dimensiones: resolvedDims,
         notasMap: notasByRef.get(ev.id) ?? {},
       }
@@ -311,6 +314,7 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
             periodoNombre={selectedPeriodo.nombre}
             periodos={periodos}
             todasDimensiones={tableData.allMaterialDims}
+            todasUnidades={unidades.map(u => ({ id: u.id, nombre: u.nombre }))}
           />
         </>
       )}

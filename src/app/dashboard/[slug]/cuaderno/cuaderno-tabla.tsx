@@ -12,12 +12,15 @@ interface Alumno { id: string; nombre: string; apellido: string | null }
 interface Dimension { id: string; nombre: string; orden: number }
 interface Periodo { id: string; nombre: string; orden: number }
 
+interface Unidad { id: string; nombre: string }
+
 interface EvalRefCol {
   id: string
   nombre: string
   tipo: 'numerica' | 'conceptual'
   periodoId: string | null
   dimensionIds: string[]
+  unidadIds: string[]
   dimensiones: Dimension[]
   notasMap: Record<string, string> // `${alumnoId}::${dimId|'__'}` → valor
 }
@@ -32,6 +35,7 @@ interface Props {
   periodoNombre: string
   periodos: Periodo[]
   todasDimensiones: Dimension[]
+  todasUnidades: Unidad[]
 }
 
 function notaKey(alumnoId: string, dimId: string | null) {
@@ -74,6 +78,7 @@ export default function CuadernoTabla({
   periodoNombre,
   periodos,
   todasDimensiones,
+  todasUnidades,
 }: Props) {
   const router = useRouter()
   const [showProceso, setShowProceso] = useState(true)
@@ -245,9 +250,10 @@ export default function CuadernoTabla({
                         <div className="flex items-center gap-0.5">
                           <span className="truncate max-w-20">{ev.nombre}</span>
                           <CuadernoAccionesCol
-                            evalRef={{ id: ev.id, nombre: ev.nombre, tipo: ev.tipo, periodoId: ev.periodoId, dimensionIds: ev.dimensionIds }}
+                            evalRef={{ id: ev.id, nombre: ev.nombre, tipo: ev.tipo, periodoId: ev.periodoId, dimensionIds: ev.dimensionIds, unidadIds: ev.unidadIds }}
                             periodos={periodos}
                             dimensiones={todasDimensiones}
+                            unidades={todasUnidades}
                           />
                         </div>
                         {dim && <div className="text-[10px] font-normal opacity-70">{dim.nombre}</div>}

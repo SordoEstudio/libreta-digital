@@ -17,6 +17,7 @@ const TIPOS = [
 
 interface Periodo { id: string; nombre: string; orden: number }
 interface Dimension { id: string; nombre: string; orden: number }
+interface Unidad { id: string; nombre: string }
 
 interface Props {
   evalRefId: string
@@ -25,8 +26,10 @@ interface Props {
   initialFecha: string | null
   initialPeriodoId: string | null
   initialDimensionIds: string[]
+  initialUnidadIds?: string[]
   periodos: Periodo[]
   dimensiones: Dimension[]
+  unidades?: Unidad[]
 }
 
 export default function EditarEvalRefSheet({
@@ -36,8 +39,10 @@ export default function EditarEvalRefSheet({
   initialFecha,
   initialPeriodoId,
   initialDimensionIds,
+  initialUnidadIds = [],
   periodos,
   dimensiones,
+  unidades = [],
 }: Props) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
@@ -47,6 +52,7 @@ export default function EditarEvalRefSheet({
   const [fecha, setFecha] = useState(initialFecha ?? '')
   const [periodoId, setPeriodoId] = useState(initialPeriodoId ?? '')
   const [selectedDims, setSelectedDims] = useState<Set<string>>(new Set(initialDimensionIds))
+  const [selectedUnidades, setSelectedUnidades] = useState<Set<string>>(new Set(initialUnidadIds))
 
   function handleOpen() {
     setNombre(initialNombre)
@@ -54,11 +60,20 @@ export default function EditarEvalRefSheet({
     setFecha(initialFecha ?? '')
     setPeriodoId(initialPeriodoId ?? '')
     setSelectedDims(new Set(initialDimensionIds))
+    setSelectedUnidades(new Set(initialUnidadIds))
     setOpen(true)
   }
 
   function toggleDim(id: string) {
     setSelectedDims(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  function toggleUnidad(id: string) {
+    setSelectedUnidades(prev => {
       const next = new Set(prev)
       next.has(id) ? next.delete(id) : next.add(id)
       return next
@@ -78,6 +93,7 @@ export default function EditarEvalRefSheet({
         fecha: fecha || null,
         periodo_id: periodoId || null,
         dimension_ids: [...selectedDims],
+        unidad_ids: [...selectedUnidades],
       }),
     })
 
@@ -164,6 +180,28 @@ export default function EditarEvalRefSheet({
                       }`}
                     >
                       {d.nombre}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {unidades.length > 0 && (
+              <div className="flex flex-col gap-1.5">
+                <Label>Unidades</Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {unidades.map(u => (
+                    <button
+                      key={u.id}
+                      type="button"
+                      onClick={() => toggleUnidad(u.id)}
+                      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs transition-colors ${
+                        selectedUnidades.has(u.id)
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      {u.nombre}
                     </button>
                   ))}
                 </div>

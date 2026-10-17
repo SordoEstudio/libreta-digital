@@ -17,14 +17,16 @@ const TIPOS = [
 
 interface Periodo { id: string; nombre: string; orden: number }
 interface Dimension { id: string; nombre: string; orden: number }
+interface Unidad { id: string; nombre: string }
 
 interface Props {
   materiaId: string
   periodos: Periodo[]
   dimensiones: Dimension[]
+  unidades?: Unidad[]
 }
 
-export default function NuevaEvalRefSheet({ materiaId, periodos, dimensiones }: Props) {
+export default function NuevaEvalRefSheet({ materiaId, periodos, dimensiones, unidades = [] }: Props) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -33,9 +35,18 @@ export default function NuevaEvalRefSheet({ materiaId, periodos, dimensiones }: 
   const [fecha, setFecha] = useState('')
   const [periodoId, setPeriodoId] = useState('')
   const [selectedDims, setSelectedDims] = useState<Set<string>>(new Set())
+  const [selectedUnidades, setSelectedUnidades] = useState<Set<string>>(new Set())
 
   function toggleDim(id: string) {
     setSelectedDims(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  function toggleUnidad(id: string) {
+    setSelectedUnidades(prev => {
       const next = new Set(prev)
       next.has(id) ? next.delete(id) : next.add(id)
       return next
@@ -49,6 +60,7 @@ export default function NuevaEvalRefSheet({ materiaId, periodos, dimensiones }: 
     setFecha('')
     setPeriodoId('')
     setSelectedDims(new Set())
+    setSelectedUnidades(new Set())
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -64,6 +76,7 @@ export default function NuevaEvalRefSheet({ materiaId, periodos, dimensiones }: 
         ...(fecha ? { fecha } : {}),
         ...(periodoId ? { periodo_id: periodoId } : {}),
         ...(selectedDims.size > 0 ? { dimension_ids: [...selectedDims] } : {}),
+        ...(selectedUnidades.size > 0 ? { unidad_ids: [...selectedUnidades] } : {}),
       }),
     })
 
@@ -155,6 +168,28 @@ export default function NuevaEvalRefSheet({ materiaId, periodos, dimensiones }: 
                   ))}
                 </div>
                 <p className="text-xs text-muted-foreground">Sin selección = nota única sin dimensión</p>
+              </div>
+            )}
+
+            {unidades.length > 0 && (
+              <div className="flex flex-col gap-1.5">
+                <Label>Unidades</Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {unidades.map(u => (
+                    <button
+                      key={u.id}
+                      type="button"
+                      onClick={() => toggleUnidad(u.id)}
+                      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs transition-colors ${
+                        selectedUnidades.has(u.id)
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      {u.nombre}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
 

@@ -13,6 +13,6 @@ interface Props {
   unidades?: UnidadBtn[]
 }
 
-export default function CuadernoNuevaInstanciaBtn({ materiaId, periodos, dimensiones }: Props) {
-  return <NuevaEvalRefSheet materiaId={materiaId} periodos={periodos} dimensiones={dimensiones} />
+export default function CuadernoNuevaInstanciaBtn({ materiaId, periodos, dimensiones, unidades }: Props) {
+  return <NuevaEvalRefSheet materiaId={materiaId} periodos={periodos} dimensiones={dimensiones} unidades={unidades ?? []} />
 }

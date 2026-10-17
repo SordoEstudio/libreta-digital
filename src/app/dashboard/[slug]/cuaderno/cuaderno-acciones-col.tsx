@@ -18,18 +18,21 @@ interface EvalRefMeta {
   tipo: 'numerica' | 'conceptual'
   periodoId: string | null
   dimensionIds: string[]
+  unidadIds: string[]
 }
 
 interface Periodo { id: string; nombre: string; orden: number }
 interface Dimension { id: string; nombre: string; orden: number }
+interface Unidad { id: string; nombre: string }
 
 interface Props {
   evalRef: EvalRefMeta
   periodos: Periodo[]
   dimensiones: Dimension[]
+  unidades: Unidad[]
 }
 
-export default function CuadernoAccionesCol({ evalRef, periodos, dimensiones }: Props) {
+export default function CuadernoAccionesCol({ evalRef, periodos, dimensiones, unidades }: Props) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
 
@@ -58,8 +61,10 @@ export default function CuadernoAccionesCol({ evalRef, periodos, dimensiones }: 
         initialFecha={null}
         initialPeriodoId={evalRef.periodoId}
         initialDimensionIds={evalRef.dimensionIds}
+        initialUnidadIds={evalRef.unidadIds}
         periodos={periodos}
         dimensiones={dimensiones}
+        unidades={unidades}
       />
       <AlertDialog>
         <AlertDialogTrigger render={<Button variant="ghost" size="icon" className="size-7 text-destructive/60 hover:text-destructive" />}>
