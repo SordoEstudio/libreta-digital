@@ -1,6 +1,6 @@
 # QA — Nuevas funcionalidades (Octubre 2026)
 
-**Alcance:** Dimensiones por materia · Notas por dimensión (multi-columna) · Peso opcional (promedio directo) · Plantillas de dimensiones · Recuperatorios por dimensión · Notas de referencia (con dimensiones y período) · Cuaderno del docente · Cierre de período · Comunicados con confirmación  
+**Alcance:** Dimensiones por materia · Notas por dimensión (multi-columna) · Peso opcional (promedio directo) · Plantillas de dimensiones · Recuperatorios por dimensión · Notas de referencia (con dimensiones y período) · Cuaderno del docente · Cierre de período · Comunicados con confirmación · Cuaderno v2 (edición inline de proceso, acciones por columna) · Unidades por materia  
 **Roles necesarios:** superadmin, admin, docente, responsable (con email real para probar envíos)  
 **Entorno:** staging o local con Supabase + Resend en modo test
 
@@ -405,6 +405,112 @@
 
 ---
 
+## 9. Cuaderno v2 — edición inline y acciones por columna
+
+**Ruta:** `Cuaderno` → seleccionar materia + período
+
+> Extiende §8. Verifica las nuevas capacidades: edición inline de notas de proceso, botón guardar seguimiento, acciones por columna (editar/eliminar eval-ref desde el cuaderno), y botón crear nueva eval-ref desde el cuaderno.
+
+### 9.1 Edición inline de notas de proceso
+- [ ] Con eval-refs cargados para el período seleccionado → celdas de proceso son inputs editables (no texto estático)
+- [ ] Click en celda vacía → input activo, se puede escribir un número
+- [ ] Click en celda con nota existente → valor precargado en el input
+- [ ] Modificar valor → cambio visible en el input antes de guardar
+- [ ] **Esperado antes de guardar:** sin spinner, sin petición al servidor
+
+### 9.2 Botón "Guardar seguimiento"
+- [ ] Botón "Guardar seguimiento" visible en la parte inferior de la tabla (cuando hay eval-refs con proceso visible)
+- [ ] Ingresar notas en varias celdas de distintos alumnos y eval-refs → click "Guardar seguimiento"
+- [ ] **Esperado:** toast con resultado (ej. "Seguimiento guardado" o "N errores al guardar")
+- [ ] Recargar página → valores ingresados persisten en los inputs
+- [ ] **Guardar con filtro de unidad activo:** botón guarda todas las eval-refs del período (no solo las visibles por el filtro) — sin pérdida de datos
+
+### 9.3 Acciones por columna — editar eval-ref
+- [ ] Cada columna de eval-ref en el header muestra ícono ✏️ (al hover o siempre)
+- [ ] Click ✏️ → sheet de edición de eval-ref abre con datos precargados (nombre, tipo, período, dimensiones, unidades)
+- [ ] Cambiar nombre de la eval-ref → guardar
+- [ ] **Esperado:** columna renombrada en el cuaderno, toast confirmación
+- [ ] Sheet cierra y la tabla se actualiza automáticamente (router.refresh)
+
+### 9.4 Acciones por columna — eliminar eval-ref
+- [ ] Ícono de eliminar en header de columna → AlertDialog de confirmación
+- [ ] Mensaje incluye aviso: "Se eliminarán también las notas cargadas para esta evaluación."
+- [ ] Confirmar → eval-ref eliminada
+- [ ] **Esperado:** columna desaparece de la tabla, toast confirmación
+- [ ] Cancelar → no se elimina nada
+
+### 9.5 Crear nueva eval-ref desde el cuaderno
+- [ ] Botón "Nueva evaluación" (o ícono +) visible en el header del cuaderno
+- [ ] Click → sheet de creación de eval-ref abre
+- [ ] Completar nombre, tipo, período, dimensiones (opcional), unidades (opcional)
+- [ ] Guardar → nueva columna aparece en el cuaderno
+- [ ] **Esperado:** la nueva eval-ref queda en la misma materia y es visible de inmediato (router.refresh)
+
+---
+
+## 10. Unidades por materia
+
+> Las unidades son agrupaciones de eval-refs dentro de una materia. Se pueden gestionar desde el cuaderno o desde el sheet de edición de materia, asignar al crear/editar eval-refs, y usar como filtro en la tabla del cuaderno.
+
+### 10.1 Gestionar unidades desde el cuaderno (sheet)
+- [ ] En página del cuaderno con materia seleccionada → botón/ícono "Gestionar unidades" (ícono de capas) visible en el header
+- [ ] Click → sheet lateral "Gestionar unidades" abre
+- [ ] Sheet muestra lista de unidades existentes para la materia (vacía si ninguna)
+- [ ] Campo "Nueva unidad" + botón "Agregar"
+- [ ] Escribir "Unidad 1: Introducción" → click "Agregar"
+- [ ] **Esperado:** unidad aparece en la lista dentro del sheet, sin recargar la página completa
+- [ ] Agregar segunda unidad "Unidad 2: Desarrollo"
+- [ ] **Esperado:** ambas unidades en la lista
+
+### 10.2 Eliminar unidad desde el sheet del cuaderno
+- [ ] Click ícono eliminar junto a una unidad → AlertDialog de confirmación
+- [ ] Mensaje: "Se quitará la unidad de todas las evaluaciones asignadas."
+- [ ] Confirmar → unidad desaparece de la lista, toast confirmación
+- [ ] Verificar: las eval-refs que tenían esa unidad asignada ya no la muestran
+
+### 10.3 Gestionar unidades desde editar-materia-sheet
+- [ ] Admin abre `Configuración → Cursos → [curso] → ✏️ en materia`
+- [ ] Sheet de edición muestra sección "Unidades" (bajo Dimensiones)
+- [ ] Agregar "Unidad 3: Cierre" → aparece en la lista
+- [ ] Eliminar unidad → AlertDialog mismo mensaje → confirmar → unidad desaparece
+- [ ] Guardar nombre/docente de la materia → unidades **no se pierden** (operaciones independientes)
+
+### 10.4 Asignar unidades al crear eval-ref
+- [ ] Con la materia teniendo unidades → abrir "Nueva evaluación" (desde cuaderno o desde Referencia)
+- [ ] Sheet muestra sección "Unidades" con chips por cada unidad de la materia
+- [ ] Click en chip → chip activa (borde primario)
+- [ ] Seleccionar 1 o más unidades → guardar
+- [ ] **Esperado:** eval-ref creada. En el cuaderno, la eval-ref queda asociada a esas unidades
+- [ ] Eval-ref sin unidad seleccionada → se guarda sin unidad asignada (válido)
+
+### 10.5 Asignar/cambiar unidades al editar eval-ref
+- [ ] Abrir sheet ✏️ de una eval-ref existente (desde cuaderno o desde Referencia)
+- [ ] Sección "Unidades" muestra chips; unidades ya asignadas están activas
+- [ ] Desmarcar unidad asignada → guardar → unidad quitada de la eval-ref
+- [ ] Marcar nueva unidad → guardar → eval-ref ahora tiene la unidad
+- [ ] Cambio reflejado en el filtro del cuaderno
+
+### 10.6 Filtro por unidad en el cuaderno
+- [ ] Con 2+ unidades creadas y eval-refs asignadas a distintas unidades → chips de filtro aparecen sobre la tabla
+- [ ] Chips: "Todas" (activo por defecto) + una por cada unidad + "Sin unidad" al final
+- [ ] Click en chip de unidad → tabla muestra solo columnas de eval-refs asignadas a esa unidad
+- [ ] Click "Sin unidad" → tabla muestra solo eval-refs sin ninguna unidad asignada
+- [ ] Click "Todas" → tabla vuelve a mostrar todas las columnas
+- [ ] Sin unidades creadas para la materia → chips de filtro **no aparecen**
+- [ ] Todas las eval-refs tienen unidad asignada → chip "Sin unidad" aparece pero al seleccionarlo la tabla queda sin columnas de proceso (comportamiento correcto)
+
+### 10.7 Filtro no afecta el guardado
+- [ ] Activar filtro "Unidad 1" (oculta columnas de Unidad 2)
+- [ ] Modificar notas visibles → "Guardar seguimiento"
+- [ ] **Esperado:** notas de Unidad 2 (ocultas) **no se pierden** — botón guarda todo el período
+
+### 10.8 Aislamiento multi-tenant — unidades
+- [ ] Admin de institución A no puede ver/crear unidades de institución B
+- [ ] `POST /api/v1/materias/[id_de_B]/unidades` desde sesión de institución A → 403 o 404
+- [ ] `DELETE /api/v1/unidades/[id_de_B]` desde sesión de institución A → 403 o 404
+
+---
+
 ## Regresiones a verificar
 
 Después de QA de nuevas funcionalidades, verificar que lo siguiente sigue funcionando:
@@ -417,6 +523,10 @@ Después de QA de nuevas funcionalidades, verificar que lo siguiente sigue funci
 - [ ] Boletín del alumno → impresión/PDF funciona
 - [ ] Calendario muestra evaluaciones correctamente
 - [ ] Asistencia se puede cargar y aparece en libreta
+- [ ] Cuaderno v1: chips Proceso/Nota definitiva siguen funcionando tras v2
+- [ ] Cuaderno v2: guardar nota definitiva no afecta notas de proceso (columnas independientes)
+- [ ] Eval-refs creadas desde Referencia siguen apareciendo en cuaderno (misma materia y período)
+- [ ] Eliminar eval-ref desde cuaderno → también desaparece de la página Referencia
 
 ---
 
