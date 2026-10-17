@@ -185,7 +185,6 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
       .from('materias_dimensiones')
       .select('id, nombre, orden')
       .eq('materia_id', selectedMateria.id)
-      .is('deleted_at', null)
       .order('orden')
 
     const allMaterialDims = (dimRows ?? []) as Array<{ id: string; nombre: string; orden: number }>
