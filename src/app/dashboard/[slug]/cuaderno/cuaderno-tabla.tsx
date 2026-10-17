@@ -423,38 +423,27 @@ export default function CuadernoTabla({
 
               {/* Libreta eval names */}
               {showLibreta && (evalsLibreta ?? []).map((ev, evIdx) => {
-                const mainSpan = ev.dimensiones.length > 0 ? ev.dimensiones.length : 1
+                const mainCols = ev.dimensiones.length > 0 ? ev.dimensiones.length : 1
+                const recupCols = ev.recuperatorio
+                  ? (ev.recuperatorio.dimensiones.length > 0 ? ev.recuperatorio.dimensiones.length : 1)
+                  : 0
+                const totalSpan = mainCols + recupCols
                 const drillUrl = `/dashboard/${slug}/notas/${ev.id}?from=cuaderno&materia_id=${materiaId}&periodo_id=${periodoId}`
-                const mainCell = (
+                return (
                   <th key={`lib-ev::${ev.id}`}
-                      colSpan={mainSpan}
+                      colSpan={totalSpan}
                       className={`group text-center px-2 py-1.5 text-xs font-semibold text-sky-700 bg-sky-50/40 ${evIdx > 0 ? 'border-l-2 border-border/50' : ''}`}>
                     <div className="flex items-center justify-center gap-0.5">
                       <span className="truncate max-w-24">{ev.nombre}</span>
                       <Link href={drillUrl} className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                         <ExternalLink className="size-3" />
                       </Link>
+                      {ev.recuperatorio && (
+                        <span className="ml-1 text-[10px] font-normal text-sky-400/70 italic">+R</span>
+                      )}
                     </div>
                   </th>
                 )
-                const recupCell = ev.recuperatorio ? (() => {
-                  const rSpan = ev.recuperatorio!.dimensiones.length > 0 ? ev.recuperatorio!.dimensiones.length : 1
-                  const rDrillUrl = `/dashboard/${slug}/notas/${ev.recuperatorio!.id}?from=cuaderno&materia_id=${materiaId}&periodo_id=${periodoId}`
-                  return (
-                    <th key={`lib-rec::${ev.recuperatorio!.id}`}
-                        colSpan={rSpan}
-                        title={ev.recuperatorio!.nombre}
-                        className="group text-center px-1 py-1.5 text-xs font-medium text-sky-500 bg-sky-50/20 border-l border-border/40">
-                      <div className="flex items-center justify-center gap-0.5">
-                        <span className="italic">R</span>
-                        <Link href={rDrillUrl} className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                          <ExternalLink className="size-3" />
-                        </Link>
-                      </div>
-                    </th>
-                  )
-                })() : null
-                return [mainCell, recupCell]
               })}
 
               {/* Referencia eval names */}
@@ -496,25 +485,29 @@ export default function CuadernoTabla({
             <tr className="border-b bg-muted/10">
               {/* Alumno spanned from Row 2 */}
 
-              {/* Libreta dim names */}
+              {/* Libreta dim names — interleaved dim | R | dim | R */}
               {showLibreta && (evalsLibreta ?? []).map((ev, evIdx) => {
                 const cols = ev.dimensiones.length > 0 ? ev.dimensiones : [null as null]
-                const dimCells = cols.map((dim, dimIdx) => (
-                  <th key={`lib-dim::${ev.id}::${dim?.id ?? '__'}`}
-                      className={`text-center px-2 py-1 text-[10px] font-normal text-sky-600/80 bg-sky-50/20 ${dimIdx === 0 && evIdx > 0 ? 'border-l-2 border-border/50' : ''}`}>
-                    {dim?.nombre ?? ''}
-                  </th>
-                ))
-                const recupDimCells = ev.recuperatorio ? (() => {
-                  const rCols = ev.recuperatorio.dimensiones.length > 0 ? ev.recuperatorio.dimensiones : [null as null]
-                  return rCols.map((dim, dimIdx) => (
-                    <th key={`lib-rdim::${ev.recuperatorio!.id}::${dim?.id ?? '__'}`}
-                        className={`text-center px-1 py-1 text-[10px] font-normal text-sky-500/60 bg-sky-50/10 ${dimIdx === 0 ? 'border-l border-border/30' : ''}`}>
+                const rCols = ev.recuperatorio
+                  ? (ev.recuperatorio.dimensiones.length > 0 ? ev.recuperatorio.dimensiones : [null as null])
+                  : null
+                return cols.flatMap((dim, dimIdx) => {
+                  const dimCell = (
+                    <th key={`lib-dim::${ev.id}::${dim?.id ?? '__'}`}
+                        className={`text-center px-2 py-1 text-[10px] font-normal text-sky-600/80 bg-sky-50/20 ${dimIdx === 0 && evIdx > 0 ? 'border-l-2 border-border/50' : ''}`}>
                       {dim?.nombre ?? ''}
                     </th>
-                  ))
-                })() : []
-                return [...dimCells, ...recupDimCells]
+                  )
+                  if (!rCols) return [dimCell]
+                  const rDim = rCols[dimIdx]
+                  const rCell = (
+                    <th key={`lib-rdim::${ev.recuperatorio!.id}::${rDim?.id ?? dimIdx}`}
+                        className="text-center px-1 py-1 text-[10px] font-normal text-sky-400/60 bg-sky-50/10 border-l border-border/20">
+                      R
+                    </th>
+                  )
+                  return [dimCell, rCell]
+                })
               })}
 
               {/* Referencia dim names */}
@@ -539,12 +532,15 @@ export default function CuadernoTabla({
                     {displayNombre(alumno)}
                   </td>
 
-                  {/* Libreta cells */}
+                  {/* Libreta cells — interleaved dim | R | dim | R */}
                   {showLibreta && (evalsLibreta ?? []).map((ev, evIdx) => {
                     const cols = ev.dimensiones.length > 0 ? ev.dimensiones : [null as null]
-                    const evalCells = cols.map((dim, dimIdx) => {
+                    const rCols = ev.recuperatorio
+                      ? (ev.recuperatorio.dimensiones.length > 0 ? ev.recuperatorio.dimensiones : [null as null])
+                      : null
+                    return cols.flatMap((dim, dimIdx) => {
                       const k = procesoKey(ev.id, alumno.id, dim?.id ?? null)
-                      return (
+                      const mainCell = (
                         <td key={`lib::${k}`} className={`px-1 py-1 bg-sky-50/20 ${dimIdx === 0 && evIdx > 0 ? 'border-l-2 border-border/30' : ''}`}>
                           <Input
                             value={valoresLibreta[k] ?? ''}
@@ -555,34 +551,30 @@ export default function CuadernoTabla({
                           />
                         </td>
                       )
+                      if (!rCols) return [mainCell]
+                      const rDim = rCols[dimIdx]
+                      const rk = procesoKey(ev.recuperatorio!.id, alumno.id, rDim?.id ?? null)
+                      const parentNota = parseFloat(valoresLibreta[k] ?? ev.notasMap[notaKey(alumno.id, dim?.id ?? null)] ?? '')
+                      const dimApproved = notaAprobacion != null && !isNaN(parentNota) && parentNota >= notaAprobacion
+                      const recupCell = (
+                        <td key={`lib::recup::${rk}`} className="px-1 py-1 bg-sky-50/10 border-l border-border/20">
+                          {dimApproved ? (
+                            <span className="flex h-7 w-14 items-center justify-center text-xs text-green-600/60">
+                              ✓
+                            </span>
+                          ) : (
+                            <Input
+                              value={valoresLibreta[rk] ?? ''}
+                              onChange={e => setValoresLibreta(prev => ({ ...prev, [rk]: e.target.value }))}
+                              disabled={!!periodoCerrado}
+                              className="h-7 w-14 text-center text-xs p-1"
+                              placeholder="—"
+                            />
+                          )}
+                        </td>
+                      )
+                      return [mainCell, recupCell]
                     })
-                    const recupCells = ev.recuperatorio ? (() => {
-                      const rCols = ev.recuperatorio.dimensiones.length > 0 ? ev.recuperatorio.dimensiones : [null as null]
-                      return rCols.map(dim => {
-                        const k = procesoKey(ev.recuperatorio!.id, alumno.id, dim?.id ?? null)
-                        const parentNotaKey = procesoKey(ev.id, alumno.id, dim?.id ?? null)
-                        const parentNota = parseFloat(valoresLibreta[parentNotaKey] ?? ev.notasMap[notaKey(alumno.id, dim?.id ?? null)] ?? '')
-                        const dimApproved = notaAprobacion != null && !isNaN(parentNota) && parentNota >= notaAprobacion
-                        return (
-                          <td key={`lib::recup::${k}`} className="px-1 py-1 bg-sky-50/10">
-                            {dimApproved ? (
-                              <span className="flex h-7 w-14 items-center justify-center text-xs text-muted-foreground">
-                                ✓ {parentNota}
-                              </span>
-                            ) : (
-                              <Input
-                                value={valoresLibreta[k] ?? ''}
-                                onChange={e => setValoresLibreta(prev => ({ ...prev, [k]: e.target.value }))}
-                                disabled={!!periodoCerrado}
-                                className="h-7 w-14 text-center text-xs p-1"
-                                placeholder="—"
-                              />
-                            )}
-                          </td>
-                        )
-                      })
-                    })() : []
-                    return [...evalCells, ...recupCells]
                   })}
 
                   {/* Proceso cells */}
