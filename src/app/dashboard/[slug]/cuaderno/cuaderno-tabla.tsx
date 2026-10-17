@@ -123,6 +123,7 @@ export default function CuadernoTabla({
   const [showProceso, setShowProceso] = useState(true)
   const [showDefinitiva, setShowDefinitiva] = useState(true)
   const [showLibreta, setShowLibreta] = useState(true)
+  const [showRecuperatorios, setShowRecuperatorios] = useState(true)
   const [selectedUnidad, setSelectedUnidad] = useState<string>('todas')
 
   const evalRefsFiltradas = useMemo(() => {
@@ -157,12 +158,6 @@ export default function CuadernoTabla({
     return init
   })
 
-  const libretaColCount = useMemo(() =>
-    (evalsLibreta ?? []).reduce((sum, ev) => {
-      return sum + (ev.dimensiones.length || 1) + (ev.recuperatorio ? (ev.recuperatorio.dimensiones.length || 1) : 0)
-    }, 0)
-  , [evalsLibreta])
-
   const procesoColCount = useMemo(() =>
     evalRefsFiltradas.reduce((sum, ev) => sum + (ev.dimensiones.length || 1), 0)
   , [evalRefsFiltradas])
@@ -178,6 +173,40 @@ export default function CuadernoTabla({
       const bk = `${b.apellido ?? ''}\x00${b.nombre}`.toLowerCase()
       return ak.localeCompare(bk, 'es')
     }), [alumnos])
+
+  // Dims where every student approved the parent eval → R column hidden
+  const allApprovedDims = useMemo(() => {
+    const result = new Set<string>()
+    if (notaAprobacion == null) return result
+    for (const ev of evalsLibreta ?? []) {
+      if (!ev.recuperatorio) continue
+      const mainDims = ev.dimensiones.length > 0 ? ev.dimensiones : [null as null]
+      for (const dim of mainDims) {
+        const allOk = sorted.length > 0 && sorted.every(alumno => {
+          const k = procesoKey(ev.id, alumno.id, dim?.id ?? null)
+          const nota = parseFloat(valoresLibreta[k] ?? ev.notasMap[notaKey(alumno.id, dim?.id ?? null)] ?? '')
+          return Number.isFinite(nota) && nota >= notaAprobacion!
+        })
+        if (allOk) result.add(`${ev.id}::${dim?.id ?? '__'}`)
+      }
+    }
+    return result
+  }, [evalsLibreta, sorted, valoresLibreta, notaAprobacion])
+
+  const libretaColCount = useMemo(() =>
+    (evalsLibreta ?? []).reduce((sum, ev) => {
+      const mainCols = ev.dimensiones.length > 0 ? ev.dimensiones.length : 1
+      if (!ev.recuperatorio || !showRecuperatorios) return sum + mainCols
+      const mainDims = ev.dimensiones.length > 0 ? ev.dimensiones : [null as null]
+      const visibleR = mainDims.filter(dim => !allApprovedDims.has(`${ev.id}::${dim?.id ?? '__'}`)).length
+      return sum + mainCols + visibleR
+    }, 0)
+  , [evalsLibreta, showRecuperatorios, allApprovedDims])
+
+  function shouldShowRCol(ev: EvalLibretaColTabla, dim: { id: string } | null): boolean {
+    if (!showRecuperatorios || !ev.recuperatorio) return false
+    return !allApprovedDims.has(`${ev.id}::${dim?.id ?? '__'}`)
+  }
 
   async function handleSaveDefinitiva() {
     setSavingDefinitiva(true)
@@ -377,6 +406,16 @@ export default function CuadernoTabla({
             Libreta ({(evalsLibreta ?? []).length})
           </button>
         )}
+        {showLibreta && (evalsLibreta ?? []).some(ev => ev.recuperatorio) && (
+          <button
+            onClick={() => setShowRecuperatorios(v => !v)}
+            className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+              showRecuperatorios ? 'bg-sky-100 text-sky-700 border-sky-300 dark:bg-sky-950 dark:border-sky-700 dark:text-sky-300' : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            +R
+          </button>
+        )}
         {evalRefs.length > 0 && (
           <button
             onClick={() => setShowProceso(v => !v)}
@@ -424,10 +463,11 @@ export default function CuadernoTabla({
               {/* Libreta eval names */}
               {showLibreta && (evalsLibreta ?? []).map((ev, evIdx) => {
                 const mainCols = ev.dimensiones.length > 0 ? ev.dimensiones.length : 1
-                const recupCols = ev.recuperatorio
-                  ? (ev.recuperatorio.dimensiones.length > 0 ? ev.recuperatorio.dimensiones.length : 1)
+                const mainDims = ev.dimensiones.length > 0 ? ev.dimensiones : [null as null]
+                const visibleRecupCols = ev.recuperatorio
+                  ? mainDims.filter(dim => shouldShowRCol(ev, dim)).length
                   : 0
-                const totalSpan = mainCols + recupCols
+                const totalSpan = mainCols + visibleRecupCols
                 const drillUrl = `/dashboard/${slug}/notas/${ev.id}?from=cuaderno&materia_id=${materiaId}&periodo_id=${periodoId}`
                 return (
                   <th key={`lib-ev::${ev.id}`}
@@ -438,7 +478,7 @@ export default function CuadernoTabla({
                       <Link href={drillUrl} className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                         <ExternalLink className="size-3" />
                       </Link>
-                      {ev.recuperatorio && (
+                      {visibleRecupCols > 0 && (
                         <span className="ml-1 text-[10px] font-normal text-sky-400/70 italic">+R</span>
                       )}
                     </div>
@@ -498,7 +538,7 @@ export default function CuadernoTabla({
                       {dim?.nombre ?? ''}
                     </th>
                   )
-                  if (!rCols) return [dimCell]
+                  if (!rCols || !shouldShowRCol(ev, dim)) return [dimCell]
                   const rDim = rCols[dimIdx]
                   const rCell = (
                     <th key={`lib-rdim::${ev.recuperatorio!.id}::${rDim?.id ?? dimIdx}`}
@@ -551,7 +591,7 @@ export default function CuadernoTabla({
                           />
                         </td>
                       )
-                      if (!rCols) return [mainCell]
+                      if (!rCols || !shouldShowRCol(ev, dim)) return [mainCell]
                       const rDim = rCols[dimIdx]
                       const rk = procesoKey(ev.recuperatorio!.id, alumno.id, rDim?.id ?? null)
                       const parentNota = parseFloat(valoresLibreta[k] ?? ev.notasMap[notaKey(alumno.id, dim?.id ?? null)] ?? '')
