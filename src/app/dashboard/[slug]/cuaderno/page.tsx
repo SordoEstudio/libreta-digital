@@ -411,6 +411,7 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
           </div>
 
           <CuadernoTabla
+            key={`${selectedMateria!.id}:${selectedPeriodo.id}`}
             alumnos={tableData.alumnos}
             evalRefs={tableData.evalRefs}
             notaDefinitivaEvalId={tableData.notaDefinitivaEvalId}
