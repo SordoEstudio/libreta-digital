@@ -4,6 +4,7 @@ import { redirect, notFound } from 'next/navigation'
 import { NotebookPen } from 'lucide-react'
 import CuadernoSelectores from './cuaderno-selectores'
 import CuadernoTabla from './cuaderno-tabla'
+import CuadernoNuevaInstanciaBtn from './cuaderno-nueva-instancia-btn'
 
 type Params = { params: Promise<{ slug: string }>; searchParams: Promise<{ materia_id?: string; periodo_id?: string }> }
 
@@ -261,17 +262,27 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
       )}
 
       {tableData && selectedPeriodo && (
-        <CuadernoTabla
-          alumnos={tableData.alumnos}
-          evalRefs={tableData.evalRefs}
-          notaDefinitivaEvalId={tableData.notaDefinitivaEvalId}
-          notaDefinitivaMap={tableData.notaDefinitivaMap}
-          materiaId={selectedMateria!.id}
-          periodoId={selectedPeriodo.id}
-          periodoNombre={selectedPeriodo.nombre}
-          periodos={periodos}
-          todasDimensiones={tableData.allMaterialDims}
-        />
+        <>
+          <div className="flex justify-end">
+            <CuadernoNuevaInstanciaBtn
+              materiaId={selectedMateria!.id}
+              periodos={periodos}
+              dimensiones={tableData.allMaterialDims}
+            />
+          </div>
+
+          <CuadernoTabla
+            alumnos={tableData.alumnos}
+            evalRefs={tableData.evalRefs}
+            notaDefinitivaEvalId={tableData.notaDefinitivaEvalId}
+            notaDefinitivaMap={tableData.notaDefinitivaMap}
+            materiaId={selectedMateria!.id}
+            periodoId={selectedPeriodo.id}
+            periodoNombre={selectedPeriodo.nombre}
+            periodos={periodos}
+            todasDimensiones={tableData.allMaterialDims}
+          />
+        </>
       )}
     </div>
   )
