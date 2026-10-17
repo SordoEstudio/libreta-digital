@@ -1,6 +1,6 @@
 # QA — Nuevas funcionalidades (Octubre 2026)
 
-**Alcance:** Dimensiones por materia · Notas por dimensión (multi-columna) · Peso opcional (promedio directo) · Plantillas de dimensiones · Recuperatorios por dimensión · Notas de referencia (con dimensiones y período) · Cuaderno del docente · Cierre de período · Comunicados con confirmación · Cuaderno v2 (edición inline de proceso, acciones por columna) · Unidades por materia  
+**Alcance:** Dimensiones por materia · Notas por dimensión (multi-columna) · Peso opcional (promedio directo) · Plantillas de dimensiones · Recuperatorios por dimensión · Notas de referencia (con dimensiones y período) · Cuaderno del docente · Cierre de período · Comunicados con confirmación · Cuaderno v2 (edición inline de proceso, acciones por columna) · Unidades por materia · Cuaderno v3 (gradebook unificado: libreta inline, recuperatorios, smart defaults, drill-down)  
 **Roles necesarios:** superadmin, admin, docente, responsable (con email real para probar envíos)  
 **Entorno:** staging o local con Supabase + Resend en modo test
 
@@ -511,6 +511,79 @@
 
 ---
 
+## 11. Cuaderno v3 — Gradebook unificado
+
+**Ruta:** `Cuaderno`  
+**Prerequisito:** materia con al menos 1 evaluación de libreta (`es_definitiva_periodo = false`, `recuperatorio_de_evaluacion_id = null`) en el período activo; al menos 1 alumno inscripto.
+
+### 11.1 Smart defaults al entrar sin params
+- [ ] Navegar a `/dashboard/[slug]/cuaderno` sin parámetros en la URL
+- [ ] **Esperado:** selector materia muestra primera materia de la lista; selector período muestra el período activo (o primero si ninguno activo)
+- [ ] Tabla carga inmediatamente con esa selección (sin pantalla en blanco)
+- [ ] Si hay solo una materia y un período → tabla muestra datos sin que el docente seleccione nada
+
+### 11.2 Columnas Libreta inline editables
+- [ ] Con evaluaciones de libreta en el período → aparece grupo "Libreta" con columnas azuladas
+- [ ] Cada columna muestra el nombre de la evaluación; con dimensiones muestra sub-etiqueta de dimensión
+- [ ] Celda vacía muestra "—" como placeholder
+- [ ] Click en celda → Input editable; escribir nota numérica (ej. `8`)
+- [ ] Escribir `A` o `a` → celda acepta el valor (ausente)
+- [ ] Chip "Libreta (N)" visible en fila de chips; toggle → columnas libreta desaparecen/reaparecen
+
+### 11.3 Guardar notas libreta
+- [ ] Ingresar notas en columnas Libreta → click "Guardar todo"
+- [ ] Toast "Notas guardadas" aparece
+- [ ] Recargar página → notas persisten en las celdas
+- [ ] Nota `A` (ausente): recargar → celda muestra `A`
+- [ ] Nota `0` (cero): recargar → celda muestra `0` (no se pierde)
+- [ ] Celda vacía no enviada → nota existente no se borra al guardar (blank = no-op)
+
+### 11.4 Guardar unificado Libreta + Referencia
+- [ ] Ingresar nota en columna Libreta Y modificar nota en columna Referencia → "Guardar todo"
+- [ ] Toast único: "Notas guardadas" (no toast doble)
+- [ ] Recargar → ambas notas persisten
+- [ ] Si la API de libreta falla y la de referencia succeeds → toast con conteo de errores (ej. "1 error(es) al guardar")
+
+### 11.5 Recuperatorios inline
+- [ ] Evaluación con recuperatorio generado → columna "R" aparece adyacente a la columna del parcial (fondo azul más claro)
+- [ ] Header "R" tiene tooltip con nombre completo del recuperatorio
+- [ ] Celda R editable para alumno que reprobó (nota original < nota_aprobacion)
+- [ ] **Dimensiones:** si evaluación tiene dims → columna R también tiene sub-cols por dimensión
+- [ ] Dim aprobada (nota original >= nota_aprobacion) → celda R muestra "✓ 8" (no input, bloqueada)
+- [ ] Dim no aprobada → celda R muestra input editable
+
+### 11.6 Período cerrado
+- [ ] Con período cerrado (`cerrado_at` no null) → columnas Libreta muestran inputs `disabled`
+- [ ] Badge "(período cerrado)" visible en grupo Libreta del header
+- [ ] Columnas Referencia **no** se deshabilitan por cierre de período
+- [ ] "Guardar todo" aún funciona pero libreta retorna error 400 del endpoint (período cerrado)
+
+### 11.7 Drill-down a editor completo
+- [ ] Hover sobre header de columna Libreta → icono ExternalLink aparece (hover reveal)
+- [ ] Click icono → navega a `/notas/[eval_id]?from=cuaderno&materia_id=X&periodo_id=Y`
+- [ ] Página de notas muestra breadcrumb "← Cuaderno" en la parte superior
+- [ ] Click "← Cuaderno" → vuelve al cuaderno con la misma materia y período seleccionados
+- [ ] Navegar a `/notas/[eval_id]` directamente (sin `?from=cuaderno`) → **no** muestra breadcrumb
+- [ ] Drill-down en columna "R" (recuperatorio) → también muestra breadcrumb al regresar
+
+### 11.8 Chips y grupos visuales
+- [ ] Chips visibles: "Libreta (N)", "Referencia (N)", "Nota definitiva"
+- [ ] Fila de grupos en thead: "Libreta" (azul), "Referencia" (gris)
+- [ ] Toggle "Libreta" → columnas libreta + R desaparecen; referencia y definitiva permanecen
+- [ ] Toggle "Referencia" → columnas referencia desaparecen; libreta y definitiva permanecen
+- [ ] Sin evaluaciones de libreta en el período → chip "Libreta" no aparece
+
+### 11.9 Cambio de materia / período
+- [ ] Cambiar selector de materia → tabla recarga con columnas de la nueva materia (notas correctas, no las de la anterior)
+- [ ] Cambiar selector de período → tabla recarga con evaluaciones del nuevo período
+- [ ] Inputs no muestran notas residuales de la selección anterior
+
+### 11.10 Aislamiento multi-tenant — notas libreta
+- [ ] `POST /api/v1/notas/bulk` con `evaluacion_id` de otra institución → 403 o 404
+- [ ] Docente de institución A no puede ver columnas de libreta de institución B
+
+---
+
 ## Regresiones a verificar
 
 Después de QA de nuevas funcionalidades, verificar que lo siguiente sigue funcionando:
@@ -527,6 +600,9 @@ Después de QA de nuevas funcionalidades, verificar que lo siguiente sigue funci
 - [ ] Cuaderno v2: guardar nota definitiva no afecta notas de proceso (columnas independientes)
 - [ ] Eval-refs creadas desde Referencia siguen apareciendo en cuaderno (misma materia y período)
 - [ ] Eliminar eval-ref desde cuaderno → también desaparece de la página Referencia
+- [ ] Cuaderno v3: "Guardar todo" no borra notas de referencia (columnas separadas, endpoints distintos)
+- [ ] Cuaderno v3: cambiar materia en selector no mezcla notas entre materias
+- [ ] Página `/notas/[eval_id]` sin `?from=cuaderno` → sigue funcionando igual (sin breadcrumb, sin regresión)
 
 ---
 
