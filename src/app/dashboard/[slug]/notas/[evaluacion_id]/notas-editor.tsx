@@ -77,24 +77,9 @@ export function NotasEditor({
       init[alumno.id] = {}
       for (const dim of dimensiones) {
         const nota = notasExistentes.find(n => n.alumno_id === alumno.id && n.dimension_id === dim.id)
-        if (nota?.valor_literal === 'A') {
-          init[alumno.id][dim.id] = ''
-        } else {
-          init[alumno.id][dim.id] = nota?.valor_numerico?.toString() ?? nota?.valor_literal ?? ''
-        }
-      }
-    }
-    return init
-  })
-
-  // Per-dimension ausente state (multi-dim only): ausentesDim[alumnoId][dimId]
-  const [ausentesDim, setAusentesDim] = useState<Record<string, Record<string, boolean>>>(() => {
-    const init: Record<string, Record<string, boolean>> = {}
-    for (const alumno of alumnos) {
-      init[alumno.id] = {}
-      for (const dim of dimensiones) {
-        const nota = notasExistentes.find(n => n.alumno_id === alumno.id && n.dimension_id === dim.id)
         init[alumno.id][dim.id] = nota?.valor_literal === 'A'
+          ? 'A'
+          : (nota?.valor_numerico?.toString() ?? nota?.valor_literal ?? '')
       }
     }
     return init
@@ -107,17 +92,7 @@ export function NotasEditor({
     const init: Record<string, string> = {}
     for (const alumno of alumnos) {
       const nota = notaMap.get(alumno.id)
-      init[alumno.id] = nota?.valor_literal === 'A' ? '' : (nota?.valor_numerico?.toString() ?? nota?.valor_literal ?? '')
-    }
-    return init
-  })
-
-  // Single global ausente for no-dim case only
-  const [ausentes, setAusentes] = useState<Record<string, boolean>>(() => {
-    if (hasDims) return {}
-    const init: Record<string, boolean> = {}
-    for (const alumno of alumnos) {
-      init[alumno.id] = notaMap.get(alumno.id)?.valor_literal === 'A'
+      init[alumno.id] = nota?.valor_literal === 'A' ? 'A' : (nota?.valor_numerico?.toString() ?? nota?.valor_literal ?? '')
     }
     return init
   })
@@ -159,27 +134,6 @@ export function NotasEditor({
     }))
   }
 
-  function toggleAusenteDim(alumnoId: string, dimId: string, ausente: boolean) {
-    setAusentesDim(prev => ({
-      ...prev,
-      [alumnoId]: { ...(prev[alumnoId] ?? {}), [dimId]: ausente },
-    }))
-    if (ausente) {
-      setValoresDim(prev => ({
-        ...prev,
-        [alumnoId]: { ...(prev[alumnoId] ?? {}), [dimId]: '' },
-      }))
-    }
-  }
-
-  function handleAusente(alumnoId: string, checked: boolean) {
-    setAusentes(prev => ({ ...prev, [alumnoId]: checked }))
-    if (checked) {
-      setValores(prev => ({ ...prev, [alumnoId]: '' }))
-      setObservaciones(prev => ({ ...prev, [alumnoId]: '' }))
-    }
-  }
-
   function handleObservacion(alumnoId: string, value: string) {
     setObservaciones(prev => ({ ...prev, [alumnoId]: value }))
   }
@@ -189,8 +143,8 @@ export function NotasEditor({
       const rows = sortedAlumnos.map(a => {
         const row: Record<string, string> = { Alumno: displayNombre(a) }
         for (const dim of dimensiones) {
-          const isAusente = ausentesDim[a.id]?.[dim.id] ?? false
-          row[dim.nombre] = isAusente ? 'Ausente' : (valoresDim[a.id]?.[dim.id] || '—')
+          const v = valoresDim[a.id]?.[dim.id] ?? ''
+          row[dim.nombre] = v.toUpperCase() === 'A' ? 'Ausente' : (v || '—')
         }
         return row
       })
@@ -201,8 +155,8 @@ export function NotasEditor({
     } else {
       const rows = sortedAlumnos.map(a => ({
         Alumno: displayNombre(a),
-        Nota: ausentes[a.id] ? 'Ausente' : (valores[a.id] || '—'),
-        Observación: ausentes[a.id] ? '' : (observaciones[a.id] ?? ''),
+        Nota: (valores[a.id] ?? '').toUpperCase() === 'A' ? 'Ausente' : (valores[a.id] || '—'),
+        Observación: (valores[a.id] ?? '').toUpperCase() === 'A' ? '' : (observaciones[a.id] ?? ''),
       }))
       const ws = XLSX.utils.json_to_sheet(rows)
       const wb = XLSX.utils.book_new()
@@ -218,11 +172,10 @@ export function NotasEditor({
       notas = alumnos.flatMap(a => {
         const obs = observaciones[a.id]?.trim()
         return dimensiones.map(dim => {
-          const isAusente = ausentesDim[a.id]?.[dim.id] ?? false
-          if (isAusente) {
+          const raw = (valoresDim[a.id]?.[dim.id] ?? '').trim()
+          if (raw.toUpperCase() === 'A') {
             return { alumno_id: a.id, dimension_id: dim.id, valor_numerico: null as number | null, valor_literal: 'A' as string | null }
           }
-          const raw = valoresDim[a.id]?.[dim.id] ?? ''
           const num = raw !== '' ? parseFloat(raw) : null
           return {
             alumno_id: a.id,
@@ -235,10 +188,10 @@ export function NotasEditor({
       })
     } else {
       notas = alumnos.map(a => {
-        if (ausentes[a.id]) {
+        const raw = (valores[a.id] ?? '').trim()
+        if (raw.toUpperCase() === 'A') {
           return { alumno_id: a.id, valor_numerico: null, valor_literal: 'A' }
         }
-        const raw = valores[a.id]
         const num = raw !== '' ? parseFloat(raw) : null
         const obs = observaciones[a.id]?.trim()
         return { alumno_id: a.id, valor_numerico: num, valor_literal: null, ...(obs ? { observacion: obs } : {}) }
@@ -272,13 +225,15 @@ export function NotasEditor({
   }
 
   const countBelowThreshold = notaAprobacion !== null && !hasDims
-    ? alumnos.filter(a => ausentes[a.id] || (!ausentes[a.id] && valores[a.id] !== '' && parseFloat(valores[a.id]) < notaAprobacion!)).length
+    ? alumnos.filter(a => {
+        const v = valores[a.id] ?? ''
+        return v.toUpperCase() === 'A' || (v !== '' && parseFloat(v) < notaAprobacion!)
+      }).length
     : notaAprobacion !== null && hasDims
       ? alumnos.filter(a =>
           dimensiones.some(dim => {
-            if (ausentesDim[a.id]?.[dim.id]) return true
             const raw = valoresDim[a.id]?.[dim.id] ?? ''
-            return raw !== '' && parseFloat(raw) < notaAprobacion!
+            return raw.toUpperCase() === 'A' || (raw !== '' && parseFloat(raw) < notaAprobacion!)
           })
         ).length
       : 0
@@ -321,7 +276,6 @@ export function NotasEditor({
               ) : (
                 <>
                   <TableHead className="w-32">Nota</TableHead>
-                  <TableHead className="w-24 text-center">Ausente</TableHead>
                   <TableHead>Observación</TableHead>
                   {notaAprobacion !== null && <TableHead className="w-28">Resultado</TableHead>}
                 </>
@@ -335,48 +289,24 @@ export function NotasEditor({
                 {hasDims ? (
                   dimensiones.map(dim => {
                     const dimEligible = !eligibles || eligibles.get(alumno.id)?.has(dim.id)
-                    const isAusente = ausentesDim[alumno.id]?.[dim.id] ?? false
-                    const cellVal = parseFloat(valoresDim[alumno.id]?.[dim.id] ?? '')
-                    const cellBg = dimEligible && !isAusente && notaAprobacion != null && Number.isFinite(cellVal)
+                    const dimVal = valoresDim[alumno.id]?.[dim.id] ?? ''
+                    const isAusenteDim = dimVal.toUpperCase() === 'A'
+                    const cellVal = parseFloat(dimVal)
+                    const cellBg = dimEligible && !isAusenteDim && notaAprobacion != null && Number.isFinite(cellVal)
                       ? cellVal >= notaAprobacion ? 'bg-green-50/60 dark:bg-green-950/20' : 'bg-red-50/50 dark:bg-red-950/20'
                       : ''
                     return (
                       <TableCell key={dim.id} className={cellBg}>
                         {!dimEligible ? (
                           <span className="text-xs text-muted-foreground/50">—</span>
-                        ) : isAusente ? (
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-bold text-orange-600 text-sm w-8">A</span>
-                            <button
-                              type="button"
-                              onClick={() => toggleAusenteDim(alumno.id, dim.id, false)}
-                              className="text-xs text-muted-foreground hover:text-foreground border rounded px-1.5 py-0.5"
-                              title="Quitar ausente"
-                            >
-                              ×
-                            </button>
-                          </div>
                         ) : (
-                          <div className="flex items-center gap-1">
-                            <Input
-                              type="number"
-                              step="0.01"
-                              min={inputMin}
-                              max={inputMax}
-                              placeholder="—"
-                              value={valoresDim[alumno.id]?.[dim.id] ?? ''}
-                              onChange={e => handleChangeDim(alumno.id, dim.id, e.target.value)}
-                              className="w-20"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => toggleAusenteDim(alumno.id, dim.id, true)}
-                              className="text-xs text-muted-foreground hover:text-orange-600 border rounded px-1.5 py-0.5"
-                              title="Marcar ausente"
-                            >
-                              A
-                            </button>
-                          </div>
+                          <Input
+                            type="text"
+                            placeholder="—"
+                            value={dimVal}
+                            onChange={e => handleChangeDim(alumno.id, dim.id, e.target.value.toUpperCase() === 'A' ? 'A' : e.target.value)}
+                            className={`w-20 ${isAusenteDim ? 'text-orange-600 font-bold text-center' : ''}`}
+                          />
                         )}
                       </TableCell>
                     )
@@ -384,27 +314,12 @@ export function NotasEditor({
                 ) : (
                   <>
                     <TableCell>
-                      {ausentes[alumno.id] ? (
-                        <span className="font-bold text-orange-600 text-sm">A</span>
-                      ) : (
-                        <Input
-                          type="number"
-                          step="0.01"
-                          min={inputMin}
-                          max={inputMax}
-                          placeholder="—"
-                          value={valores[alumno.id] ?? ''}
-                          onChange={e => handleChange(alumno.id, e.target.value)}
-                          className="w-24"
-                        />
-                      )}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <input
-                        type="checkbox"
-                        checked={ausentes[alumno.id] ?? false}
-                        onChange={e => handleAusente(alumno.id, e.target.checked)}
-                        className="size-4 cursor-pointer accent-primary"
+                      <Input
+                        type="text"
+                        placeholder="—"
+                        value={valores[alumno.id] ?? ''}
+                        onChange={e => handleChange(alumno.id, e.target.value.toUpperCase() === 'A' ? 'A' : e.target.value)}
+                        className={`w-24 ${(valores[alumno.id] ?? '').toUpperCase() === 'A' ? 'text-orange-600 font-bold text-center' : ''}`}
                       />
                     </TableCell>
                     <TableCell>
@@ -413,18 +328,19 @@ export function NotasEditor({
                         placeholder="—"
                         value={observaciones[alumno.id] ?? ''}
                         onChange={e => handleObservacion(alumno.id, e.target.value)}
-                        disabled={ausentes[alumno.id]}
+                        disabled={(valores[alumno.id] ?? '').toUpperCase() === 'A'}
                         className="min-w-40"
                       />
                     </TableCell>
                     {notaAprobacion !== null && (
                       <TableCell className="text-sm">
-                        {ausentes[alumno.id] || valores[alumno.id] === ''
-                          ? <span className="text-muted-foreground">—</span>
-                          : parseFloat(valores[alumno.id]) < notaAprobacion
+                        {(() => {
+                          const v = valores[alumno.id] ?? ''
+                          if (v === '' || v.toUpperCase() === 'A') return <span className="text-muted-foreground">—</span>
+                          return parseFloat(v) < notaAprobacion
                             ? <span className="text-destructive font-medium">✗ Reprobado</span>
                             : <span className="text-green-600 font-medium">✓ Aprobado</span>
-                        }
+                        })()}
                       </TableCell>
                     )}
                   </>
