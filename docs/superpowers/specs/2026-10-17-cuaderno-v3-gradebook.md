@@ -17,7 +17,9 @@ El docente entra al cuaderno y ve inmediatamente un gradebook con todas las eval
 
 2. **Notas de libreta inline:** El docente ve columnas para cada evaluación del período (parciales, TPs, etc.) y puede escribir la nota directamente en la celda. Acepta número o `A` para ausente. Un "Guardar todo" persiste todo en una sola acción.
 
-3. **Recuperatorios inline:** Para cada evaluación con recuperatorio generado, aparece una sub-columna "R" adyacente. El docente puede entrar la nota del recuperatorio ahí. No hay bloqueo por dimensión en el cuaderno (simplificación aceptada).
+3. **Recuperatorios inline:** Para cada evaluación con recuperatorio generado, aparece una sub-columna "R" adyacente. El docente puede entrar la nota del recuperatorio ahí. Las celdas de dimensiones ya aprobadas en el original quedan deshabilitadas (misma experiencia que el editor de notas completo).
+
+4. **Drill-down a editor completo:** Cada columna de libreta (y sus recuperatorios) tiene un ícono de link que navega a `/notas/[eval_id]` — el editor completo ya existente con filtro de alumnos elegibles, ausente, validación de escala, y bloqueo de dimensiones. El parámetro `?from=cuaderno&materia_id=X&periodo_id=Y` permite volver al cuaderno con el mismo estado.
 
 4. **Referencia inline:** Mismas columnas inline ya implementadas en v2. Sin cambios de comportamiento.
 
@@ -25,7 +27,7 @@ El docente entra al cuaderno y ve inmediatamente un gradebook con todas las eval
 
 6. **Período cerrado:** Si el período está cerrado, las columnas de libreta (y sus recuperatorios) quedan deshabilitadas. Las de referencia y definitiva no son afectadas por el cierre de período.
 
-7. **Grupos visuales:** La tabla tiene separadores de grupo con labels "Libreta" y "Referencia". Chip toggles para mostrar/ocultar cada grupo.
+8. **Grupos visuales:** La tabla tiene separadores de grupo con labels "Libreta" y "Referencia". Chip toggles para mostrar/ocultar cada grupo.
 
 ---
 
@@ -74,10 +76,24 @@ El docente entra al cuaderno y ve inmediatamente un gradebook con todas las eval
 ## Recuperatorios
 
 - Un recuperatorio es una `evaluacion` con `recuperatorio_de_evaluacion_id IS NOT NULL`.
-- Se muestra como sub-columna del parcial original, header con label "R" y tooltip con nombre completo.
-- No hay lógica de bloqueo por dimensión (simplificación MVP).
+- Se muestra como sub-columna del parcial original, header "R" con tooltip = nombre completo del recuperatorio.
 - Se guarda via el mismo `/api/v1/notas/bulk`.
-- Si el recuperatorio aún no fue generado (`permite_recuperatorio=true` pero no existe eval hija), la sub-columna "R" NO aparece — el docente genera el recuperatorio desde `/evaluaciones`.
+- Si el recuperatorio aún no fue generado, la sub-columna "R" NO aparece — el docente lo genera desde `/evaluaciones`.
+
+### Bloqueo por dimensión en cuaderno
+
+Para cada celda `(alumnoId, dimId)` de un recuperatorio:
+- Si la nota original del alumno en esa dimensión es `>= nota_aprobacion`: celda `disabled` (dimensión aprobada, no necesita recuperar).
+- Si no: celda editable.
+- `nota_aprobacion` viene de `escalas.min_aprobacion` de la institución (misma fuente que el editor existente).
+- El bloqueo es **solo visual** — el endpoint `/api/v1/notas/bulk` no valida. Validación en API queda para versión futura.
+- Para evals de recuperatorio **sin dimensiones**: no aplica bloqueo (el alumno aparece en el recuperatorio porque reprobó → celda siempre editable).
+
+### Drill-down
+
+- Link icon en header de cada columna libreta y "R" → `/notas/[eval_id]?from=cuaderno&materia_id=X&periodo_id=Y`.
+- La página `/notas/[eval_id]` existente ya maneja: filtro alumnos elegibles, bloqueo de dimensiones, ausente, escala, notificaciones.
+- Si `from=cuaderno` presente en URL: mostrar breadcrumb "← Cuaderno" que restaura `?materia_id=X&periodo_id=Y`.
 
 ---
 
@@ -96,7 +112,7 @@ El docente entra al cuaderno y ve inmediatamente un gradebook con todas las eval
 ## Fuera de scope
 
 - Crear nueva evaluación de libreta desde el cuaderno (sigue siendo en `/evaluaciones`).
-- Bloqueo por dimensión en recuperatorios dentro del cuaderno.
+- Validación en API del bloqueo por dimensión en recuperatorios (solo bloqueo visual en v3).
 - Borrar una nota ya cargada poniéndola en blanco (limitación existente del bulk endpoint).
 - La página `/referencia` se mantiene sin cambios.
 - Editar propiedades de una evaluación de libreta desde cuaderno (sigue siendo en `/evaluaciones`).

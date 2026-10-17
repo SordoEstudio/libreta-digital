@@ -400,7 +400,7 @@ export default function CuadernoTabla({
       <div className="overflow-x-auto rounded-md border">
         <table className="w-full text-sm border-collapse">
           <thead>
-            {/* Group header row */}
+            {/* Row 1: group labels */}
             <tr className="border-b bg-muted/20">
               <th className="min-w-44 sticky left-0 bg-muted/20" />
               {showLibreta && (evalsLibreta ?? []).length > 0 && (
@@ -413,113 +413,121 @@ export default function CuadernoTabla({
                   Referencia
                 </th>
               )}
-              {showProceso && evalRefsFiltradas.some(ev => ev.tipo === 'numerica') && (
-                <th className="border-b border-l" />
-              )}
-              {showDefinitiva && (
-                <th className="border-b border-l bg-amber-50/50 dark:bg-amber-950/20" />
-              )}
             </tr>
 
-            <tr className="border-b bg-muted/30">
-              {/* Alumno header */}
-              <th className="text-left px-3 py-2 font-medium text-xs text-muted-foreground min-w-44 sticky left-0 bg-muted/30">
+            {/* Row 2: eval names (with colSpan over their dims) */}
+            <tr className="border-b bg-muted/25">
+              <th rowSpan={2} className="text-left px-3 py-2 font-medium text-xs text-muted-foreground min-w-44 sticky left-0 bg-muted/25 border-r align-bottom">
                 Alumno
               </th>
 
-              {/* Libreta headers */}
+              {/* Libreta eval names */}
               {showLibreta && (evalsLibreta ?? []).map((ev, evIdx) => {
-                const cols = ev.dimensiones.length > 0 ? ev.dimensiones : [null as null]
+                const mainSpan = ev.dimensiones.length > 0 ? ev.dimensiones.length : 1
                 const drillUrl = `/dashboard/${slug}/notas/${ev.id}?from=cuaderno&materia_id=${materiaId}&periodo_id=${periodoId}`
-                const mainCols = cols.map((dim, idx) => (
-                  <th key={`lib::${ev.id}::${dim?.id ?? '__'}`}
-                      className={`group text-center px-2 py-2 font-medium text-xs text-sky-700 bg-sky-50/30 min-w-20 ${idx === 0 && evIdx > 0 ? 'border-l-2 border-border/50' : ''}`}>
-                    {idx === 0 ? (
-                      <div className="flex flex-col items-center gap-0.5">
-                        <div className="flex items-center gap-0.5">
-                          <span className="truncate max-w-20">{ev.nombre}</span>
-                          <Link href={drillUrl} className="opacity-0 group-hover:opacity-100 transition-opacity">
-                            <ExternalLink className="size-3" />
-                          </Link>
-                        </div>
-                        {dim && <span className="text-[10px] font-normal opacity-70">{dim.nombre}</span>}
-                      </div>
-                    ) : (
-                      <>
-                        <div className="truncate max-w-20">{ev.nombre}</div>
-                        {dim && <div className="text-[10px] font-normal opacity-70">{dim.nombre}</div>}
-                      </>
-                    )}
+                const mainCell = (
+                  <th key={`lib-ev::${ev.id}`}
+                      colSpan={mainSpan}
+                      className={`group text-center px-2 py-1.5 text-xs font-semibold text-sky-700 bg-sky-50/40 ${evIdx > 0 ? 'border-l-2 border-border/50' : ''}`}>
+                    <div className="flex items-center justify-center gap-0.5">
+                      <span className="truncate max-w-24">{ev.nombre}</span>
+                      <Link href={drillUrl} className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                        <ExternalLink className="size-3" />
+                      </Link>
+                    </div>
                   </th>
-                ))
-                const recupCols = ev.recuperatorio ? (() => {
+                )
+                const recupCell = ev.recuperatorio ? (() => {
+                  const rSpan = ev.recuperatorio!.dimensiones.length > 0 ? ev.recuperatorio!.dimensiones.length : 1
                   const rDrillUrl = `/dashboard/${slug}/notas/${ev.recuperatorio!.id}?from=cuaderno&materia_id=${materiaId}&periodo_id=${periodoId}`
-                  const rCols = ev.recuperatorio.dimensiones.length > 0 ? ev.recuperatorio.dimensiones : [null as null]
-                  return rCols.map((dim, idx) => (
-                    <th key={`lib::${ev.recuperatorio!.id}::${dim?.id ?? '__'}`}
-                        className="group text-center px-1 py-2 font-medium text-xs text-sky-600/70 bg-sky-50/20 min-w-16"
-                        title={ev.recuperatorio!.nombre}>
-                      {idx === 0 && (
-                        <div className="flex items-center justify-center gap-0.5">
-                          <span>R</span>
-                          <Link href={rDrillUrl} className="opacity-0 group-hover:opacity-100 transition-opacity">
-                            <ExternalLink className="size-3" />
-                          </Link>
-                        </div>
-                      )}
-                      {dim && <div className="text-[10px] font-normal opacity-70">{dim.nombre}</div>}
-                    </th>
-                  ))
-                })() : []
-                return [...mainCols, ...recupCols]
-              })}
-
-              {/* Proceso headers */}
-              {showProceso && evalRefsFiltradas.map((ev, evIdx) => {
-                const cols = ev.dimensiones.length > 0 ? ev.dimensiones : [null]
-                const evalColor = getEvalColor(ev.unidadIds)
-                return cols.map((dim, dimIdx) => (
-                  <th
-                    key={`${ev.id}::${dim?.id ?? '__'}`}
-                    style={dimIdx === 0 && evalColor ? { borderTop: `3px solid ${evalColor}` } : undefined}
-                    className={`group text-center px-2 py-2 font-medium text-xs text-muted-foreground min-w-24 ${dimIdx === 0 && evIdx > 0 ? 'border-l-2 border-border/50' : ''}`}
-                  >
-                    {dimIdx === 0 ? (
-                      <div className="flex flex-col items-center gap-0.5">
-                        <div className="flex items-center gap-0.5">
-                          <span className="truncate max-w-20">{ev.nombre}</span>
-                          <CuadernoAccionesCol
-                            evalRef={{ id: ev.id, nombre: ev.nombre, tipo: ev.tipo, periodoId: ev.periodoId, dimensionIds: ev.dimensionIds, unidadIds: ev.unidadIds }}
-                            periodos={periodos}
-                            dimensiones={todasDimensiones}
-                            unidades={todasUnidades}
-                          />
-                        </div>
-                        {dim && <div className="text-[10px] font-normal opacity-70">{dim.nombre}</div>}
+                  return (
+                    <th key={`lib-rec::${ev.recuperatorio!.id}`}
+                        colSpan={rSpan}
+                        title={ev.recuperatorio!.nombre}
+                        className="group text-center px-1 py-1.5 text-xs font-medium text-sky-500 bg-sky-50/20 border-l border-border/40">
+                      <div className="flex items-center justify-center gap-0.5">
+                        <span className="italic">R</span>
+                        <Link href={rDrillUrl} className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                          <ExternalLink className="size-3" />
+                        </Link>
                       </div>
-                    ) : (
-                      <>
-                        <div className="truncate max-w-24">{ev.nombre}</div>
-                        {dim && <div className="text-[10px] font-normal opacity-70">{dim.nombre}</div>}
-                      </>
-                    )}
-                  </th>
-                ))
+                    </th>
+                  )
+                })() : null
+                return [mainCell, recupCell]
               })}
 
-              {/* Promedio header */}
+              {/* Referencia eval names */}
+              {showProceso && evalRefsFiltradas.map((ev, evIdx) => {
+                const colSpan = ev.dimensiones.length > 0 ? ev.dimensiones.length : 1
+                const evalColor = getEvalColor(ev.unidadIds)
+                return (
+                  <th key={`proc-ev::${ev.id}`}
+                      colSpan={colSpan}
+                      style={evalColor ? { borderTop: `3px solid ${evalColor}` } : undefined}
+                      className={`group text-center px-2 py-1.5 text-xs font-semibold text-muted-foreground ${evIdx > 0 ? 'border-l-2 border-border/50' : 'border-l border-border/30'}`}>
+                    <div className="flex items-center justify-center gap-0.5">
+                      <span className="truncate max-w-24">{ev.nombre}</span>
+                      <CuadernoAccionesCol
+                        evalRef={{ id: ev.id, nombre: ev.nombre, tipo: ev.tipo, periodoId: ev.periodoId, dimensionIds: ev.dimensionIds, unidadIds: ev.unidadIds }}
+                        periodos={periodos}
+                        dimensiones={todasDimensiones}
+                        unidades={todasUnidades}
+                      />
+                    </div>
+                  </th>
+                )
+              })}
+
+              {/* Prom + Definitiva span 2 rows */}
               {showProceso && evalRefsFiltradas.some(ev => ev.tipo === 'numerica') && (
-                <th className="text-center px-2 py-2 font-medium text-xs text-muted-foreground min-w-20 border-l">
+                <th rowSpan={2} className="text-center px-2 py-2 font-medium text-xs text-muted-foreground min-w-20 border-l align-middle">
                   Prom.
                 </th>
               )}
-
-              {/* Definitiva header */}
               {showDefinitiva && (
-                <th className="text-center px-3 py-2 font-medium text-xs min-w-32 border-l bg-amber-50/50 dark:bg-amber-950/20">
+                <th rowSpan={2} className="text-center px-3 py-2 font-medium text-xs min-w-32 border-l bg-amber-50/50 dark:bg-amber-950/20 align-middle">
                   Nota definitiva
                 </th>
               )}
+            </tr>
+
+            {/* Row 3: dimension names */}
+            <tr className="border-b bg-muted/10">
+              {/* Alumno spanned from Row 2 */}
+
+              {/* Libreta dim names */}
+              {showLibreta && (evalsLibreta ?? []).map((ev, evIdx) => {
+                const cols = ev.dimensiones.length > 0 ? ev.dimensiones : [null as null]
+                const dimCells = cols.map((dim, dimIdx) => (
+                  <th key={`lib-dim::${ev.id}::${dim?.id ?? '__'}`}
+                      className={`text-center px-2 py-1 text-[10px] font-normal text-sky-600/80 bg-sky-50/20 ${dimIdx === 0 && evIdx > 0 ? 'border-l-2 border-border/50' : ''}`}>
+                    {dim?.nombre ?? ''}
+                  </th>
+                ))
+                const recupDimCells = ev.recuperatorio ? (() => {
+                  const rCols = ev.recuperatorio.dimensiones.length > 0 ? ev.recuperatorio.dimensiones : [null as null]
+                  return rCols.map((dim, dimIdx) => (
+                    <th key={`lib-rdim::${ev.recuperatorio!.id}::${dim?.id ?? '__'}`}
+                        className={`text-center px-1 py-1 text-[10px] font-normal text-sky-500/60 bg-sky-50/10 ${dimIdx === 0 ? 'border-l border-border/30' : ''}`}>
+                      {dim?.nombre ?? ''}
+                    </th>
+                  ))
+                })() : []
+                return [...dimCells, ...recupDimCells]
+              })}
+
+              {/* Referencia dim names */}
+              {showProceso && evalRefsFiltradas.map((ev, evIdx) => {
+                const cols = ev.dimensiones.length > 0 ? ev.dimensiones : [null as null]
+                return cols.map((dim, dimIdx) => (
+                  <th key={`proc-dim::${ev.id}::${dim?.id ?? '__'}`}
+                      className={`text-center px-2 py-1 text-[10px] font-normal text-muted-foreground/70 ${dimIdx === 0 && evIdx > 0 ? 'border-l-2 border-border/50' : 'border-l border-border/20'}`}>
+                    {dim?.nombre ?? ''}
+                  </th>
+                ))
+              })}
+              {/* Prom + Definitiva spanned from Row 2 */}
             </tr>
           </thead>
           <tbody>

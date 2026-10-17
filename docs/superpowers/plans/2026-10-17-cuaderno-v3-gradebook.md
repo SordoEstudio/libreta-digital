@@ -20,6 +20,8 @@
 - Period closed = `periodo.cerrado_at IS NOT NULL` checked client-side after fetch (server already passes boolean prop).
 - Inline note value convention: number string OR `'A'`/`'a'` for ausente → maps to `{ valor_numerico: null, valor_literal: 'A' }` at save time.
 - Key pattern for valoresLibreta: `${evalId}::${alumnoId}::${dimId ?? '__'}` (same `procesoKey` helper already in cuaderno-tabla.tsx).
+- `nota_aprobacion` lives on the `instituciones` table (not on `escalas`). Extend the instituciones query in `cuaderno/page.tsx` from `select('id')` to `select('id, nota_aprobacion')`.
+- Recuperatorio cell lock: visual only (input `disabled`). The bulk endpoint does NOT validate. Lock = `parentNota >= nota_aprobacion` where parentNota comes from the parent eval's `notasMap` for that alumno+dimId.
 
 ## Review Focus
 
@@ -28,6 +30,7 @@
 3. **Smart default loop:** If materia[0] has no periods (no año_lectivo_id configured), page must not crash — fall through to "sin períodos" empty state gracefully.
 4. **Period closed detection:** `periodoCerrado` passed to tabla must reflect the CURRENTLY DISPLAYED period, not just whether any period of the materia is closed. Stale prop disables all cells forever.
 5. **Guardar todo partial failure:** If libreta save succeeds but proceso save fails (or vice versa), user must get a clear error count. Silent partial success is misleading.
+6. **Recuperatorio dim lock — dim mismatch:** The recuperatorio inherits dimensions from the parent eval (same dim IDs). But the lock lookup uses `dim.id` from the recuperatorio's own `dimensiones` array against the parent's `notasMap`. If the recuperatorio was manually given different dims (edge case), lock silently fails or locks wrong cells. Verify with a recuperatorio that has the same dims as parent.
 
 ---
 
@@ -81,7 +84,7 @@ git commit -m "feat: cuaderno auto-selecciona materia y período activo por defe
 - Modify: `src/app/dashboard/[slug]/cuaderno/page.tsx`
 
 **Interfaces:**
-- Consumes: `selectedMateria`, `selectedPeriodo`, `alumnoIds`, `dimMap` (already computed in scope)
+- Consumes: `inst` (already in scope — add `nota_aprobacion` to its select), `selectedMateria`, `selectedPeriodo`, `alumnoIds`, `dimMap` (already computed in scope)
 - Produces:
 ```ts
 type EvalLibretaCol = {
@@ -102,9 +105,17 @@ type EvalLibretaCol = {
 // Added to tableData:
 evalsLibreta: EvalLibretaCol[]
 periodoCerrado: boolean
+notaAprobacion: number | null
 ```
 
-- [ ] **Step 1:** Inside the `if (selectedMateria && selectedPeriodo)` block, after the existing eval-refs fetch, add:
+- [ ] **Step 1:** Extend the instituciones query (top of page.tsx) from `select('id')` to `select('id, nota_aprobacion')`. TypeScript type for `inst` will need updating accordingly.
+
+- [ ] **Step 2:** Derive `notaAprobacion` from inst (can be done outside `if (selectedMateria && selectedPeriodo)` block):
+```ts
+const notaAprobacion: number | null = (inst as { nota_aprobacion?: number | null }).nota_aprobacion ?? null
+```
+
+- [ ] **Step 3:** Inside the `if (selectedMateria && selectedPeriodo)` block, after the existing eval-refs fetch, add:
 ```ts
 // Fetch all evaluaciones for this materia+período (including recuperatorios)
 const { data: evalsRaw } = await supabase
@@ -116,7 +127,7 @@ const { data: evalsRaw } = await supabase
   .order('orden')
 ```
 
-- [ ] **Step 2:** Filter and partition client-side:
+- [ ] **Step 4:** Filter and partition client-side:
 ```ts
 type EvalRaw = NonNullable<typeof evalsRaw>[number]
 const allEvalsFiltered = (evalsRaw ?? []).filter(
@@ -129,7 +140,7 @@ const recuperatorioByParent = new Map(
 )
 ```
 
-- [ ] **Step 3:** Fetch notas for all eval IDs:
+- [ ] **Step 5:** Fetch notas for all eval IDs:
 ```ts
 const libretaEvalIds = allEvalsFiltered.map((ev: EvalRaw) => ev.id)
 let notasLibretaRaw: Array<{ evaluacion_id: string; alumno_id: string; dimension_id: string | null; valor_numerico: number | null; valor_literal: string | null }> = []
@@ -143,7 +154,7 @@ if (libretaEvalIds.length > 0) {
 }
 ```
 
-- [ ] **Step 4:** Build notasMap per eval (same pattern as notas_referencia):
+- [ ] **Step 6:** Build notasMap per eval (same pattern as notas_referencia):
 ```ts
 const notasByEval = new Map<string, Record<string, string>>()
 for (const n of notasLibretaRaw) {
@@ -154,7 +165,7 @@ for (const n of notasLibretaRaw) {
 }
 ```
 
-- [ ] **Step 5:** Build `evalsLibreta: EvalLibretaCol[]`:
+- [ ] **Step 7:** Build `evalsLibreta: EvalLibretaCol[]`:
 ```ts
 const evalsLibreta: EvalLibretaCol[] = primaryEvals.map((ev: EvalRaw) => {
   const dims = (ev.evaluacion_dimensiones as Array<{ dimension_id: string }>)
@@ -188,23 +199,24 @@ const evalsLibreta: EvalLibretaCol[] = primaryEvals.map((ev: EvalRaw) => {
 })
 ```
 
-- [ ] **Step 6:** Add to `tableData`:
+- [ ] **Step 8:** Add to `tableData`:
 ```ts
 tableData = {
   // ...existing fields...
   evalsLibreta,
   periodoCerrado,
+  notaAprobacion,
 }
 ```
-Update `tableData` type definition to include these two fields.
+Update `tableData` type definition to include all three new fields.
 
-- [ ] **Step 7:** Pass to `<CuadernoTabla>` (add props even if tabla doesn't use them yet — TypeScript will error if tabla doesn't accept them; add as optional `evalsLibreta?: EvalLibretaCol[]` and `periodoCerrado?: boolean` to tabla Props for now to avoid breaking build).
+- [ ] **Step 9:** Pass to `<CuadernoTabla>` (add as optional `evalsLibreta?: EvalLibretaCol[]`, `periodoCerrado?: boolean`, `notaAprobacion?: number | null` to tabla Props to avoid breaking build while T3 isn't done yet).
 
-- [ ] **Step 8:** `tsc --noEmit` — no errors.
+- [ ] **Step 10:** `tsc --noEmit` — no errors.
 
-- [ ] **Step 9:** Commit.
+- [ ] **Step 11:** Commit.
 ```bash
-git commit -m "feat: cuaderno fetcha evaluaciones libreta y recuperatorios"
+git commit -m "feat: cuaderno fetcha evaluaciones libreta, recuperatorios y nota_aprobacion"
 ```
 
 ---
@@ -215,8 +227,8 @@ git commit -m "feat: cuaderno fetcha evaluaciones libreta y recuperatorios"
 - Modify: `src/app/dashboard/[slug]/cuaderno/cuaderno-tabla.tsx`
 
 **Interfaces:**
-- Consumes: `evalsLibreta: EvalLibretaCol[]`, `periodoCerrado: boolean` from T2
-- Produces: libreta columns rendered + editable in the table; `valoresLibreta` state initialized from `notasMap`
+- Consumes: `evalsLibreta: EvalLibretaCol[]`, `periodoCerrado: boolean`, `notaAprobacion: number | null` from T2; also needs `materiaId`, `periodoId`, `slug` for drill-down links
+- Produces: libreta columns rendered + editable; recuperatorio cells locked when parent dim approved; link icon on each column header navigates to existing nota editor
 
 `EvalLibretaCol` type definition belongs in `cuaderno-tabla.tsx` (imported by page via inline type or moved to a shared types file — keep local for now, same pattern as other interfaces in this file).
 
@@ -238,6 +250,8 @@ interface EvalLibretaCol {
 // In Props:
 evalsLibreta?: EvalLibretaCol[]
 periodoCerrado?: boolean
+notaAprobacion?: number | null
+slug: string   // already in Props? if not, add it for drill-down links
 ```
 
 - [ ] **Step 2:** Initialize `valoresLibreta` state (lazy, same pattern as `valoresProceso`):
@@ -281,17 +295,26 @@ const [showLibreta, setShowLibreta] = useState(true)
 ```
 `libretaColCount` = sum of (dims.length || 1) + (recup ? recupDims.length || 1 : 0) for each eval.
 
-- [ ] **Step 5:** Render libreta column headers (before existing eval-ref headers):
+- [ ] **Step 5:** Render libreta column headers (before existing eval-ref headers). Each header includes a drill-down link icon:
 ```tsx
+import Link from 'next/link'
+import { ExternalLink } from 'lucide-react'
+
 {showLibreta && (evalsLibreta ?? []).map(ev => {
   const cols = ev.dimensiones.length > 0 ? ev.dimensiones : [null]
+  const drillUrl = `/dashboard/${slug}/notas/${ev.id}?from=cuaderno&materia_id=${materiaId}&periodo_id=${periodoId}`
   return [
     ...cols.map((dim, idx) => (
       <th key={`lib::${ev.id}::${dim?.id ?? '__'}`}
-          className="text-center px-2 py-2 font-medium text-xs text-sky-700 bg-sky-50/30 min-w-20">
+          className="group text-center px-2 py-2 font-medium text-xs text-sky-700 bg-sky-50/30 min-w-20">
         {idx === 0 ? (
           <div className="flex flex-col items-center gap-0.5">
-            <span className="truncate max-w-20">{ev.nombre}</span>
+            <div className="flex items-center gap-0.5">
+              <span className="truncate max-w-20">{ev.nombre}</span>
+              <Link href={drillUrl} className="opacity-0 group-hover:opacity-100 transition-opacity">
+                <ExternalLink className="size-3" />
+              </Link>
+            </div>
             {dim && <span className="text-[10px] font-normal opacity-70">{dim.nombre}</span>}
           </div>
         ) : (
@@ -303,12 +326,20 @@ const [showLibreta, setShowLibreta] = useState(true)
       </th>
     )),
     ...(ev.recuperatorio ? (() => {
+      const rDrillUrl = `/dashboard/${slug}/notas/${ev.recuperatorio!.id}?from=cuaderno&materia_id=${materiaId}&periodo_id=${periodoId}`
       const rCols = ev.recuperatorio.dimensiones.length > 0 ? ev.recuperatorio.dimensiones : [null]
       return rCols.map((dim, idx) => (
         <th key={`lib::${ev.recuperatorio!.id}::${dim?.id ?? '__'}`}
-            className="text-center px-1 py-2 font-medium text-xs text-sky-600/70 bg-sky-50/20 min-w-16"
+            className="group text-center px-1 py-2 font-medium text-xs text-sky-600/70 bg-sky-50/20 min-w-16"
             title={ev.recuperatorio!.nombre}>
-          {idx === 0 ? 'R' : ''}
+          {idx === 0 && (
+            <div className="flex items-center justify-center gap-0.5">
+              <span>R</span>
+              <Link href={rDrillUrl} className="opacity-0 group-hover:opacity-100 transition-opacity">
+                <ExternalLink className="size-3" />
+              </Link>
+            </div>
+          )}
           {dim && <div className="text-[10px] font-normal opacity-70">{dim.nombre}</div>}
         </th>
       ))
@@ -317,7 +348,7 @@ const [showLibreta, setShowLibreta] = useState(true)
 })}
 ```
 
-- [ ] **Step 6:** Render libreta cells per alumno row (before existing proceso cells). Each cell:
+- [ ] **Step 6:** Render libreta cells per alumno row. Recuperatorio cells locked if parent dim nota >= notaAprobacion:
 ```tsx
 {showLibreta && (evalsLibreta ?? []).map(ev => {
   const cols = ev.dimensiones.length > 0 ? ev.dimensiones : [null]
@@ -339,15 +370,24 @@ const [showLibreta, setShowLibreta] = useState(true)
     const rCols = ev.recuperatorio.dimensiones.length > 0 ? ev.recuperatorio.dimensiones : [null]
     return rCols.map(dim => {
       const k = procesoKey(ev.recuperatorio!.id, alumno.id, dim?.id ?? null)
+      // Lock if parent dim was approved
+      const parentNota = parseFloat(ev.notasMap[procesoKey(ev.id, alumno.id, dim?.id ?? null)] ?? '')
+      const dimApproved = notaAprobacion != null && !isNaN(parentNota) && parentNota >= notaAprobacion
       return (
         <td key={`lib::recup::${k}`} className="px-1 py-1 bg-sky-50/10">
-          <Input
-            value={valoresLibreta[k] ?? ''}
-            onChange={e => setValoresLibreta(prev => ({ ...prev, [k]: e.target.value }))}
-            disabled={!!periodoCerrado}
-            className="h-7 w-14 text-center text-xs p-1"
-            placeholder="—"
-          />
+          {dimApproved ? (
+            <span className="flex h-7 w-14 items-center justify-center text-xs text-muted-foreground">
+              ✓ {parentNota}
+            </span>
+          ) : (
+            <Input
+              value={valoresLibreta[k] ?? ''}
+              onChange={e => setValoresLibreta(prev => ({ ...prev, [k]: e.target.value }))}
+              disabled={!!periodoCerrado}
+              className="h-7 w-14 text-center text-xs p-1"
+              placeholder="—"
+            />
+          )}
         </td>
       )
     })
@@ -358,11 +398,11 @@ const [showLibreta, setShowLibreta] = useState(true)
 
 - [ ] **Step 7:** `tsc --noEmit` — no errors.
 
-- [ ] **Step 8:** Manual verify: with a materia+período that has evaluaciones, libreta columns appear in table with existing notas pre-populated and editable inputs.
+- [ ] **Step 8:** Manual verify: columns appear; hover over column header shows drill-down link; click link opens `/notas/[id]`; recuperatorio cell for approved dim shows "✓ 8" (not input).
 
 - [ ] **Step 9:** Commit.
 ```bash
-git commit -m "feat: cuaderno muestra columnas de libreta (evaluaciones) inline editables"
+git commit -m "feat: cuaderno libreta inline editable con lock recuperatorio y drill-down"
 ```
 
 ---
@@ -502,13 +542,57 @@ git commit -m "feat: chips Libreta/Referencia/Definitiva en cuaderno gradebook"
 
 ---
 
+### Task 6: Breadcrumb "← Cuaderno" en página de notas
+
+**Files:**
+- Modify: `src/app/dashboard/[slug]/notas/[evaluacion_id]/page.tsx`
+
+**Interfaces:**
+- Consumes: `searchParams.from`, `searchParams.materia_id`, `searchParams.periodo_id` from URL
+- Produces: conditional breadcrumb link rendered above the page title when `from === 'cuaderno'`
+
+- [ ] **Step 1:** In `page.tsx`, resolve `searchParams` (it's a Promise in Next.js 16 — `await params`). Extract `from`, `materia_id`, `periodo_id` from searchParams.
+
+- [ ] **Step 2:** Build breadcrumb URL:
+```ts
+const fromCuaderno = searchParams.from === 'cuaderno'
+const backUrl = fromCuaderno
+  ? `/dashboard/${slug}/cuaderno?materia_id=${searchParams.materia_id ?? ''}&periodo_id=${searchParams.periodo_id ?? ''}`
+  : null
+```
+
+- [ ] **Step 3:** Render breadcrumb above the page heading (only when `backUrl` is set):
+```tsx
+{backUrl && (
+  <Link href={backUrl} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 mb-2">
+    <ChevronLeft className="size-4" />
+    Cuaderno
+  </Link>
+)}
+```
+Import `ChevronLeft` from `lucide-react` and `Link` from `next/link`.
+
+- [ ] **Step 4:** `tsc --noEmit` — no errors.
+
+- [ ] **Step 5:** Manual verify: open cuaderno → click drill-down link on a libreta column → notas page shows "← Cuaderno" breadcrumb → click it → returns to cuaderno with correct materia+período selected.
+
+- [ ] **Step 6:** Manual verify: navigate to `/notas/[id]` directly (no `?from=cuaderno`) → no breadcrumb shown.
+
+- [ ] **Step 7:** Commit.
+```bash
+git commit -m "feat: breadcrumb cuaderno en pagina de notas"
+```
+
+---
+
 ## Post-implementation
 
-After all 5 tasks: run whole-branch review (MERGE_BASE = commit before T1).
+After all 6 tasks: run whole-branch review (MERGE_BASE = commit before T1).
 
-Verify the 5 Review Focus items explicitly:
+Verify the 6 Review Focus items explicitly:
 1. Recuperatorio with dims → check notas bulk body has correct dimension_id per row
 2. Ausente with dims → check 'A' sends for each dimension_id
 3. Materia[0] with no periods → confirm graceful empty state (no crash)
 4. Period closed → open a closed period in cuaderno, confirm libreta inputs are disabled, referencia inputs are not
 5. Guardar todo partial failure → mock a failing bulk call, confirm error count toast shows both contributions
+6. Recuperatorio dim mismatch → recuperatorio has different dims than parent → lock logic uses recuperatorio's dims to look up parent (test: parentNota lookup uses the *recuperatorio* dim.id to find parent notasMap)
