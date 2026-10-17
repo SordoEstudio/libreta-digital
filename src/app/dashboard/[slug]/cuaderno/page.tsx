@@ -73,11 +73,13 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
     añoLectivoId: null as string | null,
   }))
 
-  // Resolve selected materia
-  const selectedMateria = materia_id ? materias.find(m => m.id === materia_id) : null
+  // Resolve selected materia — default to first materia when no param
+  const selectedMateria = materia_id
+    ? materias.find(m => m.id === materia_id)
+    : (materias[0] ?? null)
 
   // Fetch año_lectivo_id for the selected materia's curso (separate query to avoid ñ parser issue)
-  type Periodo = { id: string; nombre: string; orden: number }
+  type Periodo = { id: string; nombre: string; orden: number; activo: boolean | null; cerrado_at: string | null }
   let periodos: Periodo[] = []
   if (selectedMateria?.cursoId) {
     const { data: cursoData } = await supabase
@@ -88,14 +90,22 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
     if (cursoData?.año_lectivo_id) {
       const { data: periodoRows } = await supabase
         .from('periodos')
-        .select('id, nombre, orden')
+        .select('id, nombre, orden, activo, cerrado_at')
         .eq('año_lectivo_id', cursoData.año_lectivo_id)
         .order('orden')
       periodos = (periodoRows ?? []) as Periodo[]
     }
   }
 
-  const selectedPeriodo = periodo_id ? periodos.find(p => p.id === periodo_id) : null
+  // Default to active period when no param
+  const defaultPeriodo = periodos.find(p => p.activo) ?? periodos[0] ?? null
+  const selectedPeriodo = periodo_id
+    ? periodos.find(p => p.id === periodo_id)
+    : defaultPeriodo
+
+  const periodoCerrado = selectedPeriodo
+    ? selectedPeriodo.cerrado_at != null
+    : false
 
   // Fetch unidades for the selected materia
   type Unidad = { id: string; nombre: string; orden: number; fecha_inicio: string | null; fecha_fin: string | null }
@@ -125,6 +135,7 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
     notaDefinitivaEvalId: string | null
     notaDefinitivaMap: Record<string, string>
     allMaterialDims: Array<{ id: string; nombre: string; orden: number }>
+    periodoCerrado: boolean
   } | null = null
 
   if (selectedMateria && selectedPeriodo) {
@@ -153,7 +164,7 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
     const { data: dimRows } = await supabase
       .from('materias_dimensiones')
       .select('id, nombre, orden')
-      .eq('materia_id', materia_id!)
+      .eq('materia_id', selectedMateria.id)
       .is('deleted_at', null)
       .order('orden')
 
@@ -164,8 +175,8 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
     const { data: evalRefsRaw } = await supabase
       .from('evaluaciones_referencia')
       .select('id, nombre, tipo, periodo_id, evaluacion_referencia_dimensiones(dimension_id), evaluacion_referencia_unidades(unidad_id)')
-      .eq('materia_id', materia_id!)
-      .eq('periodo_id', periodo_id!)
+      .eq('materia_id', selectedMateria.id)
+      .eq('periodo_id', selectedPeriodo.id)
       .is('deleted_at', null)
       .order('created_at', { ascending: true })
 
@@ -220,8 +231,8 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
     const { data: definitivas } = await supabase
       .from('evaluaciones')
       .select('id, notas(alumno_id, valor_numerico, valor_literal)')
-      .eq('materia_id', materia_id!)
-      .eq('periodo_id', periodo_id!)
+      .eq('materia_id', selectedMateria.id)
+      .eq('periodo_id', selectedPeriodo.id)
       .eq('es_definitiva_periodo', true)
       .is('deleted_at', null)
       .limit(1)
@@ -241,6 +252,7 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
       notaDefinitivaEvalId: definitiva?.id ?? null,
       notaDefinitivaMap,
       allMaterialDims,
+      periodoCerrado,
     }
   }
 
@@ -315,6 +327,7 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
             periodos={periodos}
             todasDimensiones={tableData.allMaterialDims}
             todasUnidades={unidades.map(u => ({ id: u.id, nombre: u.nombre }))}
+            periodoCerrado={tableData.periodoCerrado}
           />
         </>
       )}

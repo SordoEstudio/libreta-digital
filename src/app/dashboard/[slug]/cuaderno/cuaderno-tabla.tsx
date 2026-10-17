@@ -36,6 +36,7 @@ interface Props {
   periodos: Periodo[]
   todasDimensiones: Dimension[]
   todasUnidades: Unidad[]
+  periodoCerrado?: boolean
 }
 
 function notaKey(alumnoId: string, dimId: string | null) {
