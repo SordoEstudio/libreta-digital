@@ -11,6 +11,7 @@ const PatchSchema = z.object({
   fecha: z.string().date().nullable().optional(),
   periodo_id: z.string().uuid().nullable().optional(),
   dimension_ids: z.array(z.string().uuid()).optional(),
+  unidad_ids: z.array(z.string().uuid()).optional(),
 }).strict()
 
 type Params = { params: Promise<{ ref_id: string }> }
@@ -46,7 +47,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   if (parsed.data.fecha !== undefined) updateData.fecha = parsed.data.fecha
   if (parsed.data.periodo_id !== undefined) updateData.periodo_id = parsed.data.periodo_id
 
-  if (Object.keys(updateData).length === 0 && parsed.data.dimension_ids === undefined)
+  if (Object.keys(updateData).length === 0 && parsed.data.dimension_ids === undefined && parsed.data.unidad_ids === undefined)
     return Err.validation('No hay campos para actualizar')
 
   let data = null
@@ -66,6 +67,15 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     if (parsed.data.dimension_ids.length > 0) {
       await supabase.from('evaluacion_referencia_dimensiones').insert(
         parsed.data.dimension_ids.map(dimension_id => ({ evaluacion_ref_id: ref_id, dimension_id }))
+      )
+    }
+  }
+
+  if (parsed.data.unidad_ids !== undefined) {
+    await supabase.from('evaluacion_referencia_unidades').delete().eq('evaluacion_ref_id', ref_id)
+    if (parsed.data.unidad_ids.length > 0) {
+      await supabase.from('evaluacion_referencia_unidades').insert(
+        parsed.data.unidad_ids.map(unidad_id => ({ evaluacion_ref_id: ref_id, unidad_id }))
       )
     }
   }
