@@ -280,7 +280,7 @@ export default function CuadernoTabla({
                 return cols.map((dim, dimIdx) => (
                   <th
                     key={`${ev.id}::${dim?.id ?? '__'}`}
-                    className="text-center px-2 py-2 font-medium text-xs text-muted-foreground min-w-24"
+                    className="group text-center px-2 py-2 font-medium text-xs text-muted-foreground min-w-24"
                   >
                     {dimIdx === 0 ? (
                       <div className="flex flex-col items-center gap-0.5">

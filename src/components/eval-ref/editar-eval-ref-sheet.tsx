@@ -7,7 +7,12 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
-import { Loader2, Pencil } from 'lucide-react'
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
+import { Loader2, Pencil, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 const TIPOS = [
@@ -47,6 +52,22 @@ export default function EditarEvalRefSheet({
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
+  async function handleEliminar() {
+    setDeleting(true)
+    const res = await fetch(`/api/v1/evaluaciones-referencia/${evalRefId}`, { method: 'DELETE' })
+    if (!res.ok) {
+      const json = await res.json().catch(() => ({}))
+      toast.error(json.error?.message ?? 'Error al eliminar')
+      setDeleting(false)
+      return
+    }
+    toast.success(`"${initialNombre}" eliminada`)
+    setDeleting(false)
+    setOpen(false)
+    router.refresh()
+  }
   const [nombre, setNombre] = useState(initialNombre)
   const [tipo, setTipo] = useState(initialTipo)
   const [fecha, setFecha] = useState(initialFecha ?? '')
@@ -225,6 +246,30 @@ export default function EditarEvalRefSheet({
               {loading && <Loader2 data-icon="inline-start" className="animate-spin" />}
               {loading ? 'Guardando...' : 'Guardar cambios'}
             </Button>
+
+            <div className="border-t pt-4 mt-2">
+              <AlertDialog>
+                <AlertDialogTrigger render={<Button type="button" variant="ghost" className="w-full text-destructive/70 hover:text-destructive hover:bg-destructive/10" />}>
+                  <Trash2 data-icon="inline-start" className="size-4" />
+                  Eliminar evaluación
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>¿Eliminar "{initialNombre}"?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Se eliminarán también las notas cargadas para esta evaluación. Esta acción no se puede deshacer.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleEliminar} disabled={deleting} variant="destructive">
+                      {deleting && <Loader2 data-icon="inline-start" className="animate-spin" />}
+                      Eliminar
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
           </form>
         </SheetContent>
       </Sheet>
