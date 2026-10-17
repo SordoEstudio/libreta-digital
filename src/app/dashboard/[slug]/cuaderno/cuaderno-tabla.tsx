@@ -128,6 +128,7 @@ export default function CuadernoTabla({
     return init
   })
   const [savingProceso, setSavingProceso] = useState(false)
+  const [saving, setSaving] = useState(false)
 
   // Libreta state — notasMap keys are `${alumnoId}::${dimId|'__'}`, procesoKey = `${evalId}::${alumnoId}::${dimId|'__'}`
   const [valoresLibreta, setValoresLibreta] = useState<Record<string, string>>(() => {
@@ -224,7 +225,7 @@ export default function CuadernoTabla({
     router.refresh()
   }
 
-  async function handleSaveProceso() {
+  async function handleSaveProceso(): Promise<{ errors: number }> {
     setSavingProceso(true)
     let errorCount = 0
     for (const ev of evalRefs) {
@@ -250,8 +251,64 @@ export default function CuadernoTabla({
       if (!res.ok) errorCount++
     }
     setSavingProceso(false)
-    if (errorCount > 0) toast.error(`${errorCount} evaluación(es) no se pudieron guardar`)
-    else toast.success(`Seguimiento guardado`)
+    return { errors: errorCount }
+  }
+
+  async function handleSaveLibreta(): Promise<{ errors: number }> {
+    const evs = evalsLibreta ?? []
+    if (evs.length === 0) return { errors: 0 }
+
+    // Build list of all evals to save (primaries + recuperatorios)
+    const allToSave = evs.flatMap(ev => [
+      ev,
+      ...(ev.recuperatorio ? [ev.recuperatorio] : []),
+    ])
+
+    let errors = 0
+    await Promise.allSettled(
+      allToSave.map(async ev => {
+        const cols = ev.dimensiones.length > 0 ? ev.dimensiones : [null as null]
+        const notas = alumnos.flatMap(a =>
+          cols.map(dim => {
+            const k = procesoKey(ev.id, a.id, dim?.id ?? null)
+            const raw = (valoresLibreta[k] ?? '').trim()
+            if (raw === '') return null
+            const isAusente = raw.toLowerCase() === 'a'
+            return {
+              alumno_id: a.id,
+              dimension_id: dim?.id ?? null,
+              valor_numerico: isAusente ? null : (parseFloat(raw) || null),
+              valor_literal: isAusente ? 'A' : null,
+            }
+          }).filter((n): n is NonNullable<typeof n> => n !== null)
+        )
+        if (notas.length === 0) return
+
+        const res = await fetch('/api/v1/notas/bulk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ evaluacion_id: ev.id, notas }),
+        })
+        if (!res.ok) errors++
+      })
+    )
+    return { errors }
+  }
+
+  async function handleSaveAll() {
+    setSaving(true)
+    const [libreraResult, procesoResult] = await Promise.all([
+      handleSaveLibreta(),
+      handleSaveProceso(),
+    ])
+    setSaving(false)
+
+    const total = libreraResult.errors + procesoResult.errors
+    if (total > 0) {
+      toast.error(`${total} error(es) al guardar`)
+    } else {
+      toast.success('Notas guardadas')
+    }
     router.refresh()
   }
 
@@ -549,16 +606,14 @@ export default function CuadernoTabla({
         </table>
       </div>
 
-      {(showProceso || showDefinitiva) && (
+      {(showProceso || showDefinitiva || (evalsLibreta ?? []).length > 0) && (
         <div className="flex justify-end gap-2">
-          {showProceso && evalRefsFiltradas.length > 0 && (
-            <Button onClick={handleSaveProceso} disabled={savingProceso} size="sm" variant="secondary">
-              {savingProceso
-                ? <><Loader2 data-icon="inline-start" className="animate-spin size-3.5" />Guardando...</>
-                : <><Save data-icon="inline-start" className="size-3.5" />Guardar seguimiento</>
-              }
-            </Button>
-          )}
+          <Button onClick={handleSaveAll} disabled={saving} size="sm" variant="secondary">
+            {saving
+              ? <><Loader2 data-icon="inline-start" className="animate-spin size-3.5" />Guardando...</>
+              : <><Save data-icon="inline-start" className="size-3.5" />Guardar todo</>
+            }
+          </Button>
           {showDefinitiva && (
             <Button onClick={handleSaveDefinitiva} disabled={savingDefinitiva} size="sm">
               {savingDefinitiva
