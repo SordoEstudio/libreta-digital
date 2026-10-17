@@ -176,10 +176,6 @@ export default async function BoletinPage({ params }: Params) {
                   <div className="flex flex-col gap-3">
                     {sortedPeriodos.map(([pid, periodoData]) => {
                       const hasDims = periodoData.notas.some(n => n.materias_dimensiones)
-                      const numNotas = periodoData.notas.filter(n => n.valor_numerico !== null && n.valor_literal !== 'A')
-                      const prom = numNotas.length > 0
-                        ? Math.round((numNotas.reduce((s, n) => s + n.valor_numerico!, 0) / numNotas.length) * 100) / 100
-                        : null
                       return (
                         <div key={pid ?? 'anual'}>
                           <p className="text-xs font-semibold text-muted-foreground uppercase mb-1 capitalize print:text-gray-600">
@@ -212,11 +208,6 @@ export default async function BoletinPage({ params }: Params) {
                               ))}
                             </tbody>
                           </table>
-                          {prom !== null && (
-                            <p className="text-xs text-muted-foreground mt-1 print:text-gray-600 text-right">
-                              Promedio: <strong>{prom}</strong>
-                            </p>
-                          )}
                         </div>
                       )
                     })}
