@@ -1,12 +1,23 @@
 import { requireSession, isSuperadmin, hasAnyRole } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
+import Link from 'next/link'
+import { ChevronLeft } from 'lucide-react'
 import { NotasEditor } from './notas-editor'
 
-type Params = { params: Promise<{ slug: string; evaluacion_id: string }> }
+type Params = {
+  params: Promise<{ slug: string; evaluacion_id: string }>
+  searchParams: Promise<{ from?: string; materia_id?: string; periodo_id?: string }>
+}
 
-export default async function NotasPage({ params }: Params) {
+export default async function NotasPage({ params, searchParams }: Params) {
   const { slug, evaluacion_id } = await params
+  const { from, materia_id, periodo_id } = await searchParams
+
+  const fromCuaderno = from === 'cuaderno'
+  const backUrl = fromCuaderno
+    ? `/dashboard/${slug}/cuaderno?materia_id=${materia_id ?? ''}&periodo_id=${periodo_id ?? ''}`
+    : null
   const session = await requireSession()
 
   const supabase = await createClient()
@@ -158,6 +169,12 @@ export default async function NotasPage({ params }: Params) {
   return (
     <div className="flex flex-col gap-6">
       <div>
+        {backUrl && (
+          <Link href={backUrl} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 mb-2">
+            <ChevronLeft className="size-4" />
+            Cuaderno
+          </Link>
+        )}
         <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
           <span>{mat.cursos?.nombre}</span>
           <span>/</span>
