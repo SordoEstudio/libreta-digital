@@ -208,7 +208,9 @@ export default function ItemSheet(props: Props) {
                 <Label>Dimensión</Label>
                 <Select value={dimensionId || 'none'} onValueChange={v => setDimensionId(!v || v === 'none' ? '' : v)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Sin dimensión" />
+                    <SelectValue>
+                      {!dimensionId ? 'Sin dimensión' : props.dimensiones.find(d => d.id === dimensionId)?.nombre ?? 'Sin dimensión'}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">Sin dimensión</SelectItem>

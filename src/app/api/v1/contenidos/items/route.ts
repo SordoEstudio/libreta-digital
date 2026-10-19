@@ -17,8 +17,8 @@ const CreateItemLinkSchema = z.object({
 async function resolveUnidadForInsert(unidad_id: string) {
   const supabase = await createClient()
   const { data } = await supabase
-    .from('unidades_contenido')
-    .select('id, materia_id, materias(id, institucion_id, instituciones(modulo_contenidos))')
+    .from('unidades')
+    .select('id, materia_id, institucion_id, materias(id, institucion_id, instituciones(modulo_contenidos))')
     .eq('id', unidad_id)
     .is('deleted_at', null)
     .single()

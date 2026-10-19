@@ -58,7 +58,7 @@ export default async function ContenidosCursoPage({ params }: Params) {
 
   if (materiaIds.length > 0) {
     const { data: unidades } = await supabase
-      .from('unidades_contenido')
+      .from('unidades')
       .select('id, materia_id, publicado')
       .in('materia_id', materiaIds)
       .is('deleted_at', null)

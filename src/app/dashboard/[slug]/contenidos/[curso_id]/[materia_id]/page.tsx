@@ -64,12 +64,16 @@ export default async function ContenidosMateriaPage({ params }: Params) {
 
   const materiaNombre = (materia.materias_catalogo as { nombre: string } | null)?.nombre ?? 'Materia'
 
-  const { data: unidadesRaw } = await supabase
-    .from('unidades_contenido')
+  const unidadesQuery = supabase
+    .from('unidades')
     .select('id, nombre, descripcion, orden, publicado')
     .eq('materia_id', materia_id)
     .is('deleted_at', null)
     .order('orden', { ascending: true })
+
+  if (!isEditor) unidadesQuery.eq('publicado', true)
+
+  const { data: unidadesRaw } = await unidadesQuery
 
   const unidades = unidadesRaw ?? []
   const unidadIds = unidades.map(u => u.id)

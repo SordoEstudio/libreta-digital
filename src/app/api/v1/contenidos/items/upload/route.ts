@@ -48,8 +48,8 @@ export async function POST(request: NextRequest) {
   // Resolve unidad → materia → inst
   const supabase = await createClient()
   const { data: unidad } = await supabase
-    .from('unidades_contenido')
-    .select('id, materia_id, materias(id, institucion_id, instituciones(modulo_contenidos))')
+    .from('unidades')
+    .select('id, materia_id, institucion_id, materias(id, institucion_id, instituciones(modulo_contenidos))')
     .eq('id', unidad_id)
     .is('deleted_at', null)
     .single()

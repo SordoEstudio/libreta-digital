@@ -17,7 +17,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
   const supabase = await createClient()
   const { data: item } = await supabase
     .from('contenidos')
-    .select('id, storage_path, unidad_id, unidades_contenido(id, materia_id, materias(id, institucion_id))')
+    .select('id, storage_path, unidad_id, unidades(id, materia_id, institucion_id, materias(id, institucion_id))')
     .eq('id', id)
     .is('deleted_at', null)
     .single()
@@ -25,7 +25,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
   if (!item) return Err.notFound('Item no encontrado')
   if (!item.storage_path) return Err.validation('Este item no tiene archivo adjunto')
 
-  const unidad = item.unidades_contenido as { id: string; materia_id: string; materias: { id: string; institucion_id: string } | null } | null
+  const unidad = item.unidades as { id: string; materia_id: string; institucion_id: string; materias: { id: string; institucion_id: string } | null } | null
   const materia = unidad?.materias
   if (!materia) return Err.notFound('Materia no encontrada')
 

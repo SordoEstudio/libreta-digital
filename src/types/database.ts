@@ -1,4 +1,4 @@
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -461,7 +461,7 @@ export type Database = {
             foreignKeyName: "contenidos_unidad_id_fkey"
             columns: ["unidad_id"]
             isOneToOne: false
-            referencedRelation: "unidades_contenido"
+            referencedRelation: "unidades"
             referencedColumns: ["id"]
           },
         ]
@@ -1707,6 +1707,7 @@ export type Database = {
           materia_id: string
           nombre: string
           orden: number
+          publicado: boolean
         }
         Insert: {
           created_at?: string
@@ -1719,6 +1720,7 @@ export type Database = {
           materia_id: string
           nombre: string
           orden?: number
+          publicado?: boolean
         }
         Update: {
           created_at?: string
@@ -1731,6 +1733,7 @@ export type Database = {
           materia_id?: string
           nombre?: string
           orden?: number
+          publicado?: boolean
         }
         Relationships: [
           {
@@ -1742,50 +1745,6 @@ export type Database = {
           },
           {
             foreignKeyName: "unidades_materia_id_fkey"
-            columns: ["materia_id"]
-            isOneToOne: false
-            referencedRelation: "materias"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      unidades_contenido: {
-        Row: {
-          created_at: string
-          deleted_at: string | null
-          descripcion: string | null
-          id: string
-          materia_id: string
-          nombre: string
-          orden: number
-          publicado: boolean
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          deleted_at?: string | null
-          descripcion?: string | null
-          id?: string
-          materia_id: string
-          nombre: string
-          orden?: number
-          publicado?: boolean
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          deleted_at?: string | null
-          descripcion?: string | null
-          id?: string
-          materia_id?: string
-          nombre?: string
-          orden?: number
-          publicado?: boolean
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "unidades_contenido_materia_id_fkey"
             columns: ["materia_id"]
             isOneToOne: false
             referencedRelation: "materias"

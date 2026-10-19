@@ -39,8 +39,14 @@ export async function POST(request: NextRequest) {
     return Err.forbidden()
 
   const { data, error } = await supabase
-    .from('unidades_contenido')
-    .insert({ materia_id, nombre, descripcion: descripcion ?? null, orden })
+    .from('unidades')
+    .insert({
+      materia_id,
+      institucion_id: materia.institucion_id,
+      nombre,
+      descripcion: descripcion ?? null,
+      orden,
+    })
     .select('id, nombre, descripcion, orden, publicado, created_at')
     .single()
 
@@ -74,7 +80,7 @@ export async function GET(request: NextRequest) {
     return Err.forbidden()
 
   const { data, error } = await supabase
-    .from('unidades_contenido')
+    .from('unidades')
     .select('id, nombre, descripcion, orden, publicado, created_at')
     .eq('materia_id', materia_id)
     .is('deleted_at', null)

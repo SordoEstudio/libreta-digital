@@ -16,8 +16,8 @@ type Params = { params: Promise<{ id: string }> }
 async function resolveUnidad(id: string) {
   const supabase = await createClient()
   const { data } = await supabase
-    .from('unidades_contenido')
-    .select('id, materia_id, materias(id, institucion_id, instituciones(modulo_contenidos))')
+    .from('unidades')
+    .select('id, materia_id, institucion_id, materias(id, instituciones(modulo_contenidos))')
     .eq('id', id)
     .is('deleted_at', null)
     .single()
@@ -36,26 +36,25 @@ export async function PUT(request: NextRequest, { params }: Params) {
   const { supabase, unidad } = await resolveUnidad(id)
   if (!unidad) return Err.notFound('Unidad no encontrada')
 
-  const materia = unidad.materias as { id: string; institucion_id: string; instituciones: { modulo_contenidos: boolean } | null } | null
+  const materia = unidad.materias as { id: string; instituciones: { modulo_contenidos: boolean } | null } | null
   if (!materia?.instituciones?.modulo_contenidos) return Err.notFound('Módulo no habilitado')
 
-  if (!isSuperadmin(session) && !hasAnyRole(session, materia.institucion_id, ['admin', 'docente']))
+  if (!isSuperadmin(session) && !hasAnyRole(session, unidad.institucion_id, ['admin', 'docente']))
     return Err.forbidden()
 
   const updates: {
-    updated_at: string
     nombre?: string
     descripcion?: string | null
     publicado?: boolean
     orden?: number
-  } = { updated_at: new Date().toISOString() }
+  } = {}
   if (parsed.data.nombre !== undefined) updates.nombre = parsed.data.nombre
   if (parsed.data.descripcion !== undefined) updates.descripcion = parsed.data.descripcion
   if (parsed.data.publicado !== undefined) updates.publicado = parsed.data.publicado
   if (parsed.data.orden !== undefined) updates.orden = parsed.data.orden
 
   const { data, error } = await supabase
-    .from('unidades_contenido')
+    .from('unidades')
     .update(updates)
     .eq('id', id)
     .select('id, nombre, descripcion, orden, publicado')
@@ -73,14 +72,18 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   const { supabase, unidad } = await resolveUnidad(id)
   if (!unidad) return Err.notFound('Unidad no encontrada')
 
-  const materia = unidad.materias as { id: string; institucion_id: string; instituciones: { modulo_contenidos: boolean } | null } | null
+  const materia = unidad.materias as { id: string; instituciones: { modulo_contenidos: boolean } | null } | null
   if (!materia) return Err.notFound('Materia no encontrada')
 
-  if (!isSuperadmin(session) && !hasAnyRole(session, materia.institucion_id, ['admin', 'docente']))
+  if (!isSuperadmin(session) && !hasAnyRole(session, unidad.institucion_id, ['admin', 'docente']))
     return Err.forbidden()
 
+  // Clean up cuaderno junction rows before soft-delete
+  await supabase.from('evaluacion_unidades').delete().eq('unidad_id', id)
+  await supabase.from('evaluacion_referencia_unidades').delete().eq('unidad_id', id)
+
   const { error } = await supabase
-    .from('unidades_contenido')
+    .from('unidades')
     .update({ deleted_at: new Date().toISOString() })
     .eq('id', id)
 
