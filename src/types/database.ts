@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -389,6 +389,79 @@ export type Database = {
             columns: ["institucion_id"]
             isOneToOne: false
             referencedRelation: "instituciones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contenidos: {
+        Row: {
+          autor_id: string | null
+          created_at: string
+          deleted_at: string | null
+          dimension_id: string | null
+          id: string
+          nota: string | null
+          orden: number
+          publicado: boolean
+          storage_path: string | null
+          tipo: string
+          titulo: string
+          unidad_id: string
+          updated_at: string
+          url: string | null
+        }
+        Insert: {
+          autor_id?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          dimension_id?: string | null
+          id?: string
+          nota?: string | null
+          orden?: number
+          publicado?: boolean
+          storage_path?: string | null
+          tipo: string
+          titulo: string
+          unidad_id: string
+          updated_at?: string
+          url?: string | null
+        }
+        Update: {
+          autor_id?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          dimension_id?: string | null
+          id?: string
+          nota?: string | null
+          orden?: number
+          publicado?: boolean
+          storage_path?: string | null
+          tipo?: string
+          titulo?: string
+          unidad_id?: string
+          updated_at?: string
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contenidos_autor_id_fkey"
+            columns: ["autor_id"]
+            isOneToOne: false
+            referencedRelation: "personas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contenidos_dimension_id_fkey"
+            columns: ["dimension_id"]
+            isOneToOne: false
+            referencedRelation: "materias_dimensiones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contenidos_unidad_id_fkey"
+            columns: ["unidad_id"]
+            isOneToOne: false
+            referencedRelation: "unidades_contenido"
             referencedColumns: ["id"]
           },
         ]
@@ -943,6 +1016,7 @@ export type Database = {
           email: string | null
           id: string
           logo_url: string | null
+          modulo_contenidos: boolean
           nombre: string
           nota_aprobacion: number | null
           slug: string
@@ -958,6 +1032,7 @@ export type Database = {
           email?: string | null
           id?: string
           logo_url?: string | null
+          modulo_contenidos?: boolean
           nombre: string
           nota_aprobacion?: number | null
           slug: string
@@ -973,6 +1048,7 @@ export type Database = {
           email?: string | null
           id?: string
           logo_url?: string | null
+          modulo_contenidos?: boolean
           nombre?: string
           nota_aprobacion?: number | null
           slug?: string
@@ -1666,6 +1742,50 @@ export type Database = {
           },
           {
             foreignKeyName: "unidades_materia_id_fkey"
+            columns: ["materia_id"]
+            isOneToOne: false
+            referencedRelation: "materias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      unidades_contenido: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          descripcion: string | null
+          id: string
+          materia_id: string
+          nombre: string
+          orden: number
+          publicado: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          descripcion?: string | null
+          id?: string
+          materia_id: string
+          nombre: string
+          orden?: number
+          publicado?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          descripcion?: string | null
+          id?: string
+          materia_id?: string
+          nombre?: string
+          orden?: number
+          publicado?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "unidades_contenido_materia_id_fkey"
             columns: ["materia_id"]
             isOneToOne: false
             referencedRelation: "materias"
