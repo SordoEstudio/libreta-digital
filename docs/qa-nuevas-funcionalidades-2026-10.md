@@ -1,6 +1,6 @@
 # QA — Nuevas funcionalidades (Octubre 2026)
 
-**Alcance:** Dimensiones por materia · Notas por dimensión (multi-columna) · Peso opcional (promedio directo) · Plantillas de dimensiones · Recuperatorios por dimensión · Notas de referencia (con dimensiones y período) · Cuaderno del docente · Cierre de período · Comunicados con confirmación · Cuaderno v2 (edición inline de proceso, acciones por columna) · Unidades por materia · Cuaderno v3 (gradebook unificado: libreta inline, recuperatorios, smart defaults, drill-down)  
+**Alcance:** Dimensiones por materia · Notas por dimensión (multi-columna) · Peso opcional (promedio directo) · Plantillas de dimensiones · Recuperatorios por dimensión · Notas de referencia (con dimensiones y período) · Cuaderno del docente · Cierre de período · Comunicados con confirmación · Cuaderno v2 (edición inline de proceso, acciones por columna) · Unidades por materia · Cuaderno v3 (gradebook unificado: libreta inline, recuperatorios, smart defaults, drill-down) · Módulo de contenidos (docente editor + responsable viewer) · Boletín unificado + mobile (Compartir/Guardar PDF) · Mobile UX (header, bottom bar por rol, orientation guard)  
 **Roles necesarios:** superadmin, admin, docente, responsable (con email real para probar envíos)  
 **Entorno:** staging o local con Supabase + Resend en modo test
 
@@ -584,6 +584,231 @@
 
 ---
 
+---
+
+## 12. Módulo de contenidos — Editor (docente / admin)
+
+**Prerequisito:** institución con `modulo_contenidos = true`. Si no, activar desde Supabase o panel de superadmin.
+
+**Ruta:** `Contenidos` (sidebar, visible para admin y docente cuando módulo activo)
+
+### 12.1 Acceso y desambiguación
+- [ ] Admin ve "Contenidos" en sidebar → click → `/dashboard/[slug]/contenidos`
+- [ ] Docente con una sola materia → redirect directo a esa materia (sin pasar por selección de curso/materia)
+- [ ] Docente con múltiples materias en mismo curso → página de materias con cards
+- [ ] Docente con múltiples cursos → página de selección de curso
+- [ ] Docente sin materias asignadas → EmptyState "Sin cursos disponibles"
+- [ ] Admin ve todos los cursos del año lectivo activo
+
+### 12.2 Crear unidad
+- [ ] Entrar a materia → botón "Nueva unidad" visible
+- [ ] Click → formulario inline o sheet abre con campos: Nombre (requerido, max 120), Descripción (opcional, max 500)
+- [ ] Guardar → unidad aparece en lista expandida, badge "Borrador"
+- [ ] Unidad nueva empieza como borrador (publicado = false)
+
+### 12.3 Editar y publicar unidad
+- [ ] Click ícono ✏️ en header de unidad → sheet con datos precargados → cambiar nombre → guardar → nombre actualizado
+- [ ] Ícono Eye en header → PublicarOcultar toggle
+- [ ] Publicar unidad borrador → badge "Borrador" desaparece
+- [ ] Ocultar unidad publicada → AlertDialog de confirmación → confirmar → unidad vuelve a borrador
+
+### 12.4 Agregar item — tipo link
+- [ ] Expandir unidad → botón "+ Agregar material"
+- [ ] Sheet abre con tabs: Link · Archivo · Imagen
+- [ ] Tab Link: completar URL y título → guardar
+- [ ] **Esperado:** item aparece en la unidad con ícono azul (link), botón "Abrir", texto del título visible
+- [ ] Click "Abrir" → abre URL en nueva pestaña
+
+### 12.5 Agregar item — tipo archivo
+- [ ] Tab Archivo: seleccionar archivo PDF (o .docx, .xlsx) → completar título → guardar
+- [ ] **Esperado:** item con ícono ámbar (archivo), botón "Descargar"
+- [ ] Click "Descargar" → descarga o abre el archivo (redirige a signed URL)
+- [ ] Archivo > 10 MB → error de validación (rechazado)
+- [ ] Tipo no permitido (ej. `.exe`) → error de validación
+
+### 12.6 Agregar item — tipo imagen
+- [ ] Tab Imagen: seleccionar JPEG o PNG → título → guardar
+- [ ] **Esperado:** item con ícono verde (imagen), botones "Ver" y "Descargar"
+- [ ] "Ver" → abre imagen en nueva pestaña
+- [ ] "Descargar" → descarga la imagen
+
+### 12.7 Editar item
+- [ ] Click ícono ✏️ de un item → sheet abre con datos precargados
+- [ ] Cambiar título → guardar → título actualizado en la lista
+
+### 12.8 Reordenar items
+- [ ] Con 3+ items en una unidad → íconos ↑ ↓ en cada item
+- [ ] Click ↑ en segundo item → sube al primer lugar (optimista, sin recargar)
+- [ ] Click ↓ en primer item → baja al segundo lugar
+- [ ] Primer item → ↑ deshabilitado; último item → ↓ deshabilitado
+
+### 12.9 Eliminar item
+- [ ] Ícono eliminar → confirmación → item desaparece
+- [ ] Archivo en storage → eliminado (no quedan archivos huérfanos)
+
+### 12.10 Borrador vs publicado
+- [ ] Item borrador → badge "Borrador" visible
+- [ ] Publicar item → badge desaparece
+- [ ] Unidad borrador → responsable no puede acceder aunque URL sea directa
+
+### 12.11 Nota y dimensión
+- [ ] Al crear item: campo "Nota" opcional → guardar con nota → nota visible en itálica bajo el título
+- [ ] Campo "Dimensión" (dropdown, si materia tiene dims) → badge visible en item
+- [ ] Sin dimensiones en la materia → campo Dimensión no aparece
+
+### 12.12 Permisos API
+- [ ] `POST /api/v1/contenidos/unidades` como responsable → 403
+- [ ] `PUT /api/v1/contenidos/items/[id]` como responsable → 403
+- [ ] `DELETE /api/v1/contenidos/items/[id]` como responsable → 403
+- [ ] Docente de institución A no puede editar contenidos de institución B
+
+---
+
+## 13. Módulo de contenidos — Vista responsable
+
+**Prerequisito:** responsable con al menos un alumno inscripto en un curso con materias que tengan contenidos publicados.
+
+**Ruta:** tab "Contenidos" en bottom bar (mobile) o sidebar
+
+### 13.1 Filtrado por inscripciones
+- [ ] Responsable A tiene alumno en Curso 1 → ve solo Curso 1 en `/contenidos`
+- [ ] Responsable B tiene alumnos en Curso 1 y Curso 2 → ve ambos cursos
+- [ ] Responsable sin alumnos inscriptos → EmptyState "Sin cursos disponibles"
+- [ ] Responsable intenta acceder directamente a `/contenidos/[curso_id]` de un curso donde no tiene alumno → redirect a `/contenidos`
+
+### 13.2 Desambiguación
+- [ ] Responsable con 1 alumno en 1 curso con 1 materia → redirect directo a esa materia (sin intermedios)
+- [ ] Responsable con 1 curso pero múltiples materias → página de selección de materia
+- [ ] Responsable con múltiples cursos → página de selección de curso
+
+### 13.3 Solo contenidos publicados
+- [ ] Responsable abre materia → solo ve unidades con `publicado = true`
+- [ ] Unidades en borrador → no aparecen (ni como placeholder)
+- [ ] Items en borrador → no aparecen dentro de unidades publicadas
+
+### 13.4 Read-only — sin controles de edición
+- [ ] No hay botón "Nueva unidad"
+- [ ] No hay íconos ✏️ ni Eye en headers de unidades
+- [ ] No hay íconos de reordenar (↑ ↓) ni eliminar en items
+- [ ] No hay botón "+ Agregar material"
+- [ ] Badge "Borrador" no aparece (responsable nunca ve borradores)
+
+### 13.5 Botones de acción
+- [ ] Item tipo link → botón "Abrir" → abre URL en nueva pestaña ✓
+- [ ] Item tipo archivo → botón "Descargar" → descarga archivo (requiere autenticación, usa signed URL)
+- [ ] Item tipo imagen → botones "Ver" y "Descargar" → Ver abre imagen; Descargar descarga
+- [ ] Sin signedUrl (error generando URL) → botones de archivo/imagen no aparecen (no 500)
+
+### 13.6 Aislamiento multi-tenant
+- [ ] Responsable de institución A no puede ver contenidos de institución B
+- [ ] `GET /dashboard/[slug_B]/contenidos` como responsable de institución A → notFound o redirect
+
+---
+
+## 14. Boletín unificado
+
+**Ruta:** `/dashboard/[slug]/libreta/[alumno_id]/boletin`
+
+### 14.1 Tabla unificada por template y período
+- [ ] Alumno con notas en múltiples períodos → tabla muestra TODOS los períodos como grupos de columnas en la fila de encabezado
+- [ ] Fila 1 del encabezado: períodos como headers con `colspan` correcto
+- [ ] Fila 2 del encabezado: nombre de cada template (evaluación institucional) bajo su período
+- [ ] Columna "Definitiva" al final (solo si hay alguna nota definitiva_anual)
+- [ ] Materia con dimensiones → una fila por dimensión, celda "Materia" tiene rowspan
+- [ ] Materia sin dimensiones → fila única
+
+### 14.2 Ausente en boletín
+- [ ] Alumno con nota `valor_literal = 'A'` → celda muestra "Ausente" con texto naranja
+- [ ] Alumno aprobado → celda muestra número en negrita
+
+### 14.3 Asistencia
+- [ ] Materia con inasistencias → texto "N inasistencia(s)" bajo nombre de materia (sub-texto pequeño)
+- [ ] Sin inasistencias → sin texto adicional
+
+### 14.4 Volver — navegación por rol
+- [ ] Admin / docente: botón "Volver" → navega a `/alumnos`
+- [ ] Responsable (solo responsable): botón "Volver" → navega a `/mis-alumnos`
+
+### 14.5 Mobile — Compartir y Guardar
+- [ ] En mobile (< md): dos botones visibles con texto: "Compartir" y "Guardar"
+- [ ] "Compartir" → invoca Web Share API (`navigator.share`) con título del boletín y URL actual
+  - Si el dispositivo no soporta `navigator.share` → botón no hace nada (no rompe)
+- [ ] "Guardar" → invoca `window.print()` → abre diálogo nativo "Guardar como PDF"
+- [ ] En desktop (≥ md): solo botón con ícono de impresora → `window.print()`
+- [ ] En impresión / PDF: botones Compartir/Guardar/Imprimir ocultos (`print:hidden`)
+
+### 14.6 Header del boletín
+- [ ] Logo de institución visible en impresión (si `logo_rectangular_url` definido)
+- [ ] Nombre alumno, curso y año lectivo en encabezado
+
+---
+
+## 15. Mobile UX
+
+### 15.1 Header mobile (< md)
+- [ ] Logo cuadrado de institución visible en header mobile (carga desde `/api/v1/instituciones/branding`)
+- [ ] Sin logo: ícono fallback + nombre institución
+- [ ] Campana de notificaciones → ícono compacto → dropdown en side="bottom" align="end"
+- [ ] Dropdown notificaciones no desborda el ancho del viewport (max `calc(100vw - 2rem)`)
+- [ ] Avatar → abre sheet inferior con nombre, email y botón "Cerrar sesión"
+- [ ] Cerrar sesión → hace signOut → redirect a /login
+
+### 15.2 Bottom tab bar — Admin / Superadmin
+- [ ] Tabs: **Inicio** | **Comunicados** | **Alumnos** | **Más**
+- [ ] "Inicio" activo solo en ruta exacta `/dashboard/[slug]`
+- [ ] "Comunicados" activo en rutas que empiezan con `/comunicados`
+- [ ] "Alumnos" activo en `/alumnos` y `/libreta` paths
+- [ ] "Más" → abre sidebar
+- [ ] Tab activo: color primary; inactivo: muted-foreground
+
+### 15.3 Bottom tab bar — Docente
+- [ ] Tabs: **Inicio** | **Cuaderno** | **Materias** | **Comunicados**
+- [ ] Sin botón "Más"
+- [ ] "Materias" activo en rutas `/cursos`
+
+### 15.4 Bottom tab bar — Responsable
+- [ ] Tabs: **Inicio** | **Contenidos** | **Comunicados** | **Boletines**
+- [ ] Sin botón "Más"
+- [ ] "Boletines" activo en `/mis-alumnos` y `/libreta` paths
+- [ ] "Contenidos" activo en rutas `/contenidos`
+- [ ] Tab bar no aparece fuera de rutas `/dashboard/[slug]`
+
+### 15.5 Bottom bar — sticky / fijo
+- [ ] Barra siempre visible en el borde inferior del viewport aunque el contenido sea largo
+- [ ] Contenido principal scrollea por encima de la barra (no debajo)
+- [ ] En iPhone con home indicator: barra respeta `env(safe-area-inset-bottom)` (no tapa el indicador)
+- [ ] En desktop (≥ md): barra **no aparece**
+
+### 15.6 MobileOrientationGuard — Cuaderno
+- [ ] En mobile portrait: tabla del cuaderno aparece difuminada (blur)
+- [ ] Overlay con ícono de rotar y texto "Girá el dispositivo"
+- [ ] Rotar a landscape → overlay desaparece, tabla visible y usable
+- [ ] En desktop → overlay nunca aparece
+
+### 15.7 MobileOrientationGuard — Evaluaciones
+- [ ] En mobile portrait: tabla de evaluaciones aparece difuminada
+- [ ] Mismo overlay que en cuaderno
+- [ ] Rotar a landscape → overlay desaparece
+
+### 15.8 Textarea auto-grow — Nuevo comunicado
+- [ ] Sheet "Nuevo comunicado" → campo Contenido empieza con altura de 1 línea
+- [ ] Escribir texto largo → textarea crece automáticamente (sin scrollbar interno)
+- [ ] Sin control de resize visible (no aparece el handle de redimensionar)
+- [ ] Al borrar texto → textarea se reduce
+
+### 15.9 Comunicados — vista mobile
+- [ ] En mobile: lista de cards en lugar de tabla
+- [ ] Cada card muestra: título, curso/materia, fecha, badge confirmaciones
+- [ ] Card completa es tappable → navega al detalle del comunicado
+- [ ] En desktop: tabla normal (sin cambio)
+
+### 15.10 Mis alumnos / Boletines — mobile
+- [ ] Grid de cards donde la card completa es un link al boletín del alumno
+- [ ] Badge "Inactivo" solo si alumno no activo
+- [ ] Sin CardFooter con botón separado (toda la card es el botón)
+
+---
+
 ## Regresiones a verificar
 
 Después de QA de nuevas funcionalidades, verificar que lo siguiente sigue funcionando:
@@ -593,8 +818,7 @@ Después de QA de nuevas funcionalidades, verificar que lo siguiente sigue funci
 - [ ] Crear alumno, asignar responsable, enviar invitación → responsable puede hacer login
 - [ ] Cargar notas en evaluación normal → aparece en libreta del alumno
 - [ ] Cerrar período → notas bloqueadas → reabrir → notas desbloqueadas
-- [ ] Boletín del alumno → impresión/PDF funciona
-- [ ] Calendario muestra evaluaciones correctamente
+- [ ] Boletín del alumno → Guardar PDF funciona (desktop: print dialog; mobile: diálogo nativo)
 - [ ] Asistencia se puede cargar y aparece en libreta
 - [ ] Cuaderno v1: chips Proceso/Nota definitiva siguen funcionando tras v2
 - [ ] Cuaderno v2: guardar nota definitiva no afecta notas de proceso (columnas independientes)
@@ -603,6 +827,10 @@ Después de QA de nuevas funcionalidades, verificar que lo siguiente sigue funci
 - [ ] Cuaderno v3: "Guardar todo" no borra notas de referencia (columnas separadas, endpoints distintos)
 - [ ] Cuaderno v3: cambiar materia en selector no mezcla notas entre materias
 - [ ] Página `/notas/[eval_id]` sin `?from=cuaderno` → sigue funcionando igual (sin breadcrumb, sin regresión)
+- [ ] Sidebar desktop: Calendario **no aparece** (removido del menú)
+- [ ] Sidebar desktop: Contenidos aparece solo si `modulo_contenidos = true` en la institución
+- [ ] Login y redirect por rol: responsable llega a su página de inicio correcta
+- [ ] Admin desde mobile: Inicio → dashboard con stats institucionales
 
 ---
 
