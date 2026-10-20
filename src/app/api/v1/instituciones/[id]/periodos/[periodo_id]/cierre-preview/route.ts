@@ -105,7 +105,6 @@ export async function GET(_request: NextRequest, { params }: Params) {
     .from('asistencia_resumen')
     .select('materia_id')
     .eq('periodo_id', periodo_id)
-    .gt('total_clases', 0)
 
   const asistenciaExistente = new Set<string>()
   for (const ar of asistRaw ?? []) {

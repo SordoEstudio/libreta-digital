@@ -6,11 +6,9 @@ import { ok, Err } from '@/lib/api'
 import { isPeriodoCerrado } from '@/lib/cierre-periodo'
 
 const RegistroSchema = z.object({
-  alumno_id:                    z.string().uuid(),
-  total_clases:                 z.number().int().min(0),
-  inasistencias_justificadas:   z.number().int().min(0),
-  inasistencias_injustificadas: z.number().int().min(0),
-  observacion:                  z.string().max(500).optional().nullable(),
+  alumno_id:     z.string().uuid(),
+  inasistencias: z.number().int().min(0),
+  observacion:   z.string().max(500).optional().nullable(),
 })
 
 const BulkSchema = z.object({
@@ -93,9 +91,9 @@ export async function POST(request: NextRequest, { params }: Params) {
     alumno_id:                    r.alumno_id,
     materia_id,
     periodo_id:                   parsed.data.periodo_id,
-    total_clases:                 r.total_clases,
-    inasistencias_justificadas:   r.inasistencias_justificadas,
-    inasistencias_injustificadas: r.inasistencias_injustificadas,
+    total_clases:                 0,
+    inasistencias_justificadas:   r.inasistencias,
+    inasistencias_injustificadas: 0,
     observacion:                  r.observacion ?? null,
     updated_at:                   new Date().toISOString(),
   }))

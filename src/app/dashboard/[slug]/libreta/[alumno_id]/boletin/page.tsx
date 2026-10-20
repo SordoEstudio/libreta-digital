@@ -265,12 +265,9 @@ export default async function BoletinPage({ params }: Params) {
                   const sortedDims = [...matData.dimensions.values()].sort((a, b) => a.orden - b.orden)
                   const hasDims = sortedDims.length > 0
                   const asist = asistenciaMap.get(matId)
-                  const asistInfo = asist && asist.total_clases > 0
-                    ? (() => {
-                        const presentes = asist.total_clases - asist.inasistencias_justificadas - asist.inasistencias_injustificadas
-                        const pct = Math.round((presentes / asist.total_clases) * 1000) / 10
-                        return `${asist.inasistencias_justificadas}J / ${asist.inasistencias_injustificadas}I · ${pct}% asistencia`
-                      })()
+                  const totalInasist = asist ? (asist.inasistencias_justificadas + asist.inasistencias_injustificadas) : 0
+                  const asistInfo = totalInasist > 0
+                    ? `${totalInasist} inasistencia${totalInasist !== 1 ? 's' : ''}`
                     : null
 
                   if (hasDims) {
