@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup,
   SidebarGroupContent, SidebarGroupLabel, SidebarHeader,
@@ -28,6 +29,15 @@ export function AppSidebar({ session }: AppSidebarProps) {
   const slugMatch = pathname.match(/^\/dashboard\/([^/]+)/)
   const activeSlug = slugMatch?.[1]
 
+  const [logoCuadrado, setLogoCuadrado] = useState<string | null>(null)
+  useEffect(() => {
+    if (!activeSlug) { setLogoCuadrado(null); return }
+    fetch(`/api/v1/instituciones/branding?slug=${activeSlug}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => setLogoCuadrado(d?.data?.logo_cuadrado_url ?? null))
+      .catch(() => {})
+  }, [activeSlug])
+
   const isSuperadmin = session.memberships.some(m => m.rol === 'superadmin')
   const isAdmin = !!activeSlug && session.memberships.some(m => m.rol === 'admin')
   const isDocente = !!activeSlug && session.memberships.some(m => m.rol === 'docente')
@@ -52,9 +62,14 @@ export function AppSidebar({ session }: AppSidebarProps) {
     <Sidebar collapsible="icon">
       <SidebarHeader>
         <div className="flex items-center gap-2 px-2 py-2">
-          <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-harvi-green-lime group-data-[collapsible=icon]:hidden">
-            <span className="text-[11px] font-black text-harvi-dark leading-none">LD</span>
-          </div>
+          {logoCuadrado ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={logoCuadrado} alt="" className="size-7 rounded-md object-contain shrink-0 group-data-[collapsible=icon]:hidden bg-white" />
+          ) : (
+            <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-harvi-green-lime group-data-[collapsible=icon]:hidden">
+              <span className="text-[11px] font-black text-harvi-dark leading-none">LD</span>
+            </div>
+          )}
           <div className="flex flex-col flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
             <span className="text-sm font-bold leading-tight text-white truncate">Libreta.digital</span>
             <span className="text-[10px] text-white/50 leading-tight">by Harvi</span>

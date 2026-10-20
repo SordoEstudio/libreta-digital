@@ -114,14 +114,15 @@ export async function POST(request: NextRequest) {
 
   if (confError || !confirmaciones) return Err.server(confError?.message ?? 'Error al crear confirmaciones')
 
-  // Fetch nombre institución para el email
+  // Fetch institución para el email
   const { data: inst } = await supabase
     .from('instituciones')
-    .select('nombre')
+    .select('nombre, logo_rectangular_url')
     .eq('id', curso.institucion_id)
     .single()
 
   const institucion_nombre = inst?.nombre ?? 'Libreta Digital'
+  const logo_url = inst?.logo_rectangular_url ?? undefined
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
 
   // Fire-and-forget
@@ -131,7 +132,7 @@ export async function POST(request: NextRequest) {
       const confId = confByPersona.get(r.persona_id)
       if (!confId) return Promise.resolve()
       const confirm_url = `${appUrl}/confirmar/${confId}`
-      return sendComunicado(r.email, { titulo, contenido, institucion_nombre, confirm_url }, confId)
+      return sendComunicado(r.email, { titulo, contenido, institucion_nombre, confirm_url, logo_url }, confId)
         .catch(console.error)
     })
   )

@@ -1,6 +1,6 @@
 import {
   Html, Head, Preview, Body, Container, Section,
-  Heading, Text, Button, Hr, Tailwind, pixelBasedPreset,
+  Heading, Text, Button, Hr, Img, Tailwind, pixelBasedPreset,
 } from 'react-email'
 
 export interface CierrePeriodoEmailProps {
@@ -8,6 +8,7 @@ export interface CierrePeriodoEmailProps {
   periodo_nombre: string
   institucion_nombre: string
   boletin_url: string
+  logo_url?: string
 }
 
 export function CierrePeriodoEmail({
@@ -15,6 +16,7 @@ export function CierrePeriodoEmail({
   periodo_nombre,
   institucion_nombre,
   boletin_url,
+  logo_url,
 }: CierrePeriodoEmailProps) {
   return (
     <Html lang="es">
@@ -24,9 +26,13 @@ export function CierrePeriodoEmail({
           <Preview>Libreta de {alumno_nombre} — {periodo_nombre}</Preview>
           <Container className="max-w-600 mx-auto py-24">
             <Section className="bg-white rounded-8 p-32 border-solid border border-gray-200">
-              <Heading as="h1" className="text-20 font-semibold text-gray-900 m-0 mb-4">
-                Libreta Digital
-              </Heading>
+              {logo_url ? (
+                <Img src={logo_url} alt={institucion_nombre} height={40} className="mb-16 object-contain" />
+              ) : (
+                <Heading as="h1" className="text-20 font-semibold text-gray-900 m-0 mb-4">
+                  Libreta Digital
+                </Heading>
+              )}
               <Text className="text-14 text-gray-500 m-0 mb-24">
                 {institucion_nombre}
               </Text>

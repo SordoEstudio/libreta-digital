@@ -5,7 +5,8 @@ import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { BookOpen, Settings } from 'lucide-react'
+import { BookOpen, Settings, ImageIcon } from 'lucide-react'
+import { LogoUpload } from '@/components/logo-upload'
 import AñoSelector from './año-selector'
 import NuevoAñoSheet from './periodos/nuevo-año-sheet'
 import NuevoCursoSheet from '../cursos/nuevo-curso-sheet'
@@ -30,7 +31,7 @@ export default async function ConfiguracionPage({ params, searchParams }: Props)
 
   const { data: inst } = await supabase
     .from('instituciones')
-    .select('id, nombre')
+    .select('id, nombre, logo_cuadrado_url, logo_rectangular_url')
     .eq('slug', slug)
     .is('deleted_at', null)
     .single()
@@ -82,6 +83,32 @@ export default async function ConfiguracionPage({ params, searchParams }: Props)
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Identidad visual */}
+      <div className="flex flex-col gap-4 rounded-lg border p-4">
+        <div className="flex items-center gap-2">
+          <ImageIcon className="size-4 text-muted-foreground" />
+          <h2 className="font-semibold">Identidad visual</h2>
+        </div>
+        <div className="flex flex-wrap gap-8">
+          <LogoUpload
+            instId={inst.id}
+            tipo="cuadrado"
+            currentUrl={inst.logo_cuadrado_url}
+            label="Isologo (cuadrado)"
+            hint="PNG / SVG · mín 200×200 px · máx 2 MB"
+            onUpdate={() => {}}
+          />
+          <LogoUpload
+            instId={inst.id}
+            tipo="rectangular"
+            currentUrl={inst.logo_rectangular_url}
+            label="Logotipo (rectangular)"
+            hint="PNG / SVG · mín 400×100 px · máx 2 MB"
+            onUpdate={() => {}}
+          />
+        </div>
+      </div>
+
       {/* Header row */}
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">

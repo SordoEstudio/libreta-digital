@@ -1025,6 +1025,8 @@ export type Database = {
           direccion: string | null
           email: string | null
           id: string
+          logo_cuadrado_url: string | null
+          logo_rectangular_url: string | null
           logo_url: string | null
           modulo_contenidos: boolean
           nombre: string
@@ -1041,6 +1043,8 @@ export type Database = {
           direccion?: string | null
           email?: string | null
           id?: string
+          logo_cuadrado_url?: string | null
+          logo_rectangular_url?: string | null
           logo_url?: string | null
           modulo_contenidos?: boolean
           nombre: string
@@ -1057,6 +1061,8 @@ export type Database = {
           direccion?: string | null
           email?: string | null
           id?: string
+          logo_cuadrado_url?: string | null
+          logo_rectangular_url?: string | null
           logo_url?: string | null
           modulo_contenidos?: boolean
           nombre?: string

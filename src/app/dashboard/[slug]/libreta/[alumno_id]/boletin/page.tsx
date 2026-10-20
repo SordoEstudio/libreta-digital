@@ -15,7 +15,7 @@ export default async function BoletinPage({ params }: Params) {
   const supabase = await createClient()
   const { data: inst } = await supabase
     .from('instituciones')
-    .select('id, nombre')
+    .select('id, nombre, logo_rectangular_url')
     .eq('slug', slug)
     .single()
 
@@ -209,6 +209,10 @@ export default async function BoletinPage({ params }: Params) {
       <div className="max-w-5xl mx-auto print:max-w-none">
         {/* Header */}
         <div className="text-center mb-6 pb-4 border-b">
+          {inst.logo_rectangular_url && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={inst.logo_rectangular_url} alt={inst.nombre} className="mx-auto mb-3 h-12 object-contain print:h-10" />
+          )}
           <p className="text-sm text-muted-foreground print:text-gray-600">{inst.nombre}</p>
           <h1 className="text-2xl font-bold mt-1">Libreta de Calificaciones</h1>
           <div className="flex justify-center gap-6 mt-3 text-sm">

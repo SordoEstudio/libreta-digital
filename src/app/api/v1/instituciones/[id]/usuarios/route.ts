@@ -131,7 +131,7 @@ export async function POST(request: NextRequest, { params }: Params) {
 
   const { data: inst } = await supabase
     .from('instituciones')
-    .select('nombre')
+    .select('nombre, logo_rectangular_url')
     .eq('id', institucion_id)
     .single()
 
@@ -153,6 +153,7 @@ export async function POST(request: NextRequest, { params }: Params) {
     rol,
     login_url: `${appUrl}/login`,
     setup_url,
+    logo_url: inst?.logo_rectangular_url ?? undefined,
   })
 
   return created({ persona_id, email, rol, setup_url: setup_url ?? null })

@@ -1,6 +1,6 @@
 import {
   Html, Head, Preview, Body, Container, Section,
-  Heading, Text, Button, Hr, Tailwind, pixelBasedPreset,
+  Heading, Text, Button, Hr, Img, Tailwind, pixelBasedPreset,
 } from 'react-email'
 
 export interface BienvenidaEmailProps {
@@ -10,6 +10,7 @@ export interface BienvenidaEmailProps {
   rol: string
   login_url: string
   setup_url?: string
+  logo_url?: string
 }
 
 const ROL_LABELS: Record<string, string> = {
@@ -25,6 +26,7 @@ export function BienvenidaEmail({
   rol,
   login_url,
   setup_url,
+  logo_url,
 }: BienvenidaEmailProps) {
   const rolLabel = ROL_LABELS[rol] ?? rol
 
@@ -36,9 +38,13 @@ export function BienvenidaEmail({
           <Preview>Bienvenido a Libreta Digital — {institucion_nombre}</Preview>
           <Container className="max-w-600 mx-auto py-24">
             <Section className="bg-white rounded-8 p-32 border-solid border border-gray-200">
-              <Heading as="h1" className="text-20 font-semibold text-gray-900 m-0 mb-4">
-                Bienvenido a Libreta Digital
-              </Heading>
+              {logo_url ? (
+                <Img src={logo_url} alt={institucion_nombre} height={40} className="mb-16 object-contain" />
+              ) : (
+                <Heading as="h1" className="text-20 font-semibold text-gray-900 m-0 mb-4">
+                  Bienvenido a Libreta Digital
+                </Heading>
+              )}
               <Text className="text-14 text-gray-500 m-0 mb-24">
                 {institucion_nombre}
               </Text>

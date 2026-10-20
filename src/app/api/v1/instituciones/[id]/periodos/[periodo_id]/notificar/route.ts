@@ -28,7 +28,7 @@ export async function POST(_request: NextRequest, { params }: Params) {
 
   const { data: inst } = await supabase
     .from('instituciones')
-    .select('slug, nombre')
+    .select('slug, nombre, logo_rectangular_url')
     .eq('id', institucion_id)
     .is('deleted_at', null)
     .single()
@@ -92,6 +92,7 @@ export async function POST(_request: NextRequest, { params }: Params) {
         periodo_nombre: periodo.nombre,
         institucion_nombre: inst.nombre,
         boletin_url: task.boletin_url,
+        logo_url: inst.logo_rectangular_url ?? undefined,
       })
     )
   )

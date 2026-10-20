@@ -1,6 +1,6 @@
 import {
   Html, Head, Preview, Body, Container, Section,
-  Heading, Text, Hr, Tailwind, pixelBasedPreset,
+  Heading, Text, Hr, Img, Tailwind, pixelBasedPreset,
 } from 'react-email'
 
 export interface NotaNuevaEmailProps {
@@ -12,6 +12,7 @@ export interface NotaNuevaEmailProps {
   valor: string
   institucion_nombre: string
   responsable_nombre: string
+  logo_url?: string
 }
 
 export function NotaNuevaEmail({
@@ -23,6 +24,7 @@ export function NotaNuevaEmail({
   valor,
   institucion_nombre,
   responsable_nombre,
+  logo_url,
 }: NotaNuevaEmailProps) {
   return (
     <Html lang="es">
@@ -32,9 +34,13 @@ export function NotaNuevaEmail({
           <Preview>Nueva nota para {alumno_nombre} en {materia_nombre}</Preview>
           <Container className="max-w-600 mx-auto py-24">
             <Section className="bg-white rounded-8 p-32 border-solid border border-gray-200">
-              <Heading as="h1" className="text-20 font-semibold text-gray-900 m-0 mb-4">
-                Nueva nota disponible
-              </Heading>
+              {logo_url ? (
+                <Img src={logo_url} alt={institucion_nombre} height={40} className="mb-16 object-contain" />
+              ) : (
+                <Heading as="h1" className="text-20 font-semibold text-gray-900 m-0 mb-4">
+                  Nueva nota disponible
+                </Heading>
+              )}
               <Text className="text-14 text-gray-500 m-0 mb-24">
                 {institucion_nombre}
               </Text>
