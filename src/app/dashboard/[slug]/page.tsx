@@ -14,7 +14,7 @@ export default async function InstitucionDashboardPage({ params }: Params) {
   const supabase = await createClient()
   const { data: inst } = await supabase
     .from('instituciones')
-    .select('id, nombre, tipo, activa')
+    .select('id, nombre, tipo, activa, modulo_contenidos')
     .eq('slug', slug)
     .is('deleted_at', null)
     .single()
@@ -40,7 +40,7 @@ export default async function InstitucionDashboardPage({ params }: Params) {
   }
 
   if (isResponsable && session.persona_id) {
-    return <HomeResponsable instId={inst.id} slug={slug} personaId={session.persona_id} />
+    return <HomeResponsable instId={inst.id} slug={slug} personaId={session.persona_id} moduloContenidos={!!inst.modulo_contenidos} />
   }
 
   // Fallback: sin persona_id o rol no reconocido

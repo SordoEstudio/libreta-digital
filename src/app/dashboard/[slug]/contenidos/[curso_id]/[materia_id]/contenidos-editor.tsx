@@ -6,11 +6,12 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
   ChevronDown, ChevronUp, Trash2, ExternalLink, FileText, ImageIcon, Link2,
-  Eye, EyeOff, Pencil, Plus,
+  Eye, EyeOff, Plus,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import UnidadForm from './unidad-form'
+import UnidadSheet from './unidad-sheet'
 import ItemSheet from './item-sheet'
 import type { UnidadConItems, ContenidoItem } from './page'
 
@@ -38,9 +39,7 @@ export default function ContenidosEditor({ unidades: initialUnidades, dimensione
     () => new Set(initialUnidades.map(u => u.id))
   )
   const [addingUnidad, setAddingUnidad] = useState(false)
-  const [editingUnidadId, setEditingUnidadId] = useState<string | null>(null)
 
-  // Sync server-side refresh (router.refresh() sends new props)
   useEffect(() => {
     setUnidades(initialUnidades)
     setExpandedIds(prev => {
@@ -135,74 +134,55 @@ export default function ContenidosEditor({ unidades: initialUnidades, dimensione
 
       {unidades.map((unidad) => {
         const isExpanded = expandedIds.has(unidad.id)
-        const isEditing = editingUnidadId === unidad.id
 
         return (
           <div key={unidad.id} className="border rounded-lg overflow-hidden">
-            {/* Unidad header */}
             <div
               className="flex items-center gap-2 px-4 py-3 bg-muted/40 cursor-pointer select-none hover:bg-muted/60 transition-colors"
-              onClick={() => !isEditing && toggleExpanded(unidad.id)}
+              onClick={() => toggleExpanded(unidad.id)}
             >
               <ChevronDown className={cn('size-4 shrink-0 text-muted-foreground transition-transform duration-200', !isExpanded && '-rotate-90')} />
 
-              {isEditing ? (
-                <div className="flex-1" onClick={e => e.stopPropagation()}>
-                  <UnidadForm
-                    mode="edit"
+              <div className="flex-1 min-w-0">
+                <span className="font-medium truncate">{unidad.nombre}</span>
+                {unidad.descripcion && (
+                  <p className="text-xs text-muted-foreground truncate">{unidad.descripcion}</p>
+                )}
+              </div>
+
+              <span className="text-xs text-muted-foreground shrink-0">
+                {unidad.items.length} material{unidad.items.length !== 1 ? 'es' : ''}
+              </span>
+
+              {!unidad.publicado && (
+                <Badge variant="secondary" className="shrink-0">Borrador</Badge>
+              )}
+
+              {isEditor && (
+                <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
+                  <Button
+                    variant="ghost" size="icon" className="size-7"
+                    onClick={() => toggleUnidadPublicado(unidad.id, !unidad.publicado)}
+                    title={unidad.publicado ? 'Ocultar' : 'Publicar'}
+                  >
+                    {unidad.publicado ? <Eye className="size-3.5" /> : <EyeOff className="size-3.5" />}
+                  </Button>
+                  <UnidadSheet
                     unidadId={unidad.id}
                     initialNombre={unidad.nombre}
                     initialDescripcion={unidad.descripcion}
-                    onDone={() => setEditingUnidadId(null)}
                   />
+                  <Button
+                    variant="ghost" size="icon" className="size-7 text-destructive hover:text-destructive"
+                    onClick={() => deleteUnidad(unidad.id)}
+                    title="Eliminar unidad"
+                  >
+                    <Trash2 className="size-3.5" />
+                  </Button>
                 </div>
-              ) : (
-                <>
-                  <div className="flex-1 min-w-0">
-                    <span className="font-medium truncate">{unidad.nombre}</span>
-                    {unidad.descripcion && (
-                      <p className="text-xs text-muted-foreground truncate">{unidad.descripcion}</p>
-                    )}
-                  </div>
-
-                  <span className="text-xs text-muted-foreground shrink-0">
-                    {unidad.items.length} material{unidad.items.length !== 1 ? 'es' : ''}
-                  </span>
-
-                  {!unidad.publicado && (
-                    <Badge variant="secondary" className="shrink-0">Borrador</Badge>
-                  )}
-
-                  {isEditor && (
-                    <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
-                      <Button
-                        variant="ghost" size="icon" className="size-7"
-                        onClick={() => toggleUnidadPublicado(unidad.id, !unidad.publicado)}
-                        title={unidad.publicado ? 'Ocultar' : 'Publicar'}
-                      >
-                        {unidad.publicado ? <Eye className="size-3.5" /> : <EyeOff className="size-3.5" />}
-                      </Button>
-                      <Button
-                        variant="ghost" size="icon" className="size-7"
-                        onClick={() => setEditingUnidadId(unidad.id)}
-                        title="Editar unidad"
-                      >
-                        <Pencil className="size-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost" size="icon" className="size-7 text-destructive hover:text-destructive"
-                        onClick={() => deleteUnidad(unidad.id)}
-                        title="Eliminar unidad"
-                      >
-                        <Trash2 className="size-3.5" />
-                      </Button>
-                    </div>
-                  )}
-                </>
               )}
             </div>
 
-            {/* Collapsible content */}
             {isExpanded && (
               <>
                 <div className="divide-y">
@@ -296,7 +276,6 @@ export default function ContenidosEditor({ unidades: initialUnidades, dimensione
         )
       })}
 
-      {/* Add unidad */}
       {isEditor && (
         <div className="mt-2">
           {addingUnidad ? (
@@ -304,6 +283,7 @@ export default function ContenidosEditor({ unidades: initialUnidades, dimensione
               <UnidadForm
                 mode="create"
                 materiaId={materiaId}
+                nextOrden={unidades.length}
                 onDone={() => setAddingUnidad(false)}
               />
             </div>

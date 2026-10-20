@@ -167,18 +167,6 @@ export function AppSidebar({ session }: AppSidebarProps) {
                   </SidebarMenuItem>
                 )}
 
-                {(isAdminLevel || isDocente || isResponsable) && (
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      render={<Link href={`/dashboard/${activeSlug}/contenidos`} />}
-                      isActive={pathname.startsWith(`/dashboard/${activeSlug}/contenidos`)}
-                    >
-                      <BookMarked />
-                      Contenidos
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )}
-
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     render={<Link href={`/dashboard/${activeSlug}/calendario`} />}

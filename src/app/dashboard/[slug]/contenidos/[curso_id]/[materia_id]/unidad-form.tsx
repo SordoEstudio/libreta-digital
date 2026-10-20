@@ -11,6 +11,7 @@ import { toast } from 'sonner'
 interface CreateProps {
   mode: 'create'
   materiaId: string
+  nextOrden?: number
   onDone?: () => void
 }
 
@@ -41,7 +42,7 @@ export default function UnidadForm(props: Props) {
       res = await fetch('/api/v1/contenidos/unidades', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ materia_id: props.materiaId, nombre, descripcion: descripcion || null, orden: 0 }),
+        body: JSON.stringify({ materia_id: props.materiaId, nombre, descripcion: descripcion || null, orden: props.nextOrden ?? 0 }),
       })
     } else {
       res = await fetch(`/api/v1/contenidos/unidades/${props.unidadId}`, {

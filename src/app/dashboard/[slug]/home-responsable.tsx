@@ -1,16 +1,17 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { Button } from '@/components/ui/button'
-import { GraduationCap, BookOpen, ArrowRight } from 'lucide-react'
+import { GraduationCap, BookOpen, BookMarked, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 
 interface Props {
   instId: string
   slug: string
   personaId: string
+  moduloContenidos?: boolean
 }
 
-export default async function HomeResponsable({ instId, slug, personaId }: Props) {
+export default async function HomeResponsable({ instId, slug, personaId, moduloContenidos }: Props) {
   const supabase = await createClient()
   const admin = createAdminClient()
 
@@ -152,10 +153,18 @@ export default async function HomeResponsable({ instId, slug, personaId }: Props
                   {inscripcion?.cursos?.nombre ?? 'Sin curso asignado'}
                 </p>
               </div>
-              <Button variant="secondary" size="sm" className="shrink-0" render={<Link href={`/dashboard/${slug}/libreta/${alumno.id}`} />}>
-                Ver libreta
-                <ArrowRight data-icon="inline-end" />
-              </Button>
+              <div className="flex items-center gap-2 shrink-0">
+                <Button variant="secondary" size="sm" render={<Link href={`/dashboard/${slug}/libreta/${alumno.id}`} />}>
+                  Ver libreta
+                  <ArrowRight data-icon="inline-end" />
+                </Button>
+                {moduloContenidos && inscripcion?.curso_id && (
+                  <Button variant="outline" size="sm" render={<Link href={`/dashboard/${slug}/contenidos/${inscripcion.curso_id}`} />}>
+                    <BookMarked data-icon="inline-start" />
+                    Contenidos
+                  </Button>
+                )}
+              </div>
             </div>
 
             {notasPorMateria.size === 0 ? (

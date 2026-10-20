@@ -6,7 +6,7 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import { BookOpen, GraduationCap } from 'lucide-react'
+import { BookOpen, BookMarked, GraduationCap } from 'lucide-react'
 import NuevaMateriaSheet from './nueva-materia-sheet'
 import EditarMateriaSheet, { type HorarioSlot } from './editar-materia-sheet'
 import ExportAlumnosButton from './export-alumnos-button'
@@ -21,7 +21,7 @@ export default async function CursoDetallePage({ params }: Params) {
   const supabase = await createClient()
   const { data: inst } = await supabase
     .from('instituciones')
-    .select('id')
+    .select('id, modulo_contenidos')
     .eq('slug', slug)
     .single()
 
@@ -184,6 +184,17 @@ export default async function CursoDetallePage({ params }: Params) {
                     <BookOpen data-icon="inline-start" />
                     Evaluaciones
                   </Button>
+                  {inst.modulo_contenidos && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      render={<Link href={`/dashboard/${slug}/contenidos/${curso_id}/${materia.id}`} />}
+                    >
+                      <BookMarked data-icon="inline-start" />
+                      Contenidos
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             )
