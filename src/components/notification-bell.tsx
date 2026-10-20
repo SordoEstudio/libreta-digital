@@ -17,7 +17,7 @@ interface Notificacion {
   created_at: string
 }
 
-export function NotificationBell() {
+export function NotificationBell({ compact = false }: { compact?: boolean }) {
   const [items, setItems] = useState<Notificacion[]>([])
   const [sinLeer, setSinLeer] = useState(0)
   const [loaded, setLoaded] = useState(false)
@@ -41,6 +41,45 @@ export function NotificationBell() {
   }
 
   if (!loaded) return null
+
+  if (compact) {
+    return (
+      <DropdownMenu onOpenChange={handleOpenChange}>
+        <DropdownMenuTrigger className="relative flex size-9 items-center justify-center rounded-md outline-hidden hover:bg-accent">
+          <Bell className="size-5" />
+          {sinLeer > 0 && (
+            <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-red-500" />
+          )}
+        </DropdownMenuTrigger>
+        <DropdownMenuContent side="bottom" align="end" sideOffset={4} className="p-0" style={{ width: '320px' }}>
+          <div className="border-b px-3 py-2">
+            <p className="text-sm font-semibold">Notificaciones</p>
+          </div>
+          {items.length === 0 ? (
+            <p className="px-3 py-6 text-center text-sm text-muted-foreground">
+              Sin notificaciones nuevas
+            </p>
+          ) : (
+            <div className="max-h-80 divide-y overflow-y-auto">
+              {items.map(n => (
+                <div key={n.id} className="px-3 py-2.5">
+                  <p className="text-sm font-medium leading-snug">{n.titulo}</p>
+                  {n.contenido && (
+                    <p className="mt-0.5 text-xs text-muted-foreground">{n.contenido}</p>
+                  )}
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {new Date(n.created_at).toLocaleDateString('es-AR', {
+                      day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
+                    })}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    )
+  }
 
   return (
     <DropdownMenu onOpenChange={handleOpenChange}>

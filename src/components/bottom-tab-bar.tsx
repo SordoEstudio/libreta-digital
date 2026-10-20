@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import { useSidebar } from '@/components/ui/sidebar'
 import {
   LayoutDashboard, GraduationCap, NotebookPen,
-  BookOpen, CalendarDays, MessageSquare, MoreHorizontal,
+  BookOpen, MessageSquare, MoreHorizontal,
 } from 'lucide-react'
 import { cn } from 'cn'
 import type { SessionUser } from '@/lib/auth'
@@ -37,6 +37,7 @@ export function BottomTabBar({ session }: BottomTabBarProps) {
   const isAdminLevel = isAdmin || isSuperadmin
 
   const tabs: Tab[] = []
+  let showMas = false
 
   if (isResponsable && !isAdminLevel && !isDocente) {
     tabs.push(
@@ -52,13 +53,8 @@ export function BottomTabBar({ session }: BottomTabBarProps) {
         icon: MessageSquare,
         match: p => p.startsWith(`/dashboard/${activeSlug}/comunicados`),
       },
-      {
-        href: `/dashboard/${activeSlug}/calendario`,
-        label: 'Calendario',
-        icon: CalendarDays,
-        match: p => p.startsWith(`/dashboard/${activeSlug}/calendario`),
-      },
     )
+    showMas = true
   } else if (isDocente && !isAdminLevel) {
     tabs.push(
       {
@@ -74,13 +70,14 @@ export function BottomTabBar({ session }: BottomTabBarProps) {
         match: p => p.startsWith(`/dashboard/${activeSlug}/cursos`),
       },
       {
-        href: `/dashboard/${activeSlug}/calendario`,
-        label: 'Calendario',
-        icon: CalendarDays,
-        match: p => p.startsWith(`/dashboard/${activeSlug}/calendario`),
+        href: `/dashboard/${activeSlug}/comunicados`,
+        label: 'Comunicados',
+        icon: MessageSquare,
+        match: p => p.startsWith(`/dashboard/${activeSlug}/comunicados`),
       },
     )
   } else {
+    // Admin / superadmin
     tabs.push(
       {
         href: `/dashboard/${activeSlug}`,
@@ -95,12 +92,13 @@ export function BottomTabBar({ session }: BottomTabBarProps) {
         match: p => p.startsWith(`/dashboard/${activeSlug}/comunicados`),
       },
       {
-        href: `/dashboard/${activeSlug}/calendario`,
-        label: 'Calendario',
-        icon: CalendarDays,
-        match: p => p.startsWith(`/dashboard/${activeSlug}/calendario`),
+        href: `/dashboard/${activeSlug}/alumnos`,
+        label: 'Alumnos',
+        icon: GraduationCap,
+        match: p => p.startsWith(`/dashboard/${activeSlug}/alumnos`),
       },
     )
+    showMas = true
   }
 
   return (
@@ -121,13 +119,15 @@ export function BottomTabBar({ session }: BottomTabBarProps) {
           </Link>
         )
       })}
-      <button
-        onClick={toggleSidebar}
-        className="flex flex-1 flex-col items-center justify-center gap-0.5 py-2.5 text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors"
-      >
-        <MoreHorizontal className="size-5" />
-        Más
-      </button>
+      {showMas && (
+        <button
+          onClick={toggleSidebar}
+          className="flex flex-1 flex-col items-center justify-center gap-0.5 py-2.5 text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <MoreHorizontal className="size-5" />
+          Más
+        </button>
+      )}
     </nav>
   )
 }
