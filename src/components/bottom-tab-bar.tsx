@@ -42,6 +42,12 @@ export function BottomTabBar({ session }: BottomTabBarProps) {
   if (isResponsable && !isAdminLevel && !isDocente) {
     tabs.push(
       {
+        href: `/dashboard/${activeSlug}`,
+        label: 'Inicio',
+        icon: LayoutDashboard,
+        match: p => p === `/dashboard/${activeSlug}`,
+      },
+      {
         href: `/dashboard/${activeSlug}/mis-alumnos`,
         label: 'Mis alumnos',
         icon: GraduationCap,
@@ -57,6 +63,12 @@ export function BottomTabBar({ session }: BottomTabBarProps) {
     showMas = true
   } else if (isDocente && !isAdminLevel) {
     tabs.push(
+      {
+        href: `/dashboard/${activeSlug}`,
+        label: 'Inicio',
+        icon: LayoutDashboard,
+        match: p => p === `/dashboard/${activeSlug}`,
+      },
       {
         href: `/dashboard/${activeSlug}/cuaderno`,
         label: 'Cuaderno',
@@ -103,7 +115,7 @@ export function BottomTabBar({ session }: BottomTabBarProps) {
 
   return (
     <nav
-      className="md:hidden fixed bottom-0 inset-x-0 z-20 flex border-t bg-background"
+      className="md:hidden flex shrink-0 border-t bg-background"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
       {tabs.map(tab => {

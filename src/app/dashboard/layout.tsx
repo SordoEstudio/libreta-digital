@@ -13,9 +13,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <SidebarProvider>
       <AppSidebar session={session} />
-      <SidebarInset>
+      <SidebarInset className="h-svh md:h-auto overflow-hidden md:overflow-auto">
         <MobileHeader session={session} />
-        <main className="flex flex-1 flex-col gap-6 px-4 py-6 md:px-6 pb-28 md:pb-6">
+        <main className="flex flex-1 flex-col gap-6 px-4 py-6 md:px-6 overflow-y-auto md:overflow-visible">
           {children}
         </main>
         <BottomTabBar session={session} />

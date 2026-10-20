@@ -134,9 +134,10 @@ export default function NuevoComunicadoSheet({ cursos }: Props) {
                 onChange={e => setContenido(e.target.value)}
                 placeholder="Escribí el comunicado aquí..."
                 maxLength={5000}
-                rows={6}
+                rows={1}
                 required
-                className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-y"
+                onInput={e => { const el = e.currentTarget; el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px' }}
+                className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none overflow-hidden"
               />
             </div>
 

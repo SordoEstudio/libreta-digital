@@ -11,6 +11,7 @@ import { BookOpen, BookMarked, ClipboardList, UserCheck } from 'lucide-react'
 import NuevaEvaluacionSheet from './nueva-evaluacion-sheet'
 import EditarEvaluacionSheet from './editar-evaluacion-sheet'
 import GenerarRecuperatorioButton from './generar-recuperatorio-button'
+import { MobileOrientationGuard } from '@/components/mobile-orientation-guard'
 
 type Params = { params: Promise<{ slug: string; materia_id: string }> }
 
@@ -152,6 +153,7 @@ export default async function EvaluacionesPage({ params }: Params) {
       )}
 
       {grupos.length > 0 ? (
+        <MobileOrientationGuard>
         <div className="flex flex-col gap-6">
           {grupos.map(([periodoId, grupo]) => (
             <div key={periodoId}>
@@ -234,6 +236,7 @@ export default async function EvaluacionesPage({ params }: Params) {
             </div>
           ))}
         </div>
+        </MobileOrientationGuard>
       ) : (
         <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
           <BookOpen className="size-12 text-muted-foreground/40" />
