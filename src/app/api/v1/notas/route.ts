@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
 
   const { data: inst } = await supabase
     .from('instituciones')
-    .select('nombre')
+    .select('nombre, logo_rectangular_url')
     .eq('id', evaluacion.institucion_id)
     .single()
 
@@ -100,6 +100,7 @@ export async function POST(request: NextRequest) {
     valor,
     institucion_id: evaluacion.institucion_id,
     institucion_nombre: inst?.nombre ?? '',
+    logo_url: inst?.logo_rectangular_url ?? undefined,
   })
 
   return created(data)

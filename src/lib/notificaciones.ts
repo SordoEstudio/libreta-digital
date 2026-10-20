@@ -12,6 +12,7 @@ interface NotaContext {
   valor: string
   institucion_id: string
   institucion_nombre: string
+  logo_url?: string
 }
 
 export async function notificarNotaCargada(ctx: NotaContext): Promise<void> {
@@ -48,6 +49,7 @@ export async function notificarNotaCargada(ctx: NotaContext): Promise<void> {
         valor: ctx.valor,
         institucion_nombre: ctx.institucion_nombre,
         responsable_nombre: persona.nombre,
+        logo_url: ctx.logo_url,
       }, `${ctx.nota_id}-${persona.id}`),
     ]
   })

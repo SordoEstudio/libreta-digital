@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
   const alumnoMap = new Map((alumnos ?? []).map(a => [a.id, a.nombre]))
   const { data: inst } = await supabase
     .from('instituciones')
-    .select('nombre')
+    .select('nombre, logo_rectangular_url')
     .eq('id', evaluacion.institucion_id)
     .single()
 
@@ -127,6 +127,7 @@ export async function POST(request: NextRequest) {
         valor: (nota.valor_numerico?.toString() ?? nota.valor_literal) ?? '—',
         institucion_id: evaluacion.institucion_id,
         institucion_nombre: inst?.nombre ?? '',
+        logo_url: inst?.logo_rectangular_url ?? undefined,
       })
     )
   )
