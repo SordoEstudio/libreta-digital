@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import { useSidebar } from '@/components/ui/sidebar'
 import {
   LayoutDashboard, GraduationCap, NotebookPen,
-  BookOpen, MessageSquare, MoreHorizontal,
+  BookOpen, MessageSquare, MoreHorizontal, FileText, FolderOpen,
 } from 'lucide-react'
 import { cn } from 'cn'
 import type { SessionUser } from '@/lib/auth'
@@ -48,10 +48,10 @@ export function BottomTabBar({ session }: BottomTabBarProps) {
         match: p => p === `/dashboard/${activeSlug}`,
       },
       {
-        href: `/dashboard/${activeSlug}/mis-alumnos`,
-        label: 'Mis alumnos',
-        icon: GraduationCap,
-        match: p => p.startsWith(`/dashboard/${activeSlug}/mis-alumnos`) || p.startsWith(`/dashboard/${activeSlug}/libreta`),
+        href: `/dashboard/${activeSlug}/contenidos`,
+        label: 'Contenidos',
+        icon: FolderOpen,
+        match: p => p.startsWith(`/dashboard/${activeSlug}/contenidos`),
       },
       {
         href: `/dashboard/${activeSlug}/comunicados`,
@@ -59,8 +59,14 @@ export function BottomTabBar({ session }: BottomTabBarProps) {
         icon: MessageSquare,
         match: p => p.startsWith(`/dashboard/${activeSlug}/comunicados`),
       },
+      {
+        href: `/dashboard/${activeSlug}/mis-alumnos`,
+        label: 'Boletines',
+        icon: FileText,
+        match: p => p.startsWith(`/dashboard/${activeSlug}/mis-alumnos`) || p.startsWith(`/dashboard/${activeSlug}/libreta`),
+      },
     )
-    showMas = true
+    showMas = false
   } else if (isDocente && !isAdminLevel) {
     tabs.push(
       {

@@ -1,28 +1,37 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { Printer, Share2 } from 'lucide-react'
+import { Printer, Share2, Download } from 'lucide-react'
 
 export default function PrintButton({ alumnoNombre }: { alumnoNombre?: string }) {
   return (
     <>
-      {/* Mobile: share via Web Share API */}
-      <Button
-        size="icon"
-        variant="ghost"
-        className="md:hidden"
-        onClick={async () => {
-          if (navigator.share) {
-            await navigator.share({
-              title: alumnoNombre ? `Boletín — ${alumnoNombre}` : 'Boletín de calificaciones',
-              url: window.location.href,
-            }).catch(() => {})
-          }
-        }}
-      >
-        <Share2 className="size-5" />
-        <span className="sr-only">Compartir</span>
-      </Button>
+      {/* Mobile: share + save PDF */}
+      <div className="flex gap-1.5 md:hidden print:hidden">
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={async () => {
+            if (navigator.share) {
+              await navigator.share({
+                title: alumnoNombre ? `Boletín — ${alumnoNombre}` : 'Boletín de calificaciones',
+                url: window.location.href,
+              }).catch(() => {})
+            }
+          }}
+        >
+          <Share2 className="size-4" />
+          Compartir
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => window.print()}
+        >
+          <Download className="size-4" />
+          Guardar
+        </Button>
+      </div>
 
       {/* Desktop: print */}
       <Button
