@@ -54,26 +54,40 @@ export default async function ContenidosIndexPage({ params }: Params) {
     cursos = (data ?? []).map(c => ({ id: c.id, nombre: c.nombre, nivel: c.nivel }))
   }
 
-  // For docente (not admin): only show cursos they teach in
-  let visibleCursos = cursos
-  if (!isEditor || (!isSuperadmin(session) && hasAnyRole(session, inst.id, ['docente']) && !hasAnyRole(session, inst.id, ['admin']))) {
-    if (cursos.length > 0) {
-      const { data: materias } = await supabase
-        .from('materias')
-        .select('curso_id, materia_docentes(persona_id)')
-        .in('curso_id', cursos.map(c => c.id))
-        .is('deleted_at', null)
+  const isOnlyDocente = !isSuperadmin(session) && hasAnyRole(session, inst.id, ['docente']) && !hasAnyRole(session, inst.id, ['admin'])
+  const isOnlyResponsable = !isSuperadmin(session) && !hasAnyRole(session, inst.id, ['admin', 'docente']) && hasAnyRole(session, inst.id, ['responsable'])
 
-      const myPersonaId = session.persona_id
-      const cursosConMisMateria = new Set(
-        (materias ?? [])
-          .filter(m => (m.materia_docentes as { persona_id: string }[]).some(d => d.persona_id === myPersonaId))
-          .map(m => m.curso_id)
-      )
-      if (!hasAnyRole(session, inst.id, ['admin'])) {
-        visibleCursos = cursos.filter(c => cursosConMisMateria.has(c.id))
+  let visibleCursos = cursos
+
+  if (isOnlyDocente && cursos.length > 0) {
+    const { data: materias } = await supabase
+      .from('materias')
+      .select('curso_id, materia_docentes(persona_id)')
+      .in('curso_id', cursos.map(c => c.id))
+      .is('deleted_at', null)
+    const cursosConMisMateria = new Set(
+      (materias ?? [])
+        .filter(m => (m.materia_docentes as { persona_id: string }[]).some(d => d.persona_id === session.persona_id))
+        .map(m => m.curso_id)
+    )
+    visibleCursos = cursos.filter(c => cursosConMisMateria.has(c.id))
+  } else if (isOnlyResponsable && session.persona_id && cursos.length > 0) {
+    const { data: vinculaciones } = await supabase
+      .from('alumno_responsables')
+      .select('alumnos(alumno_inscripciones(curso_id, activo, deleted_at))')
+      .eq('persona_id', session.persona_id)
+      .eq('institucion_id', inst.id)
+
+    type InscripcionRaw = { curso_id: string; activo: boolean; deleted_at: string | null }
+    type AlumnoRaw = { alumno_inscripciones: InscripcionRaw[] } | null
+
+    const enrolledCursoIds = new Set<string>()
+    for (const v of (vinculaciones ?? [])) {
+      for (const i of ((v.alumnos as AlumnoRaw)?.alumno_inscripciones ?? [])) {
+        if (i.activo && !i.deleted_at) enrolledCursoIds.add(i.curso_id)
       }
     }
+    visibleCursos = cursos.filter(c => enrolledCursoIds.has(c.id))
   }
 
   // Redirect if only one course

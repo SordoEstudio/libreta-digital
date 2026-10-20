@@ -31,6 +31,9 @@ export default async function ContenidosCursoPage({ params }: Params) {
   const canAccess = isSuperadmin(session) || hasAnyRole(session, inst.id, ['admin', 'docente', 'responsable'])
   if (!canAccess) redirect(`/dashboard/${slug}`)
 
+  const isEditor = isSuperadmin(session) || hasAnyRole(session, inst.id, ['admin', 'docente'])
+  const isOnlyResponsable = !isEditor && hasAnyRole(session, inst.id, ['responsable'])
+
   const { data: curso } = await supabase
     .from('cursos')
     .select('*')
@@ -40,6 +43,24 @@ export default async function ContenidosCursoPage({ params }: Params) {
     .single()
 
   if (!curso) notFound()
+
+  // Verify responsable has an alumno enrolled in this curso
+  if (isOnlyResponsable && session.persona_id) {
+    const { data: vinculaciones } = await supabase
+      .from('alumno_responsables')
+      .select('alumnos(alumno_inscripciones(curso_id, activo, deleted_at))')
+      .eq('persona_id', session.persona_id)
+      .eq('institucion_id', inst.id)
+
+    type InscripcionRaw = { curso_id: string; activo: boolean; deleted_at: string | null }
+    type AlumnoRaw = { alumno_inscripciones: InscripcionRaw[] } | null
+
+    const hasAccess = (vinculaciones ?? []).some(v =>
+      ((v.alumnos as AlumnoRaw)?.alumno_inscripciones ?? [])
+        .some(i => i.curso_id === curso_id && i.activo && !i.deleted_at)
+    )
+    if (!hasAccess) redirect(`/dashboard/${slug}/contenidos`)
+  }
 
   // Fetch materias con nombre del catálogo
   const { data: materiasRaw } = await supabase

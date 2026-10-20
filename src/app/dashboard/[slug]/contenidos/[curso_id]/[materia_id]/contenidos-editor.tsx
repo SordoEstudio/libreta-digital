@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import {
   ChevronDown, ChevronUp, ExternalLink, FileText, ImageIcon, Link2,
-  Eye, EyeOff, Plus,
+  Eye, EyeOff, Plus, Download,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -171,34 +171,46 @@ export default function ContenidosEditor({ unidades: initialUnidades, dimensione
                         <ItemTypeIcon tipo={item.tipo} />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            {item.tipo === 'link' && item.url ? (
-                              <a
-                                href={item.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="font-medium text-sm hover:underline flex items-center gap-1 truncate"
-                              >
-                                {item.titulo}
-                                <ExternalLink className="size-3 shrink-0" />
-                              </a>
-                            ) : item.signedUrl ? (
-                              <a
-                                href={item.signedUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="font-medium text-sm hover:underline flex items-center gap-1 truncate"
-                              >
-                                {item.titulo}
-                                <ExternalLink className="size-3 shrink-0" />
-                              </a>
-                            ) : (
-                              <span className="font-medium text-sm truncate">{item.titulo}</span>
-                            )}
+                            <span className="font-medium text-sm">{item.titulo}</span>
                             {!item.publicado && <Badge variant="secondary" className="text-xs">Borrador</Badge>}
                             {item.dimension_id && dimensiones.find(d => d.id === item.dimension_id) && (
                               <Badge variant="outline" className="text-xs">
                                 {dimensiones.find(d => d.id === item.dimension_id)!.nombre}
                               </Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                            {item.tipo === 'link' && item.url && (
+                              <a href={item.url} target="_blank" rel="noopener noreferrer">
+                                <Button variant="outline" size="sm" className="h-7 text-xs">
+                                  <ExternalLink className="size-3" />
+                                  Abrir
+                                </Button>
+                              </a>
+                            )}
+                            {item.tipo === 'archivo' && item.signedUrl && (
+                              <a href={`/api/v1/contenidos/items/${item.id}/download`}>
+                                <Button variant="outline" size="sm" className="h-7 text-xs">
+                                  <Download className="size-3" />
+                                  Descargar
+                                </Button>
+                              </a>
+                            )}
+                            {item.tipo === 'imagen' && item.signedUrl && (
+                              <>
+                                <a href={item.signedUrl} target="_blank" rel="noopener noreferrer">
+                                  <Button variant="outline" size="sm" className="h-7 text-xs">
+                                    <ExternalLink className="size-3" />
+                                    Ver
+                                  </Button>
+                                </a>
+                                <a href={`/api/v1/contenidos/items/${item.id}/download`}>
+                                  <Button variant="outline" size="sm" className="h-7 text-xs">
+                                    <Download className="size-3" />
+                                    Descargar
+                                  </Button>
+                                </a>
+                              </>
                             )}
                           </div>
                           {item.nota && (
