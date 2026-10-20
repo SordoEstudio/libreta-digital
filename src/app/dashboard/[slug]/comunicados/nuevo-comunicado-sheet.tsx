@@ -95,7 +95,9 @@ export default function NuevoComunicadoSheet({ cursos }: Props) {
               <Label htmlFor="com-curso">Curso *</Label>
               <Select value={cursoId} onValueChange={v => handleCursoChange(v ?? '')}>
                 <SelectTrigger id="com-curso">
-                  <SelectValue placeholder="Seleccionar curso..." />
+                  <SelectValue placeholder="Seleccionar curso...">
+                    {cursoId ? (cursos.find(c => c.id === cursoId)?.nombre ?? 'Seleccionar curso...') : 'Seleccionar curso...'}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {cursos.map(c => (
@@ -110,7 +112,9 @@ export default function NuevoComunicadoSheet({ cursos }: Props) {
                 <Label htmlFor="com-materia">Materia <span className="text-muted-foreground font-normal">(opcional)</span></Label>
                 <Select value={materiaId || 'todas'} onValueChange={v => setMateriaId(v === 'todas' ? '' : (v ?? ''))}>
                   <SelectTrigger id="com-materia">
-                    <SelectValue />
+                    <SelectValue>
+                      {materiaId ? (materiasDelCurso.find(m => m.id === materiaId)?.nombre ?? 'Todas las materias') : 'Todas las materias'}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="todas">Todas las materias</SelectItem>
