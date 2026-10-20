@@ -165,7 +165,6 @@ export default function CuadernoTabla({
   // Definitiva state
   const [definitivaEvalId, setDefinitivaEvalId] = useState<string | null>(initialDefinitivaId)
   const [definitivaValores, setDefinitivaValores] = useState<Record<string, string>>(initialDefinitivaMap)
-  const [savingDefinitiva, setSavingDefinitiva] = useState(false)
 
   const sorted = useMemo(() =>
     [...alumnos].sort((a, b) => {
@@ -208,11 +207,9 @@ export default function CuadernoTabla({
     return !allApprovedDims.has(`${ev.id}::${dim?.id ?? '__'}`)
   }
 
-  async function handleSaveDefinitiva() {
-    setSavingDefinitiva(true)
+  async function saveDefinitiva(): Promise<{ error: boolean }> {
     let evalId = definitivaEvalId
 
-    // Create definitiva evaluación if it doesn't exist
     if (!evalId) {
       const res = await fetch(`/api/v1/materias/${materiaId}/evaluaciones`, {
         method: 'POST',
@@ -226,12 +223,7 @@ export default function CuadernoTabla({
           orden: 999,
         }),
       })
-      if (!res.ok) {
-        const json = await res.json().catch(() => ({}))
-        toast.error(json.error?.message ?? 'Error al crear evaluación definitiva')
-        setSavingDefinitiva(false)
-        return
-      }
+      if (!res.ok) return { error: true }
       const json = await res.json()
       evalId = json.data.id
       setDefinitivaEvalId(evalId)
@@ -247,25 +239,14 @@ export default function CuadernoTabla({
       }
     }).filter(n => n.valor_numerico !== null || n.valor_literal !== null)
 
-    if (notas.length === 0) {
-      toast.info('Sin notas para guardar')
-      setSavingDefinitiva(false)
-      return
-    }
+    if (notas.length === 0) return { error: false }
 
     const res = await fetch('/api/v1/notas/bulk', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ evaluacion_id: evalId, notas }),
     })
-    const json = await res.json()
-    setSavingDefinitiva(false)
-    if (!res.ok) {
-      toast.error(json.error?.message ?? 'Error al guardar notas')
-      return
-    }
-    toast.success(`Notas definitivas guardadas`)
-    router.refresh()
+    return { error: !res.ok }
   }
 
   async function handleSaveProceso(): Promise<{ errors: number }> {
@@ -340,13 +321,14 @@ export default function CuadernoTabla({
 
   async function handleSaveAll() {
     setSaving(true)
-    const [libreraResult, procesoResult] = await Promise.all([
+    const [libreraResult, procesoResult, definitivaResult] = await Promise.all([
       handleSaveLibreta(),
       handleSaveProceso(),
+      showDefinitiva ? saveDefinitiva() : Promise.resolve({ error: false }),
     ])
     setSaving(false)
 
-    const total = libreraResult.errors + procesoResult.errors
+    const total = libreraResult.errors + procesoResult.errors + (definitivaResult.error ? 1 : 0)
     if (total > 0) {
       toast.error(`${total} error(es) al guardar`)
     } else {
@@ -639,6 +621,7 @@ export default function CuadernoTabla({
                               ...prev,
                               [procesoKey(ev.id, alumno.id, dim?.id ?? null)]: e.target.value
                             }))}
+                            readOnly={!!periodoCerrado}
                             className={`h-7 w-20 text-sm text-center mx-auto ${procBg}`}
                             placeholder="—"
                           />
@@ -662,6 +645,7 @@ export default function CuadernoTabla({
                       <Input
                         value={definitivaValores[alumno.id] ?? ''}
                         onChange={e => setDefinitivaValores(prev => ({ ...prev, [alumno.id]: e.target.value }))}
+                        readOnly={!!periodoCerrado}
                         className="h-7 w-20 text-sm text-center mx-auto"
                         placeholder="—"
                       />
@@ -675,21 +659,13 @@ export default function CuadernoTabla({
       </div>
 
       {(showProceso || showDefinitiva || (evalsLibreta ?? []).length > 0) && (
-        <div className="flex justify-end gap-2">
-          <Button onClick={handleSaveAll} disabled={saving} size="sm" variant="secondary">
+        <div className="flex justify-end">
+          <Button onClick={handleSaveAll} disabled={saving || !!periodoCerrado} size="sm">
             {saving
               ? <><Loader2 data-icon="inline-start" className="animate-spin size-3.5" />Guardando...</>
-              : <><Save data-icon="inline-start" className="size-3.5" />Guardar todo</>
+              : <><Save data-icon="inline-start" className="size-3.5" />Guardar notas</>
             }
           </Button>
-          {showDefinitiva && (
-            <Button onClick={handleSaveDefinitiva} disabled={savingDefinitiva} size="sm">
-              {savingDefinitiva
-                ? <><Loader2 data-icon="inline-start" className="animate-spin size-3.5" />Guardando...</>
-                : <><Save data-icon="inline-start" className="size-3.5" />Guardar nota definitiva</>
-              }
-            </Button>
-          )}
         </div>
       )}
     </div>

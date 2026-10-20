@@ -20,16 +20,17 @@ const TIPOS = [
 
 interface Props {
   materiaId: string
-  periodos: Array<{ id: string; nombre: string }>
+  periodos: Array<{ id: string; nombre: string; cerrado_at?: string | null }>
   dimensiones: Array<{ id: string; nombre: string }>
+  disabled?: boolean
 }
 
-export default function NuevaEvaluacionSheet({ materiaId, periodos, dimensiones }: Props) {
+export default function NuevaEvaluacionSheet({ materiaId, periodos, dimensiones, disabled }: Props) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [nombre, setNombre] = useState('')
-  const [tipo, setTipo] = useState('')
+  const [tipo, setTipo] = useState('parcial')
   const [periodoId, setPeriodoId] = useState('')
   const [fecha, setFecha] = useState('')
   const [permiteRecuperatorio, setPermiteRecuperatorio] = useState(false)
@@ -70,7 +71,7 @@ export default function NuevaEvaluacionSheet({ materiaId, periodos, dimensiones 
 
   return (
     <>
-      <Button onClick={() => setOpen(true)}>
+      <Button onClick={() => setOpen(true)} disabled={disabled}>
         <Plus data-icon="inline-start" />
         Nueva evaluación
       </Button>
@@ -119,10 +120,15 @@ export default function NuevaEvaluacionSheet({ materiaId, periodos, dimensiones 
                 <SelectContent>
                   <SelectItem value="__anual__">Sin período — evaluación anual</SelectItem>
                   {periodos.map(p => (
-                    <SelectItem key={p.id} value={p.id}>{p.nombre}</SelectItem>
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.nombre}{p.cerrado_at ? ' (cerrado)' : ''}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {periodoId && periodoId !== '__anual__' && periodos.find(p => p.id === periodoId)?.cerrado_at && (
+                <p className="text-xs text-amber-600">Este período está cerrado — no se pueden crear evaluaciones.</p>
+              )}
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -167,7 +173,7 @@ export default function NuevaEvaluacionSheet({ materiaId, periodos, dimensiones 
 
             <Button
               type="submit"
-              disabled={loading || !nombre || !tipo}
+              disabled={loading || !nombre || !tipo || !!(periodoId && periodoId !== '__anual__' && periodos.find(p => p.id === periodoId)?.cerrado_at)}
               className="mt-2"
             >
               {loading && <Loader2 data-icon="inline-start" className="animate-spin" />}

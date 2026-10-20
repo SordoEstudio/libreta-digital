@@ -92,7 +92,7 @@ export default function NuevaPlantillaSheet({ instId }: Props) {
                 value={nombre}
                 onChange={e => setNombre(e.target.value)}
                 maxLength={100}
-                placeholder="Ej: Oral 30% / Escrito 70%"
+                placeholder="Ej: Oral / Escrito"
                 required
               />
             </div>

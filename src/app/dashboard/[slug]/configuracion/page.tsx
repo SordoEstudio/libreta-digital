@@ -11,7 +11,7 @@ import AñoSelector from './año-selector'
 import NuevoAñoSheet from './periodos/nuevo-año-sheet'
 import NuevoCursoSheet from '../cursos/nuevo-curso-sheet'
 import NuevaMateriaSheet from '../cursos/[curso_id]/nueva-materia-sheet'
-import EditarMateriaSheet, { type HorarioSlot } from '../cursos/[curso_id]/editar-materia-sheet'
+import EditarMateriaSheet from '../cursos/[curso_id]/editar-materia-sheet'
 import EditarCursoSheet from './editar-curso-sheet'
 import EliminarCursoButton from './eliminar-curso-button'
 import EliminarMateriaButton from './eliminar-materia-button'
@@ -70,7 +70,7 @@ export default async function ConfiguracionPage({ params, searchParams }: Props)
   const { data: materias } = selectedCurso
     ? await admin
         .from('materias')
-        .select('id, catalogo_id, materias_catalogo(id, nombre), materia_docentes(personas(id, nombre, apellido)), materia_horarios(id, dia_semana, hora_inicio, hora_fin, aula, deleted_at), materias_dimensiones(id, nombre, peso, orden)')
+        .select('id, catalogo_id, materias_catalogo(id, nombre), materia_docentes(personas(id, nombre, apellido)), materias_dimensiones(id, nombre, peso, orden)')
         .eq('curso_id', selectedCurso.id)
         .is('deleted_at', null)
         .order('materias_catalogo(nombre)')
@@ -241,7 +241,6 @@ export default async function ConfiguracionPage({ params, searchParams }: Props)
                       <TableBody>
                         {materias.map(m => {
                           type MateriaDocente = { personas: { id: string; nombre: string; apellido: string | null } | null }
-                          type HorarioRaw = { id: string; dia_semana: number; hora_inicio: string; hora_fin: string; aula: string | null; deleted_at: string | null }
                           const docente = ((m.materia_docentes ?? []) as MateriaDocente[])[0]?.personas
                           const catalogo = m.materias_catalogo as { id: string; nombre: string } | null
                           const materiaNombre = catalogo?.nombre ?? ''
@@ -249,12 +248,13 @@ export default async function ConfiguracionPage({ params, searchParams }: Props)
                             ? (docente.apellido ? `${docente.apellido}, ${docente.nombre}` : docente.nombre)
                             : null
                           const docenteActual = docente ? { persona_id: docente.id, nombre: docente.nombre, apellido: docente.apellido ?? null } : null
-                          const horariosActuales = ((m.materia_horarios ?? []) as HorarioRaw[]).filter(h => !h.deleted_at) as HorarioSlot[]
                           return (
                             <TableRow key={m.id}>
                               <TableCell className="font-medium">{materiaNombre}</TableCell>
-                              <TableCell className="text-sm text-muted-foreground">
-                                {docenteNombreDisplay ?? <span className="italic">Sin docente</span>}
+                              <TableCell className="text-sm">
+                                {docenteNombreDisplay
+                                  ? <span className="text-muted-foreground">{docenteNombreDisplay}</span>
+                                  : <span className="italic text-amber-600">Sin docente</span>}
                               </TableCell>
                               <TableCell>
                                 <div className="flex items-center gap-0.5">
@@ -262,7 +262,6 @@ export default async function ConfiguracionPage({ params, searchParams }: Props)
                                     materiaId={m.id}
                                     materiaNombre={materiaNombre}
                                     docenteActual={docenteActual}
-                                    horariosActuales={horariosActuales}
                                     initialDimensiones={([...(m.materias_dimensiones ?? [])] as Array<{ id: string; nombre: string; peso: number | null; orden: number }>).sort((a, b) => a.orden - b.orden)}
                                     instId={inst.id}
                                   />

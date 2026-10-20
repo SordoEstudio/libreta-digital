@@ -12,19 +12,9 @@ import {
   AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { Pencil, Save, Plus, Trash2, Loader2, X } from 'lucide-react'
+import { Pencil, Save, Plus, Trash2, Loader2, ChevronDown } from 'lucide-react'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
-
-const DIAS = ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
-
-export interface HorarioSlot {
-  id: string
-  dia_semana: number
-  hora_inicio: string
-  hora_fin: string
-  aula: string | null
-}
 
 interface Docente {
   persona_id: string
@@ -58,7 +48,6 @@ interface Props {
   materiaId: string
   materiaNombre: string
   docenteActual: Docente | null
-  horariosActuales: HorarioSlot[]
   initialDimensiones: Dimension[]
   instId: string
   initialUnidades?: Unidad[]
@@ -68,7 +57,6 @@ export default function EditarMateriaSheet({
   materiaId,
   materiaNombre,
   docenteActual,
-  horariosActuales,
   initialDimensiones,
   instId,
   initialUnidades = [],
@@ -83,16 +71,6 @@ export default function EditarMateriaSheet({
   const [loadingDocentes, setLoadingDocentes] = useState(false)
   const [savingDocente, setSavingDocente] = useState(false)
   const docenteChanged = docenteId !== originalDocenteId
-
-  // Horarios
-  const [horarios, setHorarios] = useState<HorarioSlot[]>(horariosActuales)
-  const [showForm, setShowForm] = useState(false)
-  const [dia, setDia] = useState('1')
-  const [horaInicio, setHoraInicio] = useState('08:00')
-  const [horaFin, setHoraFin] = useState('09:00')
-  const [aula, setAula] = useState('')
-  const [adding, setAdding] = useState(false)
-  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   // Dimensiones
   const [dimensiones, setDimensiones] = useState<Dimension[]>(initialDimensiones)
@@ -110,6 +88,10 @@ export default function EditarMateriaSheet({
   const [unidadAdding, setUnidadAdding] = useState(false)
   const [unidadDeletingId, setUnidadDeletingId] = useState<string | null>(null)
   const [confirmDeleteUnidad, setConfirmDeleteUnidad] = useState<Unidad | null>(null)
+
+  // Collapsible sections
+  const [dimOpen, setDimOpen] = useState(true)
+  const [unidadOpen, setUnidadOpen] = useState(true)
 
   useEffect(() => {
     if (!open) return
@@ -151,59 +133,6 @@ export default function EditarMateriaSheet({
       const json = await res.json().catch(() => ({}))
       toast.error(json.error?.message ?? 'Error al actualizar docente')
     }
-  }
-
-  async function handleAddHorario() {
-    setAdding(true)
-    const res = await fetch(`/api/v1/materias/${materiaId}/horarios`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        dia_semana: parseInt(dia),
-        hora_inicio: horaInicio,
-        hora_fin: horaFin,
-        aula: aula.trim() || undefined,
-      }),
-    })
-    const json = await res.json()
-    setAdding(false)
-    if (!res.ok) {
-      toast.error(json.error?.message ?? 'Error al agregar horario')
-      return
-    }
-    setHorarios(prev =>
-      [...prev, json.data].sort((a, b) =>
-        a.dia_semana !== b.dia_semana
-          ? a.dia_semana - b.dia_semana
-          : a.hora_inicio.localeCompare(b.hora_inicio)
-      )
-    )
-    setAula('')
-    setDia('1')
-    setHoraInicio('08:00')
-    setHoraFin('09:00')
-    setShowForm(false)
-    router.refresh()
-  }
-
-  async function handleDeleteHorario(horarioId: string) {
-    setDeletingId(horarioId)
-    const res = await fetch(`/api/v1/materias/${materiaId}/horarios/${horarioId}`, { method: 'DELETE' })
-    setDeletingId(null)
-    if (!res.ok) {
-      toast.error('Error al eliminar horario')
-      return
-    }
-    setHorarios(prev => prev.filter(h => h.id !== horarioId))
-    router.refresh()
-  }
-
-  function handleCancelForm() {
-    setShowForm(false)
-    setDia('1')
-    setHoraInicio('08:00')
-    setHoraFin('09:00')
-    setAula('')
   }
 
   async function handleAddDim() {
@@ -363,242 +292,153 @@ export default function EditarMateriaSheet({
               )}
             </div>
 
-            {/* Horarios */}
+            {/* Dimensiones */}
             <div className="flex flex-col gap-3 border-t pt-5">
-              <p className="text-sm font-semibold">Horarios</p>
+              <button
+                className="flex items-center justify-between text-sm font-semibold text-left w-full"
+                onClick={() => setDimOpen(v => !v)}
+              >
+                Dimensiones
+                <ChevronDown className={`size-4 text-muted-foreground transition-transform ${dimOpen ? '' : '-rotate-90'}`} />
+              </button>
 
-              {horarios.length > 0 && (
-                <div className="flex flex-col gap-1">
-                  {horarios.map(horario => (
-                    <div key={horario.id} className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm">
-                      <span className="font-medium">{DIAS[horario.dia_semana]}</span>
-                      <span className="text-muted-foreground">
-                        {horario.hora_inicio.slice(0, 5)}–{horario.hora_fin.slice(0, 5)}
-                        {horario.aula ? ` · ${horario.aula}` : ''}
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="size-7 p-0 text-muted-foreground hover:text-destructive"
-                        onClick={() => handleDeleteHorario(horario.id)}
-                        disabled={deletingId === horario.id}
-                      >
-                        {deletingId === horario.id
-                          ? <Loader2 className="size-3.5 animate-spin" />
-                          : <Trash2 className="size-3.5" />}
-                        <span className="sr-only">Eliminar horario</span>
-                      </Button>
+              {dimOpen && (
+                <>
+                  {dimensiones.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Sin dimensiones configuradas.</p>
+                  ) : (
+                    <div className="flex flex-col gap-1">
+                      {dimensiones.map(d => (
+                        <div key={d.id} className="flex items-center justify-between rounded-md border px-3 py-2">
+                          <p className="text-sm font-medium">{d.nombre}</p>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-7"
+                            onClick={() => handleDeleteDim(d.id)}
+                            disabled={dimDeletingId === d.id}
+                          >
+                            {dimDeletingId === d.id
+                              ? <Loader2 className="size-3.5 animate-spin" />
+                              : <Trash2 className="size-3.5 text-destructive" />}
+                          </Button>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              )}
+                  )}
 
-              {!showForm ? (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                  onClick={() => setShowForm(true)}
-                >
-                  <Plus data-icon="inline-start" />
-                  Agregar horario
-                </Button>
-              ) : (
-                <div className="flex flex-col gap-3 rounded-lg border p-4">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium">Nuevo horario</p>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Nueva dimensión"
+                      value={dimNombre}
+                      onChange={e => setDimNombre(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddDim() } }}
+                      className="h-8 text-sm"
+                    />
                     <Button
-                      variant="ghost"
                       size="sm"
-                      className="size-7 p-0 text-muted-foreground"
-                      onClick={handleCancelForm}
+                      variant="outline"
+                      onClick={handleAddDim}
+                      disabled={dimAdding || !dimNombre.trim()}
+                      className="shrink-0"
                     >
-                      <X className="size-3.5" />
+                      {dimAdding ? <Loader2 className="size-3.5 animate-spin" /> : <Plus className="size-3.5" />}
                     </Button>
                   </div>
 
-                  <div className="flex flex-col gap-1.5">
-                    <Label>Día</Label>
-                    <Select value={dia} onValueChange={v => setDia(v ?? '1')}>
-                      <SelectTrigger className="h-8 text-sm">
-                        <SelectValue>{DIAS[parseInt(dia)]}</SelectValue>
-                      </SelectTrigger>
-                      <SelectContent>
-                        {DIAS.slice(1).map((d, i) => (
-                          <SelectItem key={i + 1} value={String(i + 1)}>{d}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="flex flex-col gap-1.5">
-                      <Label>Hora inicio</Label>
-                      <Input
-                        type="time"
-                        value={horaInicio}
-                        onChange={e => setHoraInicio(e.target.value)}
-                        className="h-8 text-sm"
-                      />
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                      <Label>Hora fin</Label>
-                      <Input
-                        type="time"
-                        value={horaFin}
-                        onChange={e => setHoraFin(e.target.value)}
-                        className="h-8 text-sm"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-1.5">
-                    <Label>Aula <span className="text-muted-foreground font-normal">(opcional)</span></Label>
-                    <Input
-                      placeholder="Ej: Aula 3B"
-                      value={aula}
-                      onChange={e => setAula(e.target.value)}
-                      className="h-8 text-sm"
-                    />
-                  </div>
-
-                  <Button onClick={handleAddHorario} disabled={adding}>
-                    {adding
-                      ? <Loader2 data-icon="inline-start" className="animate-spin" />
-                      : <Save data-icon="inline-start" />}
-                    {adding ? 'Guardando...' : 'Confirmar horario'}
-                  </Button>
-                </div>
-              )}
-            </div>
-
-            {/* Dimensiones */}
-            <div className="flex flex-col gap-3 border-t pt-5">
-              <p className="text-sm font-semibold">Dimensiones</p>
-
-              {dimensiones.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Sin dimensiones configuradas.</p>
-              ) : (
-                <div className="flex flex-col gap-1">
-                  {dimensiones.map(d => (
-                    <div key={d.id} className="flex items-center justify-between rounded-md border px-3 py-2">
-                      <p className="text-sm font-medium">{d.nombre}</p>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="size-7"
-                        onClick={() => handleDeleteDim(d.id)}
-                        disabled={dimDeletingId === d.id}
+                  {plantillas.length > 0 && (
+                    <div className="flex flex-col gap-2">
+                      <select
+                        value={plantillaId}
+                        onChange={e => setPlantillaId(e.target.value)}
+                        className="flex h-8 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
                       >
-                        {dimDeletingId === d.id
-                          ? <Loader2 className="size-3.5 animate-spin" />
-                          : <Trash2 className="size-3.5 text-destructive" />}
-                      </Button>
+                        <option value="">Aplicar plantilla…</option>
+                        {plantillas.map(p => (
+                          <option key={p.id} value={p.id}>{p.nombre}</option>
+                        ))}
+                      </select>
+                      {plantillaId && (
+                        <AlertDialog>
+                          <AlertDialogTrigger render={<Button variant="secondary" size="sm" disabled={applyingPlantilla} />}>
+                            {applyingPlantilla && <Loader2 data-icon="inline-start" className="animate-spin" />}
+                            Aplicar plantilla
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>¿Reemplazar dimensiones?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Esto eliminará las dimensiones actuales y las reemplazará con las de la plantilla.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={handleApplyPlantilla}>Confirmar</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
                     </div>
-                  ))}
-                </div>
-              )}
-
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Nueva dimensión"
-                  value={dimNombre}
-                  onChange={e => setDimNombre(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddDim() } }}
-                  className="h-8 text-sm"
-                />
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleAddDim}
-                  disabled={dimAdding || !dimNombre.trim()}
-                  className="shrink-0"
-                >
-                  {dimAdding ? <Loader2 className="size-3.5 animate-spin" /> : <Plus className="size-3.5" />}
-                </Button>
-              </div>
-
-              {plantillas.length > 0 && (
-                <div className="flex flex-col gap-2">
-                  <select
-                    value={plantillaId}
-                    onChange={e => setPlantillaId(e.target.value)}
-                    className="flex h-8 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
-                  >
-                    <option value="">Aplicar plantilla…</option>
-                    {plantillas.map(p => (
-                      <option key={p.id} value={p.id}>{p.nombre}</option>
-                    ))}
-                  </select>
-                  {plantillaId && (
-                    <AlertDialog>
-                      <AlertDialogTrigger render={<Button variant="secondary" size="sm" disabled={applyingPlantilla} />}>
-                        {applyingPlantilla && <Loader2 data-icon="inline-start" className="animate-spin" />}
-                        Aplicar plantilla
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>¿Reemplazar dimensiones?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Esto eliminará las dimensiones actuales y las reemplazará con las de la plantilla.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction onClick={handleApplyPlantilla}>Confirmar</AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
                   )}
-                </div>
+                </>
               )}
             </div>
 
             {/* Unidades */}
             <div className="flex flex-col gap-3 border-t pt-5">
-              <p className="text-sm font-semibold">Unidades</p>
+              <button
+                className="flex items-center justify-between text-sm font-semibold text-left w-full"
+                onClick={() => setUnidadOpen(v => !v)}
+              >
+                Unidades
+                <ChevronDown className={`size-4 text-muted-foreground transition-transform ${unidadOpen ? '' : '-rotate-90'}`} />
+              </button>
 
-              {unidades.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Sin unidades configuradas.</p>
-              ) : (
-                <div className="flex flex-col gap-1">
-                  {unidades.map(u => (
-                    <div key={u.id} className="flex items-center justify-between rounded-md border px-3 py-2">
-                      <p className="text-sm font-medium">{u.nombre}</p>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="size-7"
-                        onClick={() => setConfirmDeleteUnidad(u)}
-                        disabled={unidadDeletingId === u.id}
-                      >
-                        {unidadDeletingId === u.id
-                          ? <Loader2 className="size-3.5 animate-spin" />
-                          : <Trash2 className="size-3.5 text-destructive" />}
-                      </Button>
+              {unidadOpen && (
+                <>
+                  {unidades.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Sin unidades configuradas.</p>
+                  ) : (
+                    <div className="flex flex-col gap-1">
+                      {unidades.map(u => (
+                        <div key={u.id} className="flex items-center justify-between rounded-md border px-3 py-2">
+                          <p className="text-sm font-medium">{u.nombre}</p>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-7"
+                            onClick={() => setConfirmDeleteUnidad(u)}
+                            disabled={unidadDeletingId === u.id}
+                          >
+                            {unidadDeletingId === u.id
+                              ? <Loader2 className="size-3.5 animate-spin" />
+                              : <Trash2 className="size-3.5 text-destructive" />}
+                          </Button>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              )}
+                  )}
 
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Nueva unidad"
-                  value={unidadNombre}
-                  onChange={e => setUnidadNombre(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); void handleAddUnidad() } }}
-                  className="h-8 text-sm"
-                />
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => void handleAddUnidad()}
-                  disabled={unidadAdding || !unidadNombre.trim()}
-                  className="shrink-0"
-                >
-                  {unidadAdding ? <Loader2 className="size-3.5 animate-spin" /> : <Plus className="size-3.5" />}
-                </Button>
-              </div>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Nueva unidad"
+                      value={unidadNombre}
+                      onChange={e => setUnidadNombre(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); void handleAddUnidad() } }}
+                      className="h-8 text-sm"
+                    />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => void handleAddUnidad()}
+                      disabled={unidadAdding || !unidadNombre.trim()}
+                      className="shrink-0"
+                    >
+                      {unidadAdding ? <Loader2 className="size-3.5 animate-spin" /> : <Plus className="size-3.5" />}
+                    </Button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 

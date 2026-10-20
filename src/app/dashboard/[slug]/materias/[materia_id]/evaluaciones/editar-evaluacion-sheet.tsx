@@ -35,9 +35,10 @@ interface Props {
   periodos: Array<{ id: string; nombre: string }>
   dimensiones: Array<{ id: string; nombre: string }>
   isAdmin: boolean
+  showLabel?: boolean
 }
 
-export default function EditarEvaluacionSheet({ evaluacion, periodos, dimensiones, isAdmin }: Props) {
+export default function EditarEvaluacionSheet({ evaluacion, periodos, dimensiones, isAdmin, showLabel }: Props) {
   const isInstitucional = !!evaluacion.template_id && !isAdmin
   const router = useRouter()
   const [open, setOpen] = useState(false)
@@ -117,15 +118,22 @@ export default function EditarEvaluacionSheet({ evaluacion, periodos, dimensione
 
   return (
     <>
-      <Button
-        variant="ghost"
-        size="sm"
-        className="size-7 p-0 text-muted-foreground hover:text-foreground"
-        onClick={() => handleOpen(true)}
-      >
-        <Pencil className="size-3.5" />
-        <span className="sr-only">Editar evaluación</span>
-      </Button>
+      {showLabel ? (
+        <Button variant="outline" size="sm" onClick={() => handleOpen(true)}>
+          <Pencil data-icon="inline-start" className="size-3.5" />
+          Editar
+        </Button>
+      ) : (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="size-7 p-0 text-muted-foreground hover:text-foreground"
+          onClick={() => handleOpen(true)}
+        >
+          <Pencil className="size-3.5" />
+          <span className="sr-only">Editar evaluación</span>
+        </Button>
+      )}
 
       <Sheet open={open} onOpenChange={handleOpen}>
         <SheetContent>

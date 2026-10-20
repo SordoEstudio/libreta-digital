@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, useMemo, useTransition } from 'react'
+import { useState, useMemo } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
-import { Save, Loader2, Download, ChevronsUpDown, ChevronUp, ChevronDown } from 'lucide-react'
+import { Save, Loader2, Download, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import * as XLSX from 'xlsx'
@@ -48,6 +48,7 @@ interface NotasEditorProps {
   eligibles?: Map<string, Set<string>> | null
   escalaMin?: number | null
   escalaMax?: number | null
+  isCerrado?: boolean
 }
 
 type SortDir = 'asc' | 'desc'
@@ -57,16 +58,16 @@ function displayNombre(a: Alumno) {
 }
 
 function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
-  if (!active) return <ChevronsUpDown className="size-3 ml-1 opacity-40" />
+  if (!active) return <ArrowUpDown className="size-3 ml-1 opacity-40" />
   return dir === 'asc'
-    ? <ChevronUp className="size-3 ml-1" />
-    : <ChevronDown className="size-3 ml-1" />
+    ? <ArrowUp className="size-3 ml-1" />
+    : <ArrowDown className="size-3 ml-1" />
 }
 
 export function NotasEditor({
   evaluacionId, evaluacionNombre, alumnos, notasExistentes, dimensiones, slug,
   notaAprobacion, permiteRecuperatorio, recuperatorioId, esRecuperatorio, eligibles,
-  escalaMin, escalaMax,
+  escalaMin, escalaMax, isCerrado,
 }: NotasEditorProps) {
   const hasDims = dimensiones.length > 0
 
@@ -111,7 +112,7 @@ export function NotasEditor({
   })
 
   const [sortDir, setSortDir] = useState<SortDir>('asc')
-  const [isPending, startTransition] = useTransition()
+  const [saving, setSaving] = useState(false)
   const [generando, setGenerando] = useState(false)
   const router = useRouter()
 
@@ -207,7 +208,8 @@ export function NotasEditor({
       }
     }
 
-    startTransition(async () => {
+    setSaving(true)
+    try {
       const res = await fetch(`/api/v1/notas/bulk`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -221,7 +223,9 @@ export function NotasEditor({
         const err = await res.json().catch(() => ({}))
         toast.error(err?.error?.message ?? 'Error al guardar')
       }
-    })
+    } finally {
+      setSaving(false)
+    }
   }
 
   const countBelowThreshold = notaAprobacion !== null && !hasDims
@@ -256,6 +260,11 @@ export function NotasEditor({
 
   return (
     <div className="flex flex-col gap-4">
+      {isCerrado && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          Período cerrado — las notas no se pueden editar.
+        </div>
+      )}
       <div className="overflow-x-auto rounded-md border">
         <Table>
           <TableHeader>
@@ -292,11 +301,11 @@ export function NotasEditor({
                     const dimVal = valoresDim[alumno.id]?.[dim.id] ?? ''
                     const isAusenteDim = dimVal.toUpperCase() === 'A'
                     const cellVal = parseFloat(dimVal)
-                    const cellBg = dimEligible && !isAusenteDim && notaAprobacion != null && Number.isFinite(cellVal)
-                      ? cellVal >= notaAprobacion ? 'bg-green-50/60 dark:bg-green-950/20' : 'bg-red-50/50 dark:bg-red-950/20'
+                    const inputStatusClass = dimEligible && !isAusenteDim && notaAprobacion != null && Number.isFinite(cellVal)
+                      ? cellVal >= notaAprobacion ? 'border-green-300 bg-green-50 dark:bg-green-950/30 dark:border-green-700' : 'border-red-300 bg-red-50 dark:bg-red-950/30 dark:border-red-700'
                       : ''
                     return (
-                      <TableCell key={dim.id} className={cellBg}>
+                      <TableCell key={dim.id}>
                         {!dimEligible ? (
                           <span className="text-xs text-muted-foreground/50">—</span>
                         ) : (
@@ -304,8 +313,9 @@ export function NotasEditor({
                             type="text"
                             placeholder="—"
                             value={dimVal}
+                            readOnly={isCerrado}
                             onChange={e => handleChangeDim(alumno.id, dim.id, e.target.value.toUpperCase() === 'A' ? 'A' : e.target.value)}
-                            className={`w-20 ${isAusenteDim ? 'text-orange-600 font-bold text-center' : ''}`}
+                            className={`w-20 ${isAusenteDim ? 'text-orange-600 font-bold text-center' : ''} ${inputStatusClass}`}
                           />
                         )}
                       </TableCell>
@@ -314,19 +324,30 @@ export function NotasEditor({
                 ) : (
                   <>
                     <TableCell>
-                      <Input
-                        type="text"
-                        placeholder="—"
-                        value={valores[alumno.id] ?? ''}
-                        onChange={e => handleChange(alumno.id, e.target.value.toUpperCase() === 'A' ? 'A' : e.target.value)}
-                        className={`w-24 ${(valores[alumno.id] ?? '').toUpperCase() === 'A' ? 'text-orange-600 font-bold text-center' : ''}`}
-                      />
+                      {(() => {
+                        const sv = valores[alumno.id] ?? ''
+                        const sn = parseFloat(sv)
+                        const sc = notaAprobacion !== null && sv.toUpperCase() !== 'A' && Number.isFinite(sn)
+                          ? sn >= notaAprobacion ? 'border-green-300 bg-green-50 dark:bg-green-950/30 dark:border-green-700' : 'border-red-300 bg-red-50 dark:bg-red-950/30 dark:border-red-700'
+                          : ''
+                        return (
+                          <Input
+                            type="text"
+                            placeholder="—"
+                            value={sv}
+                            readOnly={isCerrado}
+                            onChange={e => handleChange(alumno.id, e.target.value.toUpperCase() === 'A' ? 'A' : e.target.value)}
+                            className={`w-24 ${sv.toUpperCase() === 'A' ? 'text-orange-600 font-bold text-center' : ''} ${sc}`}
+                          />
+                        )
+                      })()}
                     </TableCell>
                     <TableCell>
                       <Input
                         type="text"
                         placeholder="—"
                         value={observaciones[alumno.id] ?? ''}
+                        readOnly={isCerrado}
                         onChange={e => handleObservacion(alumno.id, e.target.value)}
                         disabled={(valores[alumno.id] ?? '').toUpperCase() === 'A'}
                         className="min-w-40"
@@ -351,14 +372,14 @@ export function NotasEditor({
         </Table>
       </div>
 
-      <div className="flex justify-between">
+      <div className="flex justify-end gap-2">
         <Button variant="outline" onClick={handleExport}>
           <Download data-icon="inline-start" />
-          Exportar Excel
+          Exportar
         </Button>
-        <Button onClick={handleSave} disabled={isPending}>
-          {isPending ? <Loader2 data-icon="inline-start" className="animate-spin" /> : <Save data-icon="inline-start" />}
-          {isPending ? 'Guardando...' : 'Guardar notas'}
+        <Button onClick={handleSave} disabled={saving || isCerrado}>
+          {saving ? <Loader2 data-icon="inline-start" className="animate-spin" /> : <Save data-icon="inline-start" />}
+          {saving ? 'Guardando...' : 'Guardar notas'}
         </Button>
       </div>
 

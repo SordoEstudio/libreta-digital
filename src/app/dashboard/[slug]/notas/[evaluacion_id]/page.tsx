@@ -128,6 +128,8 @@ export default async function NotasPage({ params, searchParams }: Params) {
     .map(d => ({ id: d.materias_dimensiones!.id, nombre: d.materias_dimensiones!.nombre }))
 
   const notaAprobacion = instData?.nota_aprobacion ?? null
+  const evalPeriodo = (periodos ?? []).find(p => p.id === (evaluacion.periodo_id ?? ''))
+  const isCerrado = !!(evalPeriodo?.cerrado_at)
 
   const { data: escala } = await supabase
     .from('escalas')
@@ -227,6 +229,7 @@ export default async function NotasPage({ params, searchParams }: Params) {
               periodos={periodos ?? []}
               dimensiones={todasDimensiones ?? []}
               isAdmin={isAdminLevel}
+              showLabel
             />
           </div>
         </div>
@@ -246,6 +249,7 @@ export default async function NotasPage({ params, searchParams }: Params) {
         eligibles={eligibles}
         escalaMin={escala?.min_valor ?? null}
         escalaMax={escala?.max_valor ?? null}
+        isCerrado={isCerrado}
       />
     </div>
   )

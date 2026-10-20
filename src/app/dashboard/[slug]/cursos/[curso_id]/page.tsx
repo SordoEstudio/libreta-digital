@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { BookOpen, BookMarked, GraduationCap } from 'lucide-react'
 import NuevaMateriaSheet from './nueva-materia-sheet'
-import EditarMateriaSheet, { type HorarioSlot } from './editar-materia-sheet'
+import EditarMateriaSheet from './editar-materia-sheet'
 import ExportAlumnosButton from './export-alumnos-button'
 import AlumnosCursoTabla from './alumnos-curso-tabla'
 
@@ -142,7 +142,6 @@ export default async function CursoDetallePage({ params }: Params) {
                         materiaId={materia.id}
                         materiaNombre={nombre}
                         docenteActual={docenteActual}
-                        horariosActuales={horarios as HorarioSlot[]}
                         initialDimensiones={[...materia.materias_dimensiones].sort((a, b) => a.orden - b.orden)}
                         instId={inst.id}
                       />
