@@ -11,7 +11,7 @@ interface Props {
   currentUrl?: string | null
   label: string
   hint: string
-  onUpdate: (url: string | null) => void
+  onUpdate?: (url: string | null) => void
 }
 
 export function LogoUpload({ instId, tipo, currentUrl, label, hint, onUpdate }: Props) {
@@ -35,7 +35,7 @@ export function LogoUpload({ instId, tipo, currentUrl, label, hint, onUpdate }: 
     }
 
     setUrl(json.data.url)
-    onUpdate(json.data.url)
+    onUpdate?.(json.data.url)
     toast.success(`${label} actualizado`)
   }
 
@@ -51,7 +51,7 @@ export function LogoUpload({ instId, tipo, currentUrl, label, hint, onUpdate }: 
     }
 
     setUrl(null)
-    onUpdate(null)
+    onUpdate?.(null)
     toast.success(`${label} eliminado`)
   }
 

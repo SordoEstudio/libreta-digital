@@ -96,7 +96,6 @@ export default async function ConfiguracionPage({ params, searchParams }: Props)
             currentUrl={inst.logo_cuadrado_url}
             label="Isologo (cuadrado)"
             hint="PNG / SVG · mín 200×200 px · máx 2 MB"
-            onUpdate={() => {}}
           />
           <LogoUpload
             instId={inst.id}
@@ -104,7 +103,6 @@ export default async function ConfiguracionPage({ params, searchParams }: Props)
             currentUrl={inst.logo_rectangular_url}
             label="Logotipo (rectangular)"
             hint="PNG / SVG · mín 400×100 px · máx 2 MB"
-            onUpdate={() => {}}
           />
         </div>
       </div>
