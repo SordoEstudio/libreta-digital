@@ -1,5 +1,7 @@
 import { requireSession } from '@/lib/auth'
 import { AppSidebar } from '@/components/app-sidebar'
+import { MobileHeader } from '@/components/mobile-header'
+import { BottomTabBar } from '@/components/bottom-tab-bar'
 import {
   SidebarInset,
   SidebarProvider,
@@ -12,9 +14,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <SidebarProvider>
       <AppSidebar session={session} />
       <SidebarInset>
-        <main className="flex flex-1 flex-col gap-6 p-6">
+        <MobileHeader session={session} />
+        <main className="flex flex-1 flex-col gap-6 p-6 pb-24 md:pb-6">
           {children}
         </main>
+        <BottomTabBar session={session} />
       </SidebarInset>
     </SidebarProvider>
   )
