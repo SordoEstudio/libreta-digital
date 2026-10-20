@@ -119,8 +119,8 @@ export default async function ContenidosMateriaPage({ params }: Params) {
   const dimensiones = (dimensionesRaw ?? []) as { id: string; nombre: string }[]
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <div className="mb-6">
+    <div className="flex flex-col gap-6">
+      <div>
         <h1 className="text-2xl font-semibold">{materiaNombre}</h1>
         <p className="text-muted-foreground text-sm">Contenidos</p>
       </div>

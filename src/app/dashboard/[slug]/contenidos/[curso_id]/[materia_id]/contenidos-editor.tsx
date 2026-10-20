@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import {
   ChevronDown, ChevronUp, Trash2, ExternalLink, FileText, ImageIcon, Link2,
   Eye, EyeOff, Plus,
@@ -39,6 +40,11 @@ export default function ContenidosEditor({ unidades: initialUnidades, dimensione
     () => new Set(initialUnidades.map(u => u.id))
   )
   const [addingUnidad, setAddingUnidad] = useState(false)
+
+  // Confirm states
+  const [confirmDeleteUnidad, setConfirmDeleteUnidad] = useState<{ id: string; nombre: string } | null>(null)
+  const [confirmDeleteItem, setConfirmDeleteItem] = useState<{ id: string; titulo: string } | null>(null)
+  const [confirmHideId, setConfirmHideId] = useState<string | null>(null)
 
   useEffect(() => {
     setUnidades(initialUnidades)
@@ -127,174 +133,220 @@ export default function ContenidosEditor({ unidades: initialUnidades, dimensione
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      {unidades.length === 0 && !addingUnidad && (
-        <p className="text-muted-foreground text-sm py-4">Sin unidades todavía.</p>
-      )}
+    <>
+      <div className="flex flex-col gap-2">
+        {unidades.length === 0 && !addingUnidad && (
+          <p className="text-muted-foreground text-sm py-4">Sin unidades todavía.</p>
+        )}
 
-      {unidades.map((unidad) => {
-        const isExpanded = expandedIds.has(unidad.id)
+        {unidades.map((unidad) => {
+          const isExpanded = expandedIds.has(unidad.id)
 
-        return (
-          <div key={unidad.id} className="border rounded-lg overflow-hidden">
-            <div
-              className="flex items-center gap-2 px-4 py-3 bg-muted/40 cursor-pointer select-none hover:bg-muted/60 transition-colors"
-              onClick={() => toggleExpanded(unidad.id)}
-            >
-              <ChevronDown className={cn('size-4 shrink-0 text-muted-foreground transition-transform duration-200', !isExpanded && '-rotate-90')} />
+          return (
+            <div key={unidad.id} className="border rounded-lg overflow-hidden">
+              <div
+                className="flex items-center gap-2 px-4 py-3 bg-muted/40 cursor-pointer select-none hover:bg-muted/60 transition-colors"
+                onClick={() => toggleExpanded(unidad.id)}
+              >
+                <ChevronDown className={cn('size-4 shrink-0 text-muted-foreground transition-transform duration-200', !isExpanded && '-rotate-90')} />
 
-              <div className="flex-1 min-w-0">
-                <span className="font-medium truncate">{unidad.nombre}</span>
-                {unidad.descripcion && (
-                  <p className="text-xs text-muted-foreground truncate">{unidad.descripcion}</p>
+                <div className="flex-1 min-w-0">
+                  <span className="font-medium truncate">{unidad.nombre}</span>
+                  {unidad.descripcion && (
+                    <p className="text-xs text-muted-foreground truncate">{unidad.descripcion}</p>
+                  )}
+                </div>
+
+                <span className="text-xs text-muted-foreground shrink-0">
+                  {unidad.items.length} material{unidad.items.length !== 1 ? 'es' : ''}
+                </span>
+
+                {!unidad.publicado && (
+                  <Badge variant="secondary" className="shrink-0">Borrador</Badge>
+                )}
+
+                {isEditor && (
+                  <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
+                    <Button
+                      variant="ghost" size="icon" className="size-7"
+                      onClick={() => {
+                        if (unidad.publicado) setConfirmHideId(unidad.id)
+                        else toggleUnidadPublicado(unidad.id, true)
+                      }}
+                      title={unidad.publicado ? 'Ocultar' : 'Publicar'}
+                    >
+                      {unidad.publicado ? <Eye className="size-3.5" /> : <EyeOff className="size-3.5" />}
+                    </Button>
+                    <UnidadSheet
+                      unidadId={unidad.id}
+                      initialNombre={unidad.nombre}
+                      initialDescripcion={unidad.descripcion}
+                    />
+                    <Button
+                      variant="ghost" size="icon" className="size-7 text-destructive hover:text-destructive"
+                      onClick={() => setConfirmDeleteUnidad({ id: unidad.id, nombre: unidad.nombre })}
+                      title="Eliminar unidad"
+                    >
+                      <Trash2 className="size-3.5" />
+                    </Button>
+                  </div>
                 )}
               </div>
 
-              <span className="text-xs text-muted-foreground shrink-0">
-                {unidad.items.length} material{unidad.items.length !== 1 ? 'es' : ''}
-              </span>
-
-              {!unidad.publicado && (
-                <Badge variant="secondary" className="shrink-0">Borrador</Badge>
-              )}
-
-              {isEditor && (
-                <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
-                  <Button
-                    variant="ghost" size="icon" className="size-7"
-                    onClick={() => toggleUnidadPublicado(unidad.id, !unidad.publicado)}
-                    title={unidad.publicado ? 'Ocultar' : 'Publicar'}
-                  >
-                    {unidad.publicado ? <Eye className="size-3.5" /> : <EyeOff className="size-3.5" />}
-                  </Button>
-                  <UnidadSheet
-                    unidadId={unidad.id}
-                    initialNombre={unidad.nombre}
-                    initialDescripcion={unidad.descripcion}
-                  />
-                  <Button
-                    variant="ghost" size="icon" className="size-7 text-destructive hover:text-destructive"
-                    onClick={() => deleteUnidad(unidad.id)}
-                    title="Eliminar unidad"
-                  >
-                    <Trash2 className="size-3.5" />
-                  </Button>
-                </div>
-              )}
-            </div>
-
-            {isExpanded && (
-              <>
-                <div className="divide-y">
-                  {unidad.items.length === 0 && (
-                    <p className="px-4 py-3 text-sm text-muted-foreground">Sin materiales en esta unidad.</p>
-                  )}
-                  {unidad.items.map((item, idx) => (
-                    <div key={item.id} className="flex items-start gap-3 px-4 py-3">
-                      <ItemTypeIcon tipo={item.tipo} />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {item.tipo === 'link' && item.url ? (
-                            <a
-                              href={item.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="font-medium text-sm hover:underline flex items-center gap-1 truncate"
-                            >
-                              {item.titulo}
-                              <ExternalLink className="size-3 shrink-0" />
-                            </a>
-                          ) : item.signedUrl ? (
-                            <a
-                              href={item.signedUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="font-medium text-sm hover:underline flex items-center gap-1 truncate"
-                            >
-                              {item.titulo}
-                              <ExternalLink className="size-3 shrink-0" />
-                            </a>
-                          ) : (
-                            <span className="font-medium text-sm truncate">{item.titulo}</span>
-                          )}
-                          {!item.publicado && <Badge variant="secondary" className="text-xs">Borrador</Badge>}
-                          {item.dimension_id && dimensiones.find(d => d.id === item.dimension_id) && (
-                            <Badge variant="outline" className="text-xs">
-                              {dimensiones.find(d => d.id === item.dimension_id)!.nombre}
-                            </Badge>
+              {isExpanded && (
+                <>
+                  <div className="divide-y">
+                    {unidad.items.length === 0 && (
+                      <p className="px-4 py-3 text-sm text-muted-foreground">Sin materiales en esta unidad.</p>
+                    )}
+                    {unidad.items.map((item, idx) => (
+                      <div key={item.id} className="flex items-start gap-3 px-4 py-3">
+                        <ItemTypeIcon tipo={item.tipo} />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {item.tipo === 'link' && item.url ? (
+                              <a
+                                href={item.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-medium text-sm hover:underline flex items-center gap-1 truncate"
+                              >
+                                {item.titulo}
+                                <ExternalLink className="size-3 shrink-0" />
+                              </a>
+                            ) : item.signedUrl ? (
+                              <a
+                                href={item.signedUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-medium text-sm hover:underline flex items-center gap-1 truncate"
+                              >
+                                {item.titulo}
+                                <ExternalLink className="size-3 shrink-0" />
+                              </a>
+                            ) : (
+                              <span className="font-medium text-sm truncate">{item.titulo}</span>
+                            )}
+                            {!item.publicado && <Badge variant="secondary" className="text-xs">Borrador</Badge>}
+                            {item.dimension_id && dimensiones.find(d => d.id === item.dimension_id) && (
+                              <Badge variant="outline" className="text-xs">
+                                {dimensiones.find(d => d.id === item.dimension_id)!.nombre}
+                              </Badge>
+                            )}
+                          </div>
+                          {item.nota && (
+                            <p className="text-xs text-muted-foreground italic mt-0.5">{item.nota}</p>
                           )}
                         </div>
-                        {item.nota && (
-                          <p className="text-xs text-muted-foreground italic mt-0.5">{item.nota}</p>
+                        {isEditor && (
+                          <div className="flex items-center gap-0.5 shrink-0">
+                            <Button
+                              variant="ghost" size="icon" className="size-6"
+                              onClick={() => moveItem(unidad.id, idx, 'up')}
+                              disabled={idx === 0}
+                              title="Subir"
+                            >
+                              <ChevronUp className="size-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost" size="icon" className="size-6"
+                              onClick={() => moveItem(unidad.id, idx, 'down')}
+                              disabled={idx === unidad.items.length - 1}
+                              title="Bajar"
+                            >
+                              <ChevronDown className="size-3.5" />
+                            </Button>
+                            <ItemSheet mode="edit" item={item} dimensiones={dimensiones} />
+                            <Button
+                              variant="ghost" size="icon" className="size-6 text-destructive hover:text-destructive"
+                              onClick={() => setConfirmDeleteItem({ id: item.id, titulo: item.titulo })}
+                              title="Eliminar"
+                            >
+                              <Trash2 className="size-3.5" />
+                            </Button>
+                          </div>
                         )}
                       </div>
-                      {isEditor && (
-                        <div className="flex items-center gap-0.5 shrink-0">
-                          <Button
-                            variant="ghost" size="icon" className="size-6"
-                            onClick={() => moveItem(unidad.id, idx, 'up')}
-                            disabled={idx === 0}
-                            title="Subir"
-                          >
-                            <ChevronUp className="size-3.5" />
-                          </Button>
-                          <Button
-                            variant="ghost" size="icon" className="size-6"
-                            onClick={() => moveItem(unidad.id, idx, 'down')}
-                            disabled={idx === unidad.items.length - 1}
-                            title="Bajar"
-                          >
-                            <ChevronDown className="size-3.5" />
-                          </Button>
-                          <ItemSheet mode="edit" item={item} dimensiones={dimensiones} />
-                          <Button
-                            variant="ghost" size="icon" className="size-6 text-destructive hover:text-destructive"
-                            onClick={() => deleteItem(item.id)}
-                            title="Eliminar"
-                          >
-                            <Trash2 className="size-3.5" />
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-
-                {isEditor && (
-                  <div className="px-4 py-3 border-t bg-background">
-                    <ItemSheet
-                      mode="create"
-                      unidadId={unidad.id}
-                      nextOrden={unidad.items.length}
-                      dimensiones={dimensiones}
-                    />
+                    ))}
                   </div>
-                )}
-              </>
+
+                  {isEditor && (
+                    <div className="px-4 py-3 border-t bg-background">
+                      <ItemSheet
+                        mode="create"
+                        unidadId={unidad.id}
+                        nextOrden={unidad.items.length}
+                        dimensiones={dimensiones}
+                      />
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )
+        })}
+
+        {isEditor && (
+          <div className="mt-2">
+            {addingUnidad ? (
+              <div className="border rounded-lg p-4">
+                <UnidadForm
+                  mode="create"
+                  materiaId={materiaId}
+                  nextOrden={unidades.length}
+                  onDone={() => setAddingUnidad(false)}
+                />
+              </div>
+            ) : (
+              <Button variant="outline" onClick={() => setAddingUnidad(true)}>
+                <Plus data-icon="inline-start" />
+                Nueva unidad
+              </Button>
             )}
           </div>
-        )
-      })}
+        )}
+      </div>
 
-      {isEditor && (
-        <div className="mt-2">
-          {addingUnidad ? (
-            <div className="border rounded-lg p-4">
-              <UnidadForm
-                mode="create"
-                materiaId={materiaId}
-                nextOrden={unidades.length}
-                onDone={() => setAddingUnidad(false)}
-              />
-            </div>
-          ) : (
-            <Button variant="outline" onClick={() => setAddingUnidad(true)}>
-              <Plus data-icon="inline-start" />
-              Nueva unidad
-            </Button>
-          )}
-        </div>
-      )}
-    </div>
+      <ConfirmDialog
+        open={confirmDeleteUnidad !== null}
+        onOpenChange={v => !v && setConfirmDeleteUnidad(null)}
+        title={`¿Eliminar "${confirmDeleteUnidad?.nombre}"?`}
+        description="Se eliminarán también todos los materiales de esta unidad."
+        confirmLabel="Eliminar"
+        destructive
+        onConfirm={() => {
+          const id = confirmDeleteUnidad!.id
+          setConfirmDeleteUnidad(null)
+          deleteUnidad(id)
+        }}
+      />
+
+      <ConfirmDialog
+        open={confirmDeleteItem !== null}
+        onOpenChange={v => !v && setConfirmDeleteItem(null)}
+        title={`¿Eliminar "${confirmDeleteItem?.titulo}"?`}
+        description="Esta acción no se puede deshacer."
+        confirmLabel="Eliminar"
+        destructive
+        onConfirm={() => {
+          const id = confirmDeleteItem!.id
+          setConfirmDeleteItem(null)
+          deleteItem(id)
+        }}
+      />
+
+      <ConfirmDialog
+        open={confirmHideId !== null}
+        onOpenChange={v => !v && setConfirmHideId(null)}
+        title="¿Ocultar unidad?"
+        description="Los responsables ya no podrán ver esta unidad ni sus materiales."
+        confirmLabel="Ocultar"
+        onConfirm={() => {
+          const id = confirmHideId!
+          setConfirmHideId(null)
+          toggleUnidadPublicado(id, false)
+        }}
+      />
+    </>
   )
 }

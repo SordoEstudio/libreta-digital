@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -8,7 +8,8 @@ import { Label } from '@/components/ui/label'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Loader2, Plus } from 'lucide-react'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { Loader2, Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { ContenidoItem } from './page'
 
@@ -33,6 +34,7 @@ export default function ItemSheet(props: Props) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   const [tipo, setTipo] = useState<'link' | 'archivo' | 'imagen'>(
     props.mode === 'edit' ? props.item.tipo : 'link'
@@ -45,6 +47,30 @@ export default function ItemSheet(props: Props) {
   )
   const [file, setFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
+
+  // Reset form state when sheet opens in create mode
+  useEffect(() => {
+    if (!open || props.mode !== 'create') return
+    setTipo('link')
+    setTitulo('')
+    setUrl('')
+    setNota('')
+    setDimensionId('')
+    setFile(null)
+  }, [open, props.mode])
+
+  async function handleDelete() {
+    if (props.mode !== 'edit') return
+    const res = await fetch(`/api/v1/contenidos/items/${props.item.id}`, { method: 'DELETE' })
+    if (!res.ok) {
+      const json = await res.json().catch(() => ({}))
+      toast.error(json.error?.message ?? 'Error al eliminar')
+      return
+    }
+    toast.success('Material eliminado')
+    setOpen(false)
+    router.refresh()
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -98,7 +124,6 @@ export default function ItemSheet(props: Props) {
         setUploading(false)
         if (!uploadRes.ok) { toast.error(uploadJson.error?.message ?? 'Error al subir archivo'); return }
       } else if (props.mode === 'edit') {
-        // Edit without new file — update metadata only
         setLoading(true)
         const res = await fetch(`/api/v1/contenidos/items/${props.item.id}`, {
           method: 'PUT',
@@ -226,9 +251,35 @@ export default function ItemSheet(props: Props) {
               {(loading || uploading) && <Loader2 data-icon="inline-start" className="animate-spin" />}
               {uploading ? 'Subiendo...' : loading ? 'Guardando...' : props.mode === 'create' ? 'Agregar' : 'Guardar'}
             </Button>
+
+            {props.mode === 'edit' && (
+              <div className="border-t pt-4">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full text-destructive hover:text-destructive"
+                  onClick={() => setConfirmDelete(true)}
+                >
+                  <Trash2 data-icon="inline-start" />
+                  Eliminar material
+                </Button>
+              </div>
+            )}
           </form>
         </SheetContent>
       </Sheet>
+
+      {props.mode === 'edit' && (
+        <ConfirmDialog
+          open={confirmDelete}
+          onOpenChange={setConfirmDelete}
+          title="¿Eliminar material?"
+          description="Esta acción no se puede deshacer."
+          confirmLabel="Eliminar"
+          destructive
+          onConfirm={handleDelete}
+        />
+      )}
     </>
   )
 }
