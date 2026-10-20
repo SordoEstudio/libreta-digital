@@ -2,10 +2,8 @@ import { requireSession, isSuperadmin, hasRole } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/empty-state'
-import { GraduationCap, BookOpen } from 'lucide-react'
+import { GraduationCap } from 'lucide-react'
 import Link from 'next/link'
 
 type Params = { params: Promise<{ slug: string }> }
@@ -31,7 +29,7 @@ export default async function MisAlumnosPage({ params }: Params) {
   if (!session.persona_id) {
     return (
       <div className="flex flex-col gap-6">
-        <h1 className="text-2xl font-semibold">Mis alumnos</h1>
+        <h1 className="text-xl font-semibold md:text-2xl">Mis alumnos</h1>
         <p className="text-muted-foreground">No se pudo identificar tu perfil. Contactá al administrador.</p>
       </div>
     )
@@ -74,7 +72,7 @@ export default async function MisAlumnosPage({ params }: Params) {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold">Mis alumnos</h1>
+        <h1 className="text-xl font-semibold md:text-2xl">Mis alumnos</h1>
         <p className="text-sm text-muted-foreground">{alumnos.length} alumno{alumnos.length !== 1 ? 's' : ''} vinculado{alumnos.length !== 1 ? 's' : ''}</p>
       </div>
 
@@ -85,36 +83,21 @@ export default async function MisAlumnosPage({ params }: Params) {
           description="Contactá al administrador para que asigne tu cuenta a los alumnos correspondientes."
         />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {alumnos.map(alumno => {
             const cursoNombre = cursoMap.get(alumno.id)
             return (
-              <Card key={alumno.id}>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base">{alumno.apellido ? `${alumno.apellido}, ${alumno.nombre}` : alumno.nombre}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center gap-2">
-                    {cursoNombre && (
-                      <Badge variant="outline">{cursoNombre}</Badge>
-                    )}
-                    <Badge variant={alumno.activo ? 'default' : 'outline'}>
-                      {alumno.activo ? 'Activo' : 'Inactivo'}
-                    </Badge>
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    className="w-full"
-                    render={<Link href={`/dashboard/${slug}/libreta/${alumno.id}`} />}
-                  >
-                    <BookOpen data-icon="inline-start" />
-                    Ver libreta
-                  </Button>
-                </CardFooter>
-              </Card>
+              <Link
+                key={alumno.id}
+                href={`/dashboard/${slug}/libreta/${alumno.id}`}
+                className="block rounded-lg border p-4 hover:bg-muted/50 transition-colors"
+              >
+                <p className="font-medium">{alumno.apellido ? `${alumno.apellido}, ${alumno.nombre}` : alumno.nombre}</p>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  {cursoNombre && <Badge variant="outline">{cursoNombre}</Badge>}
+                  {!alumno.activo && <Badge variant="outline">Inactivo</Badge>}
+                </div>
+              </Link>
             )
           })}
         </div>

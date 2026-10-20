@@ -28,8 +28,8 @@ export default function CuadernoSelectores({
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-3">
-      <div className="flex flex-col gap-1 min-w-52">
+    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+      <div className="flex flex-col gap-1 min-w-0 sm:min-w-52">
         <label className="text-xs text-muted-foreground font-medium">Materia</label>
         <select
           value={selectedMateriaId ?? ''}
@@ -44,7 +44,7 @@ export default function CuadernoSelectores({
       </div>
 
       {selectedMateriaId && periodos.length > 0 && (
-        <div className="flex flex-col gap-1 min-w-40">
+        <div className="flex flex-col gap-1 min-w-0 sm:min-w-40">
           <label className="text-xs text-muted-foreground font-medium">Período</label>
           <select
             value={selectedPeriodoId ?? ''}

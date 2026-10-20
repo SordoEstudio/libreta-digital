@@ -51,7 +51,7 @@ export function NotificationBell({ compact = false }: { compact?: boolean }) {
             <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-red-500" />
           )}
         </DropdownMenuTrigger>
-        <DropdownMenuContent side="bottom" align="end" sideOffset={4} className="p-0" style={{ width: '320px' }}>
+        <DropdownMenuContent side="bottom" align="end" sideOffset={4} className="p-0" style={{ width: 'min(320px, calc(100vw - 2rem))' }}>
           <div className="border-b px-3 py-2">
             <p className="text-sm font-semibold">Notificaciones</p>
           </div>

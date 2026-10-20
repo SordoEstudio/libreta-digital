@@ -93,50 +93,80 @@ export default async function ComunicadosPage({ params }: Params) {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Comunicados</h1>
+          <h1 className="text-xl font-semibold md:text-2xl">Comunicados</h1>
           <p className="text-sm text-muted-foreground">{inst.nombre}</p>
         </div>
         <NuevoComunicadoSheet slug={slug} cursos={cursos} />
       </div>
 
       {comunicados.length > 0 ? (
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Título</TableHead>
-                <TableHead>Curso / Materia</TableHead>
-                <TableHead>Fecha</TableHead>
-                <TableHead>Confirmaciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {comunicados.map(c => (
-                <TableRow key={c.id}>
-                  <TableCell className="font-medium">
-                    <Link href={`/dashboard/${slug}/comunicados/${c.id}`} className="hover:underline">
-                      {c.titulo}
-                    </Link>
-                  </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {c.cursoNombre}
-                    {c.materiaNombre && (
-                      <span className="text-muted-foreground/70"> · {c.materiaNombre}</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {new Date(c.created_at).toLocaleDateString('es-AR')}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={c.confirmados === c.total && c.total > 0 ? 'default' : 'outline'}>
-                      {c.confirmados}/{c.total}
-                    </Badge>
-                  </TableCell>
+        <>
+          {/* Mobile: card list */}
+          <div className="flex flex-col gap-2 md:hidden">
+            {comunicados.map(c => (
+              <Link
+                key={c.id}
+                href={`/dashboard/${slug}/comunicados/${c.id}`}
+                className="block rounded-lg border p-4 hover:bg-muted/50 transition-colors"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <p className="text-sm font-medium leading-snug">{c.titulo}</p>
+                  <Badge
+                    variant={c.confirmados === c.total && c.total > 0 ? 'default' : 'outline'}
+                    className="shrink-0 text-xs"
+                  >
+                    {c.confirmados}/{c.total}
+                  </Badge>
+                </div>
+                <div className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-muted-foreground">
+                  <span>{c.cursoNombre}</span>
+                  {c.materiaNombre && <><span>·</span><span>{c.materiaNombre}</span></>}
+                  <span>·</span>
+                  <span>{new Date(c.created_at).toLocaleDateString('es-AR')}</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+
+          {/* Desktop: table */}
+          <div className="hidden md:block rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Título</TableHead>
+                  <TableHead>Curso / Materia</TableHead>
+                  <TableHead>Fecha</TableHead>
+                  <TableHead>Confirmaciones</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {comunicados.map(c => (
+                  <TableRow key={c.id}>
+                    <TableCell className="font-medium">
+                      <Link href={`/dashboard/${slug}/comunicados/${c.id}`} className="hover:underline">
+                        {c.titulo}
+                      </Link>
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {c.cursoNombre}
+                      {c.materiaNombre && (
+                        <span className="text-muted-foreground/70"> · {c.materiaNombre}</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {new Date(c.created_at).toLocaleDateString('es-AR')}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={c.confirmados === c.total && c.total > 0 ? 'default' : 'outline'}>
+                        {c.confirmados}/{c.total}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </>
       ) : (
         <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
           <MessageSquare className="size-12 text-muted-foreground/40" />

@@ -1,4 +1,4 @@
-import { requireSession, isSuperadmin, hasAnyRole } from '@/lib/auth'
+import { requireSession, isSuperadmin, hasAnyRole, hasRole } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
@@ -25,6 +25,9 @@ export default async function BoletinPage({ params }: Params) {
   }
   if (!isSuperadmin(session) && !hasAnyRole(session, inst.id, ['admin', 'docente', 'responsable']))
     redirect('/dashboard')
+
+  const isResponsableOnly = !isSuperadmin(session) && !hasRole(session, inst.id, 'admin') && !hasRole(session, inst.id, 'docente') && hasRole(session, inst.id, 'responsable')
+  const backHref = isResponsableOnly ? `/dashboard/${slug}/mis-alumnos` : `/dashboard/${slug}/alumnos`
 
   const { data: alumno } = await supabase
     .from('alumnos')
@@ -199,11 +202,11 @@ export default async function BoletinPage({ params }: Params) {
     <div>
       {/* Toolbar — hidden on print */}
       <div className="flex items-center justify-between mb-6 print:hidden">
-        <Button variant="ghost" size="sm" render={<Link href={`/dashboard/${slug}/alumnos`} />}>
+        <Button variant="ghost" size="sm" render={<Link href={backHref} />}>
           <ArrowLeft data-icon="inline-start" />
           Volver
         </Button>
-        <PrintButton />
+        <PrintButton alumnoNombre={alumno.apellido ? `${alumno.apellido}, ${alumno.nombre}` : alumno.nombre} />
       </div>
 
       <div className="max-w-5xl mx-auto print:max-w-none">
@@ -214,7 +217,7 @@ export default async function BoletinPage({ params }: Params) {
             <img src={inst.logo_rectangular_url} alt={inst.nombre} className="mx-auto mb-3 h-12 object-contain print:h-10" />
           )}
           <p className="text-sm text-muted-foreground print:text-gray-600">{inst.nombre}</p>
-          <h1 className="text-2xl font-bold mt-1">Libreta de Calificaciones</h1>
+          <h1 className="text-xl font-bold mt-1 md:text-2xl">Libreta de Calificaciones</h1>
           <div className="flex justify-center gap-6 mt-3 text-sm">
             <span><strong>Alumno:</strong> {alumno.apellido ? `${alumno.apellido}, ${alumno.nombre}` : alumno.nombre}</span>
             {cursoNombre && <span><strong>Curso:</strong> {cursoNombre}</span>}

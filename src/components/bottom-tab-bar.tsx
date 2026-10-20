@@ -95,14 +95,17 @@ export function BottomTabBar({ session }: BottomTabBarProps) {
         href: `/dashboard/${activeSlug}/alumnos`,
         label: 'Alumnos',
         icon: GraduationCap,
-        match: p => p.startsWith(`/dashboard/${activeSlug}/alumnos`),
+        match: p => p.startsWith(`/dashboard/${activeSlug}/alumnos`) || p.startsWith(`/dashboard/${activeSlug}/libreta`),
       },
     )
     showMas = true
   }
 
   return (
-    <nav className="md:hidden fixed bottom-0 inset-x-0 z-20 flex border-t bg-background">
+    <nav
+      className="md:hidden fixed bottom-0 inset-x-0 z-20 flex border-t bg-background"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+    >
       {tabs.map(tab => {
         const active = tab.match(pathname)
         return (

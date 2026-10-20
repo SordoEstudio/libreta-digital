@@ -7,7 +7,7 @@ import { NotificationBell } from '@/components/notification-bell'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
-  Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose,
+  Sheet, SheetContent, SheetHeader, SheetTitle,
 } from '@/components/ui/sheet'
 import { createClient } from '@/lib/supabase/client'
 import type { SessionUser } from '@/lib/auth'
@@ -98,18 +98,14 @@ export function MobileHeader({ session }: MobileHeaderProps) {
             </div>
           </SheetHeader>
           <div className="flex flex-col gap-1 pt-2">
-            <SheetClose
-              render={
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start gap-3 text-destructive hover:text-destructive"
-                  onClick={handleLogout}
-                />
-              }
+            <Button
+              variant="ghost"
+              className="w-full justify-start gap-3 text-destructive hover:text-destructive"
+              onClick={handleLogout}
             >
               <LogOut className="size-4" />
               Cerrar sesión
-            </SheetClose>
+            </Button>
           </div>
         </SheetContent>
       </Sheet>

@@ -441,7 +441,7 @@ export default function CuadernoTabla({
           <thead>
             {/* Row 1: group labels */}
             <tr className="border-b bg-muted/20">
-              <th className="min-w-44 sticky left-0 bg-muted/20" />
+              <th className="min-w-44 sticky left-0 bg-muted" />
               {showLibreta && (evalsLibreta ?? []).length > 0 && (
                 <th colSpan={libretaColCount} className="text-xs font-semibold text-sky-700 bg-sky-50/50 px-2 py-1 text-left border-b">
                   Libreta {periodoCerrado && <span className="ml-1 text-[10px] font-normal text-amber-600">(período cerrado)</span>}
@@ -456,7 +456,7 @@ export default function CuadernoTabla({
 
             {/* Row 2: eval names (with colSpan over their dims) */}
             <tr className="border-b bg-muted/25">
-              <th rowSpan={2} className="text-left px-3 py-2 font-medium text-xs text-muted-foreground min-w-44 sticky left-0 bg-muted/25 border-r align-bottom">
+              <th rowSpan={2} className="text-left px-3 py-2 font-medium text-xs text-muted-foreground min-w-44 sticky left-0 bg-muted border-r align-bottom">
                 Alumno
               </th>
 
@@ -568,7 +568,7 @@ export default function CuadernoTabla({
               const promedio = showProceso ? calcPromedio(alumno.id, evalRefsFiltradas) : null
               return (
                 <tr key={alumno.id} className={idx % 2 === 0 ? '' : 'bg-muted/10'}>
-                  <td className="px-3 py-1.5 font-medium sticky left-0 bg-inherit border-r">
+                  <td className="px-3 py-1.5 font-medium sticky left-0 bg-background border-r">
                     {displayNombre(alumno)}
                   </td>
 

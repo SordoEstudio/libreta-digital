@@ -6,6 +6,7 @@ import CuadernoSelectores from './cuaderno-selectores'
 import CuadernoTabla from './cuaderno-tabla'
 import CuadernoNuevaInstanciaBtn from './cuaderno-nueva-instancia-btn'
 import CuadernoUnidadesSheet from './cuaderno-unidades-sheet'
+import { MobileOrientationGuard } from '@/components/mobile-orientation-guard'
 
 type Params = { params: Promise<{ slug: string }>; searchParams: Promise<{ materia_id?: string; periodo_id?: string }> }
 
@@ -407,6 +408,7 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
       )}
 
       {tableData && selectedPeriodo && (
+        <MobileOrientationGuard>
         <CuadernoTabla
             key={`${selectedMateria!.id}:${selectedPeriodo.id}`}
             alumnos={tableData.alumnos}
@@ -424,6 +426,7 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
             notaAprobacion={tableData.notaAprobacion}
             slug={slug}
           />
+        </MobileOrientationGuard>
       )}
     </div>
   )
