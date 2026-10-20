@@ -12,9 +12,10 @@ export function deduplicarResponsables(
 }
 
 export const CreateComunicadoSchema = z.object({
-  titulo: z.string().min(1).max(300),
-  contenido: z.string().min(1).max(5000),
-  curso_id: z.string().uuid(),
-}).strict()
+  titulo:     z.string().min(1).max(300),
+  contenido:  z.string().min(1).max(5000),
+  curso_id:   z.string().uuid(),
+  materia_id: z.string().uuid().optional(),
+})
 
 export type CreateComunicadoInput = z.infer<typeof CreateComunicadoSchema>

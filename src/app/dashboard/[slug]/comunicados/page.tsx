@@ -32,7 +32,7 @@ export default async function ComunicadosPage({ params }: Params) {
 
   const { data: comunicadosRaw } = await supabase
     .from('comunicados')
-    .select('id, titulo, curso_id, created_at, cursos(nombre), comunicado_confirmaciones(id, confirmed_at)')
+    .select('id, titulo, curso_id, materia_id, created_at, cursos(nombre), materias(materias_catalogo(nombre)), comunicado_confirmaciones(id, confirmed_at)')
     .eq('institucion_id', inst.id)
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
@@ -40,12 +40,15 @@ export default async function ComunicadosPage({ params }: Params) {
   const comunicados = (comunicadosRaw ?? []).map(c => {
     const confs = c.comunicado_confirmaciones ?? []
     const cursoNombre = Array.isArray(c.cursos) ? c.cursos[0]?.nombre : (c.cursos as { nombre: string } | null)?.nombre
+    const mat = Array.isArray(c.materias) ? c.materias[0] : (c.materias as { materias_catalogo: { nombre: string } | null } | null)
+    const materiaNombre = (mat?.materias_catalogo as { nombre: string } | null)?.nombre
     return {
       id: c.id,
       titulo: c.titulo,
       curso_id: c.curso_id,
       created_at: c.created_at,
       cursoNombre: cursoNombre ?? '—',
+      materiaNombre: materiaNombre ?? null,
       total: confs.length,
       confirmados: confs.filter(cf => cf.confirmed_at !== null).length,
     }
@@ -58,7 +61,33 @@ export default async function ComunicadosPage({ params }: Params) {
     .is('deleted_at', null)
     .order('nombre')
 
-  const cursos = (cursosRaw ?? []).map(c => ({ id: c.id, nombre: c.nombre }))
+  const cursoIds = (cursosRaw ?? []).map(c => c.id)
+
+  const { data: materiasRaw } = cursoIds.length > 0
+    ? await supabase
+        .from('materias')
+        .select('id, curso_id, materias_catalogo(nombre)')
+        .in('curso_id', cursoIds)
+        .is('deleted_at', null)
+    : { data: [] }
+
+  type MateriaCatalogo = { nombre: string }
+  type MateriaRaw = { id: string; curso_id: string; materias_catalogo: MateriaCatalogo | MateriaCatalogo[] | null }
+
+  const materiasPorCurso = new Map<string, { id: string; nombre: string }[]>()
+  for (const m of (materiasRaw ?? []) as MateriaRaw[]) {
+    const cat = Array.isArray(m.materias_catalogo) ? m.materias_catalogo[0] : m.materias_catalogo
+    const nombre = (cat as MateriaCatalogo | null)?.nombre ?? '—'
+    const arr = materiasPorCurso.get(m.curso_id) ?? []
+    arr.push({ id: m.id, nombre })
+    materiasPorCurso.set(m.curso_id, arr)
+  }
+
+  const cursos = (cursosRaw ?? []).map(c => ({
+    id: c.id,
+    nombre: c.nombre,
+    materias: materiasPorCurso.get(c.id) ?? [],
+  }))
 
   return (
     <div className="flex flex-col gap-6">
@@ -76,7 +105,7 @@ export default async function ComunicadosPage({ params }: Params) {
             <TableHeader>
               <TableRow>
                 <TableHead>Título</TableHead>
-                <TableHead>Curso</TableHead>
+                <TableHead>Curso / Materia</TableHead>
                 <TableHead>Fecha</TableHead>
                 <TableHead>Confirmaciones</TableHead>
               </TableRow>
@@ -85,14 +114,16 @@ export default async function ComunicadosPage({ params }: Params) {
               {comunicados.map(c => (
                 <TableRow key={c.id}>
                   <TableCell className="font-medium">
-                    <Link
-                      href={`/dashboard/${slug}/comunicados/${c.id}`}
-                      className="hover:underline"
-                    >
+                    <Link href={`/dashboard/${slug}/comunicados/${c.id}`} className="hover:underline">
                       {c.titulo}
                     </Link>
                   </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{c.cursoNombre}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {c.cursoNombre}
+                    {c.materiaNombre && (
+                      <span className="text-muted-foreground/70"> · {c.materiaNombre}</span>
+                    )}
+                  </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {new Date(c.created_at).toLocaleDateString('es-AR')}
                   </TableCell>

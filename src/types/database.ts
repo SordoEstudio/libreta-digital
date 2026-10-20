@@ -347,6 +347,7 @@ export type Database = {
           deleted_at: string | null
           id: string
           institucion_id: string
+          materia_id: string | null
           titulo: string
         }
         Insert: {
@@ -357,6 +358,7 @@ export type Database = {
           deleted_at?: string | null
           id?: string
           institucion_id: string
+          materia_id?: string | null
           titulo: string
         }
         Update: {
@@ -367,6 +369,7 @@ export type Database = {
           deleted_at?: string | null
           id?: string
           institucion_id?: string
+          materia_id?: string | null
           titulo?: string
         }
         Relationships: [
@@ -389,6 +392,13 @@ export type Database = {
             columns: ["institucion_id"]
             isOneToOne: false
             referencedRelation: "instituciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comunicados_materia_id_fkey"
+            columns: ["materia_id"]
+            isOneToOne: false
+            referencedRelation: "materias"
             referencedColumns: ["id"]
           },
         ]

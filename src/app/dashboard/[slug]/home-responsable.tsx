@@ -1,7 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { Button } from '@/components/ui/button'
-import { GraduationCap, BookOpen, BookMarked, ArrowRight } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { GraduationCap, BookOpen, BookMarked, ArrowRight, MessageSquare, CheckCircle2, Clock } from 'lucide-react'
 import Link from 'next/link'
 
 interface Props {
@@ -14,6 +15,37 @@ interface Props {
 export default async function HomeResponsable({ instId, slug, personaId, moduloContenidos }: Props) {
   const supabase = await createClient()
   const admin = createAdminClient()
+
+  // Comunicados del responsable (vía confirmaciones)
+  type ConfirmacionRaw = {
+    id: string
+    confirmed_at: string | null
+    comunicados: {
+      id: string
+      titulo: string
+      created_at: string
+      deleted_at: string | null
+      cursos: { nombre: string } | null
+      materias: { materias_catalogo: { nombre: string } | null } | null
+    } | null
+  }
+  const { data: confirmacionesRaw } = await admin
+    .from('comunicado_confirmaciones')
+    .select('id, confirmed_at, comunicados(id, titulo, created_at, deleted_at, cursos(nombre), materias(materias_catalogo(nombre)))')
+    .eq('persona_id', personaId)
+    .order('created_at', { ascending: false })
+    .limit(20)
+
+  const comunicados = ((confirmacionesRaw ?? []) as ConfirmacionRaw[])
+    .filter(c => c.comunicados && !c.comunicados.deleted_at)
+    .map(c => ({
+      confId: c.id,
+      confirmed: !!c.confirmed_at,
+      titulo: c.comunicados!.titulo,
+      created_at: c.comunicados!.created_at,
+      cursoNombre: (c.comunicados!.cursos as { nombre: string } | null)?.nombre ?? null,
+      materiaNombre: (c.comunicados!.materias as { materias_catalogo: { nombre: string } | null } | null)?.materias_catalogo?.nombre ?? null,
+    }))
 
   const [vinculacionesRes, añoActivoRes] = await Promise.all([
     supabase
@@ -126,6 +158,52 @@ export default async function HomeResponsable({ instId, slug, personaId, moduloC
           <span className="text-sm text-muted-foreground">{añoActivo.nombre}</span>
         )}
       </div>
+
+      {comunicados.length > 0 && (
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-2">
+            <MessageSquare className="size-4 text-muted-foreground" />
+            <h2 className="font-semibold">Comunicados</h2>
+            {comunicados.filter(c => !c.confirmed).length > 0 && (
+              <Badge variant="destructive" className="text-xs">
+                {comunicados.filter(c => !c.confirmed).length} sin confirmar
+              </Badge>
+            )}
+          </div>
+          <div className="flex flex-col gap-2">
+            {comunicados.map(c => (
+              <div key={c.confId} className="flex items-start justify-between gap-3 rounded-lg border px-4 py-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium leading-snug">{c.titulo}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {c.cursoNombre}
+                    {c.materiaNombre && ` · ${c.materiaNombre}`}
+                    {' · '}
+                    {new Date(c.created_at).toLocaleDateString('es-AR')}
+                  </p>
+                </div>
+                <div className="shrink-0 flex items-center gap-2">
+                  {c.confirmed ? (
+                    <span className="flex items-center gap-1 text-xs text-emerald-600 font-medium">
+                      <CheckCircle2 className="size-3.5" />
+                      Confirmado
+                    </span>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      render={<Link href={`/confirmar/${c.confId}`} />}
+                    >
+                      <Clock data-icon="inline-start" />
+                      Confirmar
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {alumnos.map(alumno => {
         const inscripcion = inscripcionPorAlumno.get(alumno.id)

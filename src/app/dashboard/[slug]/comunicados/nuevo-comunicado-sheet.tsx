@@ -12,7 +12,7 @@ import { toast } from 'sonner'
 
 interface Props {
   slug: string
-  cursos: { id: string; nombre: string }[]
+  cursos: { id: string; nombre: string; materias: { id: string; nombre: string }[] }[]
 }
 
 export default function NuevoComunicadoSheet({ cursos }: Props) {
@@ -22,15 +22,34 @@ export default function NuevoComunicadoSheet({ cursos }: Props) {
   const [titulo, setTitulo] = useState('')
   const [contenido, setContenido] = useState('')
   const [cursoId, setCursoId] = useState('')
+  const [materiaId, setMateriaId] = useState('')
+
+  const materiasDelCurso = cursos.find(c => c.id === cursoId)?.materias ?? []
+
+  function handleCursoChange(id: string) {
+    setCursoId(id)
+    setMateriaId('')
+  }
+
+  function handleClose() {
+    setOpen(false)
+    setTitulo('')
+    setContenido('')
+    setCursoId('')
+    setMateriaId('')
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
 
+    const body: Record<string, string> = { titulo, contenido, curso_id: cursoId }
+    if (materiaId) body.materia_id = materiaId
+
     const res = await fetch('/api/v1/comunicados', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ titulo, contenido, curso_id: cursoId }),
+      body: JSON.stringify(body),
     })
 
     const json = await res.json()
@@ -43,10 +62,7 @@ export default function NuevoComunicadoSheet({ cursos }: Props) {
 
     const enviados: number = json.data?.emails_enviados ?? 0
     toast.success(`Comunicado enviado (${enviados} destinatario${enviados !== 1 ? 's' : ''})`)
-    setOpen(false)
-    setTitulo('')
-    setContenido('')
-    setCursoId('')
+    handleClose()
     router.refresh()
   }
 
@@ -57,7 +73,7 @@ export default function NuevoComunicadoSheet({ cursos }: Props) {
         Nuevo comunicado
       </Button>
 
-      <Sheet open={open} onOpenChange={setOpen}>
+      <Sheet open={open} onOpenChange={v => { if (!v) handleClose() }}>
         <SheetContent>
           <SheetHeader>
             <SheetTitle>Nuevo comunicado</SheetTitle>
@@ -77,7 +93,7 @@ export default function NuevoComunicadoSheet({ cursos }: Props) {
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="com-curso">Curso *</Label>
-              <Select value={cursoId} onValueChange={v => setCursoId(v ?? '')}>
+              <Select value={cursoId} onValueChange={v => handleCursoChange(v ?? '')}>
                 <SelectTrigger id="com-curso">
                   <SelectValue placeholder="Seleccionar curso..." />
                 </SelectTrigger>
@@ -88,6 +104,23 @@ export default function NuevoComunicadoSheet({ cursos }: Props) {
                 </SelectContent>
               </Select>
             </div>
+
+            {cursoId && materiasDelCurso.length > 0 && (
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="com-materia">Materia <span className="text-muted-foreground font-normal">(opcional)</span></Label>
+                <Select value={materiaId || 'todas'} onValueChange={v => setMateriaId(v === 'todas' ? '' : (v ?? ''))}>
+                  <SelectTrigger id="com-materia">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todas">Todas las materias</SelectItem>
+                    {materiasDelCurso.map(m => (
+                      <SelectItem key={m.id} value={m.id}>{m.nombre}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="com-contenido">Contenido *</Label>

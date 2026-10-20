@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
   const parsed = CreateComunicadoSchema.safeParse(body)
   if (!parsed.success) return Err.validation(parsed.error.issues[0].message)
 
-  const { titulo, contenido, curso_id } = parsed.data
+  const { titulo, contenido, curso_id, materia_id } = parsed.data
 
   const supabase = await createClient()
 
@@ -31,6 +31,17 @@ export async function POST(request: NextRequest) {
   if (!isSuperadmin(session) && !hasAnyRole(session, curso.institucion_id, ['admin', 'docente']))
     return Err.forbidden()
 
+  if (materia_id) {
+    const { data: mat } = await supabase
+      .from('materias')
+      .select('id')
+      .eq('id', materia_id)
+      .eq('curso_id', curso_id)
+      .is('deleted_at', null)
+      .maybeSingle()
+    if (!mat) return Err.validation('La materia no pertenece al curso seleccionado')
+  }
+
   const { data: comunicado, error: insertError } = await supabase
     .from('comunicados')
     .insert({
@@ -39,6 +50,7 @@ export async function POST(request: NextRequest) {
       titulo,
       contenido,
       curso_id,
+      ...(materia_id ? { materia_id } : {}),
     })
     .select('id, titulo, contenido, curso_id, created_at')
     .single()

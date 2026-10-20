@@ -15,6 +15,7 @@ import {
   Building2, BarChart3, LayoutDashboard, GraduationCap,
   Users, BookOpen, LogOut, Settings, Library, CalendarDays, BookMarked, MessageSquare, Layers, NotebookPen,
 } from 'lucide-react'
+import { NotificationBell } from '@/components/notification-bell'
 
 interface AppSidebarProps {
   session: SessionUser
@@ -263,6 +264,11 @@ export function AppSidebar({ session }: AppSidebarProps) {
               </div>
             </div>
           </SidebarMenuItem>
+          {activeSlug && (
+            <SidebarMenuItem>
+              <NotificationBell />
+            </SidebarMenuItem>
+          )}
           <SidebarMenuItem>
             <SidebarMenuButton onClick={handleLogout}>
               <LogOut />
