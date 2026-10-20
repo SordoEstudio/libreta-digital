@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import {
-  ChevronDown, ChevronUp, Trash2, ExternalLink, FileText, ImageIcon, Link2,
+  ChevronDown, ChevronUp, ExternalLink, FileText, ImageIcon, Link2,
   Eye, EyeOff, Plus,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -40,10 +40,6 @@ export default function ContenidosEditor({ unidades: initialUnidades, dimensione
     () => new Set(initialUnidades.map(u => u.id))
   )
   const [addingUnidad, setAddingUnidad] = useState(false)
-
-  // Confirm states
-  const [confirmDeleteUnidad, setConfirmDeleteUnidad] = useState<{ id: string; nombre: string } | null>(null)
-  const [confirmDeleteItem, setConfirmDeleteItem] = useState<{ id: string; titulo: string } | null>(null)
   const [confirmHideId, setConfirmHideId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -64,17 +60,6 @@ export default function ContenidosEditor({ unidades: initialUnidades, dimensione
     })
   }
 
-  async function deleteUnidad(unidadId: string) {
-    const res = await fetch(`/api/v1/contenidos/unidades/${unidadId}`, { method: 'DELETE' })
-    if (!res.ok) {
-      const json = await res.json().catch(() => ({}))
-      toast.error(json.error?.message ?? 'Error al eliminar unidad')
-      return
-    }
-    toast.success('Unidad eliminada')
-    router.refresh()
-  }
-
   async function toggleUnidadPublicado(unidadId: string, publicado: boolean) {
     const res = await fetch(`/api/v1/contenidos/unidades/${unidadId}`, {
       method: 'PUT',
@@ -86,17 +71,6 @@ export default function ContenidosEditor({ unidades: initialUnidades, dimensione
       toast.error(json.error?.message ?? 'Error al actualizar')
       return
     }
-    router.refresh()
-  }
-
-  async function deleteItem(itemId: string) {
-    const res = await fetch(`/api/v1/contenidos/items/${itemId}`, { method: 'DELETE' })
-    if (!res.ok) {
-      const json = await res.json().catch(() => ({}))
-      toast.error(json.error?.message ?? 'Error al eliminar item')
-      return
-    }
-    toast.success('Material eliminado')
     router.refresh()
   }
 
@@ -182,13 +156,6 @@ export default function ContenidosEditor({ unidades: initialUnidades, dimensione
                       initialNombre={unidad.nombre}
                       initialDescripcion={unidad.descripcion}
                     />
-                    <Button
-                      variant="ghost" size="icon" className="size-7 text-destructive hover:text-destructive"
-                      onClick={() => setConfirmDeleteUnidad({ id: unidad.id, nombre: unidad.nombre })}
-                      title="Eliminar unidad"
-                    >
-                      <Trash2 className="size-3.5" />
-                    </Button>
                   </div>
                 )}
               </div>
@@ -257,13 +224,6 @@ export default function ContenidosEditor({ unidades: initialUnidades, dimensione
                               <ChevronDown className="size-3.5" />
                             </Button>
                             <ItemSheet mode="edit" item={item} dimensiones={dimensiones} />
-                            <Button
-                              variant="ghost" size="icon" className="size-6 text-destructive hover:text-destructive"
-                              onClick={() => setConfirmDeleteItem({ id: item.id, titulo: item.titulo })}
-                              title="Eliminar"
-                            >
-                              <Trash2 className="size-3.5" />
-                            </Button>
                           </div>
                         )}
                       </div>
@@ -306,34 +266,6 @@ export default function ContenidosEditor({ unidades: initialUnidades, dimensione
           </div>
         )}
       </div>
-
-      <ConfirmDialog
-        open={confirmDeleteUnidad !== null}
-        onOpenChange={v => !v && setConfirmDeleteUnidad(null)}
-        title={`¿Eliminar "${confirmDeleteUnidad?.nombre}"?`}
-        description="Se eliminarán también todos los materiales de esta unidad."
-        confirmLabel="Eliminar"
-        destructive
-        onConfirm={() => {
-          const id = confirmDeleteUnidad!.id
-          setConfirmDeleteUnidad(null)
-          deleteUnidad(id)
-        }}
-      />
-
-      <ConfirmDialog
-        open={confirmDeleteItem !== null}
-        onOpenChange={v => !v && setConfirmDeleteItem(null)}
-        title={`¿Eliminar "${confirmDeleteItem?.titulo}"?`}
-        description="Esta acción no se puede deshacer."
-        confirmLabel="Eliminar"
-        destructive
-        onConfirm={() => {
-          const id = confirmDeleteItem!.id
-          setConfirmDeleteItem(null)
-          deleteItem(id)
-        }}
-      />
 
       <ConfirmDialog
         open={confirmHideId !== null}
