@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -43,7 +43,7 @@ export default function AsistenciaEditor({
   materiaId, periodoId, periodos, alumnos, asistenciaExistente, slug,
 }: Props) {
   const router = useRouter()
-  const [isPending, startTransition] = useTransition()
+  const [saving, setSaving] = useState(false)
 
   const existenteMap = new Map(asistenciaExistente.map(a => [a.alumno_id, a]))
 
@@ -69,7 +69,7 @@ export default function AsistenciaEditor({
     router.push(`/dashboard/${slug}/materias/${materiaId}/asistencia?periodo_id=${newPeriodoId}`)
   }
 
-  function handleSave() {
+  async function handleSave() {
     if (!periodoId) return
 
     const registros = alumnos.map(a => ({
@@ -78,7 +78,8 @@ export default function AsistenciaEditor({
       observacion:   valores[a.id].obs || null,
     }))
 
-    startTransition(async () => {
+    setSaving(true)
+    try {
       const res = await fetch(`/api/v1/materias/${materiaId}/asistencia`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -86,14 +87,16 @@ export default function AsistenciaEditor({
       })
 
       if (!res.ok) {
-        const json = await res.json()
+        const json = await res.json().catch(() => ({}))
         toast.error(json.error?.message ?? 'Error al guardar')
         return
       }
 
       toast.success('Asistencia guardada')
       router.refresh()
-    })
+    } finally {
+      setSaving(false)
+    }
   }
 
   if (alumnos.length === 0) {
@@ -118,11 +121,11 @@ export default function AsistenciaEditor({
           </SelectContent>
         </Select>
 
-        <Button onClick={handleSave} disabled={isPending || !periodoId}>
-          {isPending
+        <Button onClick={handleSave} disabled={saving || !periodoId}>
+          {saving
             ? <Loader2 data-icon="inline-start" className="animate-spin" />
             : <Save data-icon="inline-start" />}
-          {isPending ? 'Guardando...' : 'Guardar'}
+          {saving ? 'Guardando...' : 'Guardar'}
         </Button>
       </div>
 
