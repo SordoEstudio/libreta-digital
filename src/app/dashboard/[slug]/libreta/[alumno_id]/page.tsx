@@ -38,13 +38,18 @@ export default async function LibretaPage({ params }: Params) {
   // Responsable gate: find closed periods and check confirmation status
   const { data: inscripcion } = await supabase
     .from('alumno_inscripciones')
-    .select('cursos(año_lectivo_id)')
+    .select('curso_id')
     .eq('alumno_id', alumno_id)
     .eq('activo', true)
     .is('deleted_at', null)
     .maybeSingle()
 
-  const añoLectivoId = (inscripcion?.cursos as { año_lectivo_id: string } | null)?.año_lectivo_id
+  const cursoId = inscripcion?.curso_id
+  let añoLectivoId: string | undefined
+  if (cursoId) {
+    const { data: curso } = await supabase.from('cursos').select('*').eq('id', cursoId).single()
+    añoLectivoId = curso?.año_lectivo_id ?? undefined
+  }
 
   if (!añoLectivoId) {
     redirect(`/dashboard/${slug}/libreta/${alumno_id}/boletin`)
@@ -70,7 +75,7 @@ export default async function LibretaPage({ params }: Params) {
     .eq('persona_id', session.persona_id)
     .in('periodo_id', closedIds)
 
-  const confirmedIds = new Set((existingAcuses ?? []).map((a: { periodo_id: string }) => a.periodo_id))
+  const confirmedIds = new Set((existingAcuses ?? []).map(a => a.periodo_id))
   const hasPending = closedIds.some(id => !confirmedIds.has(id))
 
   if (hasPending) {

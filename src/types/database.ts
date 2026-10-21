@@ -293,6 +293,55 @@ export type Database = {
           },
         ]
       }
+      boletin_acuses: {
+        Row: {
+          alumno_id: string
+          confirmed_at: string
+          created_at: string
+          id: string
+          periodo_id: string
+          persona_id: string
+        }
+        Insert: {
+          alumno_id: string
+          confirmed_at?: string
+          created_at?: string
+          id?: string
+          periodo_id: string
+          persona_id: string
+        }
+        Update: {
+          alumno_id?: string
+          confirmed_at?: string
+          created_at?: string
+          id?: string
+          periodo_id?: string
+          persona_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "boletin_acuses_alumno_id_fkey"
+            columns: ["alumno_id"]
+            isOneToOne: false
+            referencedRelation: "alumnos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "boletin_acuses_periodo_id_fkey"
+            columns: ["periodo_id"]
+            isOneToOne: false
+            referencedRelation: "periodos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "boletin_acuses_persona_id_fkey"
+            columns: ["persona_id"]
+            isOneToOne: false
+            referencedRelation: "personas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       comunicado_confirmaciones: {
         Row: {
           comunicado_id: string
