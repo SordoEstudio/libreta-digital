@@ -2,9 +2,10 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import type { LucideIcon } from 'lucide-react'
 import {
-  GraduationCap, BookMarked, ArrowRight, MessageSquare,
-  CheckCircle2, Clock, AlertCircle,
+  GraduationCap, ArrowRight, MessageSquare,
+  CheckCircle2, Clock, AlertCircle, FolderOpen, HelpCircle, FileText,
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -13,13 +14,13 @@ interface Props {
   slug: string
   personaId: string
   moduloContenidos?: boolean
+  nombre?: string | null
 }
 
-export default async function HomeResponsable({ instId, slug, personaId, moduloContenidos }: Props) {
+export default async function HomeResponsable({ instId, slug, personaId, moduloContenidos, nombre }: Props) {
   const supabase = await createClient()
   const admin = createAdminClient()
 
-  // All in parallel
   const [confirmacionesRes, vinculacionesRes, añoActivoRes] = await Promise.all([
     admin
       .from('comunicado_confirmaciones')
@@ -85,22 +86,12 @@ export default async function HomeResponsable({ instId, slug, personaId, moduloC
 
   const alumnoIds = alumnos.map(a => a.id)
 
-  // Inscripciones + últimas notas en paralelo
-  const [inscripcionesRes, ultimasNotasRes] = await Promise.all([
-    supabase
-      .from('alumno_inscripciones')
-      .select('alumno_id, curso_id, cursos(nombre)')
-      .in('alumno_id', alumnoIds)
-      .eq('activo', true)
-      .is('deleted_at', null),
-    admin
-      .from('notas')
-      .select('alumno_id, valor_numerico, valor_literal, created_at, evaluaciones(nombre, materias(materias_catalogo(nombre)))')
-      .in('alumno_id', alumnoIds)
-      .is('deleted_at', null)
-      .order('created_at', { ascending: false })
-      .limit(15),
-  ])
+  const inscripcionesRes = await supabase
+    .from('alumno_inscripciones')
+    .select('alumno_id, curso_id, cursos(nombre)')
+    .in('alumno_id', alumnoIds)
+    .eq('activo', true)
+    .is('deleted_at', null)
 
   type InscripcionRaw = { alumno_id: string; curso_id: string; cursos: { nombre: string } | null }
   const inscripcionPorAlumno = new Map<string, InscripcionRaw>()
@@ -108,26 +99,82 @@ export default async function HomeResponsable({ instId, slug, personaId, moduloC
     inscripcionPorAlumno.set(i.alumno_id, i)
   }
 
-  type EvalNota = { nombre: string; materias: { materias_catalogo: { nombre: string } | null } | null }
-  type NotaRaw = { alumno_id: string; valor_numerico: number | null; valor_literal: string | null; created_at: string; evaluaciones: EvalNota | null }
-  const ultimasNotas = (ultimasNotasRes.data ?? []) as NotaRaw[]
-
   const pendientes = comunicados.filter(c => !c.confirmed)
+  const primerNombre = nombre?.split(' ')[0] ?? null
+
+  const hoy = new Date().toLocaleDateString('es-AR', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  })
 
   function displayAlumno(a: AlumnoRaw) {
     return a.apellido ? `${a.apellido}, ${a.nombre}` : a.nombre
   }
 
+  function getInitials(a: AlumnoRaw) {
+    return (a.nombre[0] + (a.apellido?.[0] ?? '')).toUpperCase()
+  }
+
+  const pasos: Array<{
+    icon: LucideIcon
+    label: string
+    desc: string
+    href: string
+    color: string
+    badge?: number
+  }> = [
+    {
+      icon: FileText,
+      label: 'Boletín',
+      desc: 'Notas y evaluaciones de tu alumno',
+      href: alumnos.length === 1
+        ? `/dashboard/${slug}/libreta/${alumnos[0].id}`
+        : `/dashboard/${slug}/mis-alumnos`,
+      color: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 dark:text-emerald-400',
+    },
+    {
+      icon: MessageSquare,
+      label: 'Comunicados',
+      desc: pendientes.length > 0 ? `${pendientes.length} sin confirmar` : 'Mensajes de la institución',
+      href: `/dashboard/${slug}/comunicados`,
+      color: pendientes.length > 0
+        ? 'text-amber-600 bg-amber-50 dark:bg-amber-950/40 dark:text-amber-400'
+        : 'text-blue-600 bg-blue-50 dark:bg-blue-950/40 dark:text-blue-400',
+      badge: pendientes.length > 0 ? pendientes.length : undefined,
+    },
+    ...(moduloContenidos ? [{
+      icon: FolderOpen,
+      label: 'Contenidos',
+      desc: 'Materiales compartidos por los docentes',
+      href: `/dashboard/${slug}/contenidos`,
+      color: 'text-violet-600 bg-violet-50 dark:bg-violet-950/40 dark:text-violet-400',
+    }] : []),
+    {
+      icon: HelpCircle,
+      label: 'Ayuda',
+      desc: 'Manual de uso paso a paso',
+      href: `/dashboard/${slug}/ayuda`,
+      color: 'text-slate-600 bg-slate-100 dark:bg-slate-800 dark:text-slate-400',
+    },
+  ]
+
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Inicio</h1>
-        {añoActivo && (
-          <span className="text-sm text-muted-foreground">{añoActivo.nombre}</span>
-        )}
+      {/* Bienvenida */}
+      <div className="flex flex-col gap-0.5">
+        <div className="flex items-center gap-2 flex-wrap">
+          <h1 className="text-2xl font-semibold">
+            {primerNombre ? `¡Hola, ${primerNombre}!` : 'Bienvenido/a'}
+          </h1>
+          {añoActivo && (
+            <Badge variant="outline" className="text-xs">{añoActivo.nombre}</Badge>
+          )}
+        </div>
+        <p className="text-sm text-muted-foreground capitalize">{hoy}</p>
       </div>
 
-      {/* Comunicados pendientes — banner */}
+      {/* Comunicados pendientes — banner urgente */}
       {pendientes.length > 0 && (
         <div className="flex items-center justify-between gap-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-800/50 dark:bg-amber-950/30">
           <div className="flex items-center gap-2.5 min-w-0">
@@ -145,56 +192,68 @@ export default async function HomeResponsable({ instId, slug, personaId, moduloC
         </div>
       )}
 
-      {/* Cards por alumno */}
+      {/* Tus alumnos */}
       <div className="flex flex-col gap-3">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+          {alumnos.length === 1 ? 'Tu alumno' : 'Tus alumnos'}
+        </p>
         {alumnos.map(alumno => {
           const inscripcion = inscripcionPorAlumno.get(alumno.id)
-          const alumnoNotas = ultimasNotas.filter(n => n.alumno_id === alumno.id).slice(0, 3)
-
           return (
-            <div key={alumno.id} className="flex flex-col gap-3 rounded-lg border p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-semibold">{displayAlumno(alumno)}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {inscripcion?.cursos?.nombre ?? 'Sin curso asignado'}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
-                  {moduloContenidos && inscripcion?.curso_id && (
-                    <Button variant="outline" size="sm" render={<Link href={`/dashboard/${slug}/contenidos/${inscripcion.curso_id}`} />}>
-                      <BookMarked data-icon="inline-start" />
-                      Contenidos
-                    </Button>
-                  )}
-                  <Button variant="secondary" size="sm" render={<Link href={`/dashboard/${slug}/libreta/${alumno.id}`} />}>
-                    Ver libreta
-                    <ArrowRight data-icon="inline-end" />
-                  </Button>
-                </div>
+            <div key={alumno.id} className="flex items-center gap-4 rounded-xl border p-4">
+              <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-sm select-none">
+                {getInitials(alumno)}
               </div>
-
-              {alumnoNotas.length > 0 ? (
-                <div className="flex flex-col gap-0.5 rounded-md bg-muted/40 px-3 py-2">
-                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-1">Últimas notas</p>
-                  {alumnoNotas.map((n, i) => {
-                    const evalNombre = n.evaluaciones?.nombre ?? '—'
-                    const materiaNombre = (n.evaluaciones?.materias as { materias_catalogo: { nombre: string } | null } | null)?.materias_catalogo?.nombre ?? '—'
-                    const valor = n.valor_numerico != null ? n.valor_numerico : (n.valor_literal ?? '—')
-                    return (
-                      <div key={i} className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground truncate">{materiaNombre} · {evalNombre}</span>
-                        <span className="font-semibold tabular-nums ml-3 shrink-0">{valor}</span>
-                      </div>
-                    )
-                  })}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">Sin notas recientes.</p>
-              )}
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold leading-tight">{displayAlumno(alumno)}</p>
+                <p className="text-sm text-muted-foreground">{inscripcion?.cursos?.nombre ?? 'Sin curso asignado'}</p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+                {moduloContenidos && inscripcion?.curso_id && (
+                  <Button variant="outline" size="sm" render={<Link href={`/dashboard/${slug}/contenidos/${inscripcion.curso_id}`} />}>
+                    Contenidos
+                  </Button>
+                )}
+                <Button size="sm" render={<Link href={`/dashboard/${slug}/libreta/${alumno.id}`} />}>
+                  Ver libreta
+                  <ArrowRight data-icon="inline-end" />
+                </Button>
+              </div>
             </div>
           )
         })}
+      </div>
+
+      {/* Accesos rápidos */}
+      <div className="flex flex-col gap-3">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Accesos rápidos</p>
+        <div className="grid grid-cols-2 gap-3">
+          {pasos.map((paso) => {
+            const Icon = paso.icon
+            return (
+              <Link
+                key={paso.href}
+                href={paso.href}
+                className="group flex flex-col gap-3 rounded-xl border p-4 transition-colors hover:bg-muted/40"
+              >
+                <div className="flex items-center justify-between">
+                  <div className={`flex size-9 items-center justify-center rounded-lg ${paso.color}`}>
+                    <Icon className="size-5" />
+                  </div>
+                  {paso.badge ? (
+                    <Badge variant="destructive" className="text-xs">{paso.badge}</Badge>
+                  ) : (
+                    <ArrowRight className="size-3.5 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm font-semibold">{paso.label}</p>
+                  <p className="text-xs text-muted-foreground leading-snug">{paso.desc}</p>
+                </div>
+              </Link>
+            )
+          })}
+        </div>
       </div>
 
       {/* Comunicados recientes */}
@@ -205,7 +264,9 @@ export default async function HomeResponsable({ instId, slug, personaId, moduloC
               <MessageSquare className="size-4 text-muted-foreground" />
               <h2 className="font-semibold">Comunicados</h2>
               {pendientes.length > 0 && (
-                <Badge variant="destructive" className="text-xs">{pendientes.length} pendiente{pendientes.length !== 1 ? 's' : ''}</Badge>
+                <Badge variant="destructive" className="text-xs">
+                  {pendientes.length} pendiente{pendientes.length !== 1 ? 's' : ''}
+                </Badge>
               )}
             </div>
             <Button variant="ghost" size="sm" render={<Link href={`/dashboard/${slug}/comunicados`} />}>
@@ -213,7 +274,7 @@ export default async function HomeResponsable({ instId, slug, personaId, moduloC
             </Button>
           </div>
           <div className="flex flex-col gap-2">
-            {comunicados.slice(0, 5).map(c => (
+            {comunicados.slice(0, 3).map(c => (
               <div key={c.confId} className="flex items-start justify-between gap-3 rounded-lg border px-4 py-3">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium leading-snug">{c.titulo}</p>

@@ -40,7 +40,7 @@ export default async function InstitucionDashboardPage({ params }: Params) {
   }
 
   if (isResponsable && session.persona_id) {
-    return <HomeResponsable instId={inst.id} slug={slug} personaId={session.persona_id} moduloContenidos={!!inst.modulo_contenidos} />
+    return <HomeResponsable instId={inst.id} slug={slug} personaId={session.persona_id} moduloContenidos={!!inst.modulo_contenidos} nombre={session.nombre} />
   }
 
   // Fallback: sin persona_id o rol no reconocido
