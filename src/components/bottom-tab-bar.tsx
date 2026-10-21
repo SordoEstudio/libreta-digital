@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import { useSidebar } from '@/components/ui/sidebar'
 import {
   LayoutDashboard, GraduationCap, NotebookPen,
-  BookOpen, MessageSquare, MoreHorizontal, FileText, FolderOpen,
+  BookOpen, MessageSquare, MoreHorizontal, FileText, FolderOpen, HelpCircle,
 } from 'lucide-react'
 import { cn } from 'cn'
 import type { SessionUser } from '@/lib/auth'
@@ -64,6 +64,12 @@ export function BottomTabBar({ session }: BottomTabBarProps) {
         label: 'Boletines',
         icon: FileText,
         match: p => p.startsWith(`/dashboard/${activeSlug}/mis-alumnos`) || p.startsWith(`/dashboard/${activeSlug}/libreta`),
+      },
+      {
+        href: `/dashboard/${activeSlug}/ayuda`,
+        label: 'Ayuda',
+        icon: HelpCircle,
+        match: p => p.startsWith(`/dashboard/${activeSlug}/ayuda`),
       },
     )
     showMas = false
