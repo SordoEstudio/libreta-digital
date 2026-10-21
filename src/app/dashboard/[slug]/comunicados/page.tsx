@@ -1,12 +1,14 @@
 import { requireSession, isSuperadmin, hasAnyRole } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect, notFound } from 'next/navigation'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
 import Link from 'next/link'
-import { MessageSquare } from 'lucide-react'
+import { MessageSquare, CheckCircle2, Clock } from 'lucide-react'
 import NuevoComunicadoSheet from './nuevo-comunicado-sheet'
 
 type Params = { params: Promise<{ slug: string }> }
@@ -27,8 +29,96 @@ export default async function ComunicadosPage({ params }: Params) {
     if (isSuperadmin(session)) redirect('/dashboard/instituciones')
     notFound()
   }
-  if (!isSuperadmin(session) && !hasAnyRole(session, inst.id, ['admin', 'docente']))
-    redirect(`/dashboard/${slug}`)
+
+  const isEditor = isSuperadmin(session) || hasAnyRole(session, inst.id, ['admin', 'docente'])
+  const isOnlyResponsable = !isEditor && hasAnyRole(session, inst.id, ['responsable'])
+
+  if (!isEditor && !isOnlyResponsable) redirect(`/dashboard/${slug}`)
+
+  // Responsable: show their own comunicados
+  if (isOnlyResponsable && session.persona_id) {
+    const admin = createAdminClient()
+    type ConfRaw = {
+      id: string
+      confirmed_at: string | null
+      comunicados: {
+        id: string
+        titulo: string
+        created_at: string
+        deleted_at: string | null
+        cursos: { nombre: string } | null
+        materias: { materias_catalogo: { nombre: string } | null } | null
+      } | null
+    }
+    const { data: confsRaw } = await admin
+      .from('comunicado_confirmaciones')
+      .select('id, confirmed_at, comunicados(id, titulo, created_at, deleted_at, cursos(nombre), materias(materias_catalogo(nombre)))')
+      .eq('persona_id', session.persona_id)
+      .order('created_at', { ascending: false })
+
+    const comunicados = ((confsRaw ?? []) as ConfRaw[])
+      .filter(c => c.comunicados && !c.comunicados.deleted_at)
+      .map(c => ({
+        confId: c.id,
+        confirmed: !!c.confirmed_at,
+        titulo: c.comunicados!.titulo,
+        created_at: c.comunicados!.created_at,
+        cursoNombre: (c.comunicados!.cursos as { nombre: string } | null)?.nombre ?? '—',
+        materiaNombre: (c.comunicados!.materias as { materias_catalogo: { nombre: string } | null } | null)?.materias_catalogo?.nombre ?? null,
+      }))
+
+    const pendientes = comunicados.filter(c => !c.confirmed).length
+
+    return (
+      <div className="flex flex-col gap-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-semibold md:text-2xl">Comunicados</h1>
+            <p className="text-sm text-muted-foreground">{inst.nombre}</p>
+          </div>
+          {pendientes > 0 && (
+            <Badge variant="destructive">{pendientes} pendiente{pendientes !== 1 ? 's' : ''}</Badge>
+          )}
+        </div>
+
+        {comunicados.length > 0 ? (
+          <div className="flex flex-col gap-2">
+            {comunicados.map(c => (
+              <div key={c.confId} className="flex items-start justify-between gap-3 rounded-lg border px-4 py-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium leading-snug">{c.titulo}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {c.cursoNombre}
+                    {c.materiaNombre && ` · ${c.materiaNombre}`}
+                    {' · '}
+                    {new Date(c.created_at).toLocaleDateString('es-AR')}
+                  </p>
+                </div>
+                <div className="shrink-0 flex items-center gap-2">
+                  {c.confirmed ? (
+                    <span className="flex items-center gap-1 text-xs text-emerald-600 font-medium">
+                      <CheckCircle2 className="size-3.5" />
+                      Confirmado
+                    </span>
+                  ) : (
+                    <Button variant="outline" size="sm" render={<Link href={`/confirmar/${c.confId}`} />}>
+                      <Clock data-icon="inline-start" />
+                      Confirmar
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+            <MessageSquare className="size-12 text-muted-foreground/40" />
+            <p className="text-muted-foreground">No tenés comunicados.</p>
+          </div>
+        )}
+      </div>
+    )
+  }
 
   const { data: comunicadosRaw } = await supabase
     .from('comunicados')

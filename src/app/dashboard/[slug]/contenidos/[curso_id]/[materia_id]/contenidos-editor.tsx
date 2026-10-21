@@ -36,19 +36,12 @@ function ItemTypeIcon({ tipo }: { tipo: ContenidoItem['tipo'] }) {
 export default function ContenidosEditor({ unidades: initialUnidades, dimensiones, materiaId, isEditor }: Props) {
   const router = useRouter()
   const [unidades, setUnidades] = useState(initialUnidades)
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(
-    () => new Set(initialUnidades.map(u => u.id))
-  )
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set())
   const [addingUnidad, setAddingUnidad] = useState(false)
   const [confirmHideId, setConfirmHideId] = useState<string | null>(null)
 
   useEffect(() => {
     setUnidades(initialUnidades)
-    setExpandedIds(prev => {
-      const next = new Set(prev)
-      initialUnidades.forEach(u => { if (!next.has(u.id)) next.add(u.id) })
-      return next
-    })
   }, [initialUnidades])
 
   function toggleExpanded(id: string) {
@@ -167,7 +160,7 @@ export default function ContenidosEditor({ unidades: initialUnidades, dimensione
                       <p className="px-4 py-3 text-sm text-muted-foreground">Sin materiales en esta unidad.</p>
                     )}
                     {unidad.items.map((item, idx) => (
-                      <div key={item.id} className="flex items-start gap-3 px-4 py-3">
+                      <div key={item.id} className="flex items-center gap-3 px-4 py-2.5">
                         <ItemTypeIcon tipo={item.tipo} />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
@@ -179,65 +172,65 @@ export default function ContenidosEditor({ unidades: initialUnidades, dimensione
                               </Badge>
                             )}
                           </div>
-                          <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                            {item.tipo === 'link' && item.url && (
-                              <a href={item.url} target="_blank" rel="noopener noreferrer">
+                          {item.nota && (
+                            <p className="text-xs text-muted-foreground italic mt-0.5">{item.nota}</p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          {item.tipo === 'link' && item.url && (
+                            <a href={item.url} target="_blank" rel="noopener noreferrer">
+                              <Button variant="outline" size="sm" className="h-7 text-xs">
+                                <ExternalLink className="size-3" />
+                                Abrir
+                              </Button>
+                            </a>
+                          )}
+                          {item.tipo === 'archivo' && item.signedUrl && (
+                            <a href={`/api/v1/contenidos/items/${item.id}/download`}>
+                              <Button variant="outline" size="sm" className="h-7 text-xs">
+                                <Download className="size-3" />
+                                Descargar
+                              </Button>
+                            </a>
+                          )}
+                          {item.tipo === 'imagen' && item.signedUrl && (
+                            <>
+                              <a href={item.signedUrl} target="_blank" rel="noopener noreferrer">
                                 <Button variant="outline" size="sm" className="h-7 text-xs">
                                   <ExternalLink className="size-3" />
-                                  Abrir
+                                  Ver
                                 </Button>
                               </a>
-                            )}
-                            {item.tipo === 'archivo' && item.signedUrl && (
                               <a href={`/api/v1/contenidos/items/${item.id}/download`}>
                                 <Button variant="outline" size="sm" className="h-7 text-xs">
                                   <Download className="size-3" />
                                   Descargar
                                 </Button>
                               </a>
-                            )}
-                            {item.tipo === 'imagen' && item.signedUrl && (
-                              <>
-                                <a href={item.signedUrl} target="_blank" rel="noopener noreferrer">
-                                  <Button variant="outline" size="sm" className="h-7 text-xs">
-                                    <ExternalLink className="size-3" />
-                                    Ver
-                                  </Button>
-                                </a>
-                                <a href={`/api/v1/contenidos/items/${item.id}/download`}>
-                                  <Button variant="outline" size="sm" className="h-7 text-xs">
-                                    <Download className="size-3" />
-                                    Descargar
-                                  </Button>
-                                </a>
-                              </>
-                            )}
-                          </div>
-                          {item.nota && (
-                            <p className="text-xs text-muted-foreground italic mt-0.5">{item.nota}</p>
+                            </>
+                          )}
+                          {isEditor && (
+                            <>
+                              <Button
+                                variant="ghost" size="icon" className="size-6"
+                                onClick={() => moveItem(unidad.id, idx, 'up')}
+                                disabled={idx === 0}
+                                title="Subir"
+                              >
+                                <ChevronUp className="size-3.5" />
+                              </Button>
+                              <Button
+                                variant="ghost" size="icon" className="size-6"
+                                onClick={() => moveItem(unidad.id, idx, 'down')}
+                                disabled={idx === unidad.items.length - 1}
+                                title="Bajar"
+                              >
+                                <ChevronDown className="size-3.5" />
+                              </Button>
+                              <ItemSheet mode="edit" item={item} dimensiones={dimensiones} />
+                            </>
                           )}
                         </div>
-                        {isEditor && (
-                          <div className="flex items-center gap-0.5 shrink-0">
-                            <Button
-                              variant="ghost" size="icon" className="size-6"
-                              onClick={() => moveItem(unidad.id, idx, 'up')}
-                              disabled={idx === 0}
-                              title="Subir"
-                            >
-                              <ChevronUp className="size-3.5" />
-                            </Button>
-                            <Button
-                              variant="ghost" size="icon" className="size-6"
-                              onClick={() => moveItem(unidad.id, idx, 'down')}
-                              disabled={idx === unidad.items.length - 1}
-                              title="Bajar"
-                            >
-                              <ChevronDown className="size-3.5" />
-                            </Button>
-                            <ItemSheet mode="edit" item={item} dimensiones={dimensiones} />
-                          </div>
-                        )}
                       </div>
                     ))}
                   </div>
