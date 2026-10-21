@@ -100,11 +100,15 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
     }
   }
 
+  const isAnual = periodo_id === '__anual__'
+
   // Default to active period when no param
   const defaultPeriodo = periodos.find(p => p.activo) ?? periodos[0] ?? null
-  const selectedPeriodo = periodo_id
-    ? periodos.find(p => p.id === periodo_id)
-    : defaultPeriodo
+  const selectedPeriodo = isAnual
+    ? null
+    : periodo_id
+      ? periodos.find(p => p.id === periodo_id)
+      : defaultPeriodo
 
   const periodoCerrado = selectedPeriodo
     ? selectedPeriodo.cerrado_at != null
@@ -138,7 +142,7 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
     } | null
   }
 
-  // Only fetch table data when both materia + periodo selected
+  // Only fetch table data when both materia + periodo selected (or anual)
   let tableData: {
     alumnos: Array<{ id: string; nombre: string; apellido: string | null }>
     evalRefs: Array<{
@@ -159,7 +163,7 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
     notaAprobacion: number | null
   } | null = null
 
-  if (selectedMateria && selectedPeriodo) {
+  if (selectedMateria && (selectedPeriodo || isAnual)) {
     // Alumnos inscriptos en el curso
     const { data: inscripciones } = await supabase
       .from('alumno_inscripciones')
@@ -192,13 +196,15 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
     const dimMap = new Map(allMaterialDims.map(d => [d.id, d]))
 
     // Eval refs for this materia + period
-    const { data: evalRefsRaw } = await supabase
+    const evalRefsQueryBase = supabase
       .from('evaluaciones_referencia')
       .select('id, nombre, tipo, periodo_id, evaluacion_referencia_dimensiones(dimension_id), evaluacion_referencia_unidades(unidad_id)')
       .eq('materia_id', selectedMateria.id)
-      .eq('periodo_id', selectedPeriodo.id)
       .is('deleted_at', null)
       .order('created_at', { ascending: true })
+    const { data: evalRefsRaw } = isAnual
+      ? await evalRefsQueryBase.is('periodo_id', null)
+      : await evalRefsQueryBase.eq('periodo_id', selectedPeriodo!.id)
 
     type EvalRefRaw = {
       id: string
@@ -247,12 +253,12 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
       }
     })
 
-    // Nota definitiva del período
-    const { data: definitivas } = await supabase
+    // Nota definitiva del período (no aplica para anual)
+    const { data: definitivas } = isAnual ? { data: null } : await supabase
       .from('evaluaciones')
       .select('id, notas(alumno_id, valor_numerico, valor_literal)')
       .eq('materia_id', selectedMateria.id)
-      .eq('periodo_id', selectedPeriodo.id)
+      .eq('periodo_id', selectedPeriodo!.id)
       .eq('es_definitiva_periodo', true)
       .is('deleted_at', null)
       .limit(1)
@@ -267,13 +273,15 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
     }
 
     // Fetch all evaluaciones for this materia+período (including recuperatorios)
-    const { data: evalsRaw } = await supabase
+    const evalsQueryBase = supabase
       .from('evaluaciones')
       .select('id, nombre, tipo, permite_recuperatorio, recuperatorio_de_evaluacion_id, orden, evaluacion_dimensiones(dimension_id)')
       .eq('materia_id', selectedMateria.id)
-      .eq('periodo_id', selectedPeriodo.id)
       .is('deleted_at', null)
       .order('orden')
+    const { data: evalsRaw } = isAnual
+      ? await evalsQueryBase.is('periodo_id', null)
+      : await evalsQueryBase.eq('periodo_id', selectedPeriodo!.id)
 
     type EvalRaw = NonNullable<typeof evalsRaw>[number]
     const allEvalsFiltered = (evalsRaw ?? []).filter(
@@ -361,7 +369,7 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
           selectedMateriaId={selectedMateria?.id ?? null}
           selectedPeriodoId={selectedPeriodo?.id ?? null}
         />
-        {tableData && selectedPeriodo && (
+        {tableData && (selectedPeriodo || isAnual) && (
           <div className="flex gap-2 shrink-0">
             <CuadernoUnidadesSheet
               materiaId={selectedMateria!.id}
@@ -396,28 +404,26 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
         </div>
       )}
 
-      {selectedMateria && !selectedPeriodo && (
+      {selectedMateria && !selectedPeriodo && !isAnual && (
         <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
           <NotebookPen className="size-12 text-muted-foreground/40" />
           <p className="text-muted-foreground">
-            {periodos.length === 0
-              ? 'Esta materia no tiene períodos configurados.'
-              : 'Seleccioná un período para ver el cuaderno.'}
+            Seleccioná un período para ver el cuaderno.
           </p>
         </div>
       )}
 
-      {tableData && selectedPeriodo && (
+      {tableData && (selectedPeriodo || isAnual) && (
         <MobileOrientationGuard>
         <CuadernoTabla
-            key={`${selectedMateria!.id}:${selectedPeriodo.id}`}
+            key={`${selectedMateria!.id}:${isAnual ? '__anual__' : selectedPeriodo!.id}`}
             alumnos={tableData.alumnos}
             evalRefs={tableData.evalRefs}
             notaDefinitivaEvalId={tableData.notaDefinitivaEvalId}
             notaDefinitivaMap={tableData.notaDefinitivaMap}
             materiaId={selectedMateria!.id}
-            periodoId={selectedPeriodo.id}
-            periodoNombre={selectedPeriodo.nombre}
+            periodoId={isAnual ? '__anual__' : selectedPeriodo!.id}
+            periodoNombre={isAnual ? 'Anual' : selectedPeriodo!.nombre}
             periodos={periodos}
             todasDimensiones={tableData.allMaterialDims}
             todasUnidades={unidades.map(u => ({ id: u.id, nombre: u.nombre }))}

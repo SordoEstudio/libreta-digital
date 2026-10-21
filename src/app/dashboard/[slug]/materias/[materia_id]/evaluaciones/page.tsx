@@ -98,20 +98,22 @@ export default async function EvaluacionesPage({ params }: Params) {
     .order('orden')
 
   const activePeriodo = (periodos ?? []).find(p => p.activo)
+  const cerradoIds = new Set((periodos ?? []).filter(p => p.cerrado_at).map(p => p.id))
 
   // Group evaluaciones by period, maintaining period orden
   type Evaluacion = NonNullable<typeof evaluaciones>[number]
-  const periodoGroups = new Map<string, { nombre: string; evs: Evaluacion[] }>()
-  for (const p of periodos ?? []) periodoGroups.set(p.id, { nombre: p.nombre, evs: [] })
-  periodoGroups.set('__anual__', { nombre: 'Anual', evs: [] })
+  const periodoGroups = new Map<string, { nombre: string; cerrado: boolean; evs: Evaluacion[] }>()
+  for (const p of periodos ?? []) periodoGroups.set(p.id, { nombre: p.nombre, cerrado: !!p.cerrado_at, evs: [] })
+  periodoGroups.set('__anual__', { nombre: 'Anual', cerrado: false, evs: [] })
   for (const ev of evaluaciones ?? []) {
     const key = ev.periodo_id ?? '__anual__'
     if (!periodoGroups.has(key)) {
-      periodoGroups.set(key, { nombre: (ev.periodos as { nombre: string } | null)?.nombre ?? 'Período eliminado', evs: [] })
+      periodoGroups.set(key, { nombre: (ev.periodos as { nombre: string } | null)?.nombre ?? 'Período eliminado', cerrado: false, evs: [] })
     }
     periodoGroups.get(key)!.evs.push(ev)
   }
-  const grupos = Array.from(periodoGroups.entries()).filter(([, g]) => g.evs.length > 0)
+  // Always show Anual group at the end, even when empty
+  const grupos = Array.from(periodoGroups.entries()).filter(([key, g]) => g.evs.length > 0 || key === '__anual__')
 
   const { data: dimensiones } = await supabase
     .from('materias_dimensiones')
@@ -153,15 +155,18 @@ export default async function EvaluacionesPage({ params }: Params) {
         </div>
       )}
 
-      {grupos.length > 0 ? (
+      {true ? (
         <MobileOrientationGuard>
         <div className="flex flex-col gap-6">
           {grupos.map(([periodoId, grupo]) => (
             <div key={periodoId}>
               <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                {grupo.nombre}
+                {grupo.nombre}{grupo.cerrado ? ' (cerrado)' : ''}
               </h2>
               <div className="rounded-md border">
+                {grupo.evs.length === 0 ? (
+                  <p className="px-4 py-3 text-sm text-muted-foreground">Sin evaluaciones.</p>
+                ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -176,6 +181,7 @@ export default async function EvaluacionesPage({ params }: Params) {
                     {grupo.evs.map(ev => {
                       const templateId = (ev as { template_id?: string | null }).template_id ?? null
                       const recuperatorioDeId = (ev as { recuperatorio_de_evaluacion_id?: string | null }).recuperatorio_de_evaluacion_id ?? null
+                      const esCerrado = ev.periodo_id ? cerradoIds.has(ev.periodo_id) : false
                       return (
                         <TableRow key={ev.id}>
                           <TableCell className="font-medium">
@@ -199,7 +205,7 @@ export default async function EvaluacionesPage({ params }: Params) {
                               render={<Link href={`/dashboard/${slug}/notas/${ev.id}`} />}
                             >
                               <ClipboardList data-icon="inline-start" />
-                              Cargar
+                              {esCerrado ? 'Ver' : 'Cargar'}
                             </Button>
                           </TableCell>
                           <TableCell>
@@ -233,6 +239,7 @@ export default async function EvaluacionesPage({ params }: Params) {
                     })}
                   </TableBody>
                 </Table>
+                )}
               </div>
             </div>
           ))}

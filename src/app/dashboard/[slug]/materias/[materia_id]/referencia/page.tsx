@@ -69,7 +69,7 @@ export default async function ReferenciaPage({ params }: Params) {
   const dimensiones = ([...(materia.materias_dimensiones as Dimension[] ?? [])]).sort((a, b) => a.orden - b.orden)
 
   // Periodos del año lectivo activo de este curso
-  type Periodo = { id: string; nombre: string; orden: number }
+  type Periodo = { id: string; nombre: string; orden: number; cerrado_at?: string | null }
   let periodos: Periodo[] = []
   if (cursoId) {
     const { data: curso } = await supabase
@@ -80,12 +80,13 @@ export default async function ReferenciaPage({ params }: Params) {
     if (curso?.año_lectivo_id) {
       const { data: periodoRows } = await supabase
         .from('periodos')
-        .select('id, nombre, orden')
+        .select('id, nombre, orden, cerrado_at')
         .eq('año_lectivo_id', curso.año_lectivo_id)
         .order('orden')
       periodos = (periodoRows ?? []) as Periodo[]
     }
   }
+  const cerradoIds = new Set(periodos.filter(p => p.cerrado_at).map(p => p.id))
 
   const { data: evalRefs } = await supabase
     .from('evaluaciones_referencia')
@@ -132,6 +133,7 @@ export default async function ReferenciaPage({ params }: Params) {
               {evalRefs.map(ev => {
                 type EvRefDim = { dimension_id: string }
                 const dimIds = (ev.evaluacion_referencia_dimensiones as EvRefDim[] ?? []).map(d => d.dimension_id)
+                const esCerrado = ev.periodo_id ? cerradoIds.has(ev.periodo_id) : false
                 return (
                   <TableRow key={ev.id}>
                     <TableCell className="font-medium">{ev.nombre}</TableCell>
@@ -151,7 +153,7 @@ export default async function ReferenciaPage({ params }: Params) {
                         render={<Link href={`/dashboard/${slug}/materias/${materia_id}/referencia/${ev.id}`} />}
                       >
                         <ClipboardList data-icon="inline-start" />
-                        Cargar
+                        {esCerrado ? 'Ver' : 'Cargar'}
                       </Button>
                     </TableCell>
                     <TableCell>

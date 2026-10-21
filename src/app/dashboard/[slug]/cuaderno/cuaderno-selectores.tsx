@@ -43,7 +43,7 @@ export default function CuadernoSelectores({
         </select>
       </div>
 
-      {selectedMateriaId && periodos.length > 0 && (
+      {selectedMateriaId && (
         <div className="flex flex-col gap-1 min-w-0 sm:min-w-40">
           <label className="text-xs text-muted-foreground font-medium">Período</label>
           <select
@@ -55,6 +55,7 @@ export default function CuadernoSelectores({
             {periodos.map(p => (
               <option key={p.id} value={p.id}>{p.nombre}</option>
             ))}
+            <option value="__anual__">Anual</option>
           </select>
         </div>
       )}
