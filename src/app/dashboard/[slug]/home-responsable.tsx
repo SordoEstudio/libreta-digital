@@ -200,22 +200,26 @@ export default async function HomeResponsable({ instId, slug, personaId, moduloC
         {alumnos.map(alumno => {
           const inscripcion = inscripcionPorAlumno.get(alumno.id)
           return (
-            <div key={alumno.id} className="flex items-center gap-4 rounded-xl border p-4">
-              <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-sm select-none">
-                {getInitials(alumno)}
+            <div key={alumno.id} className="flex items-start justify-between gap-4 rounded-xl border p-4">
+              {/* Izquierda: avatar arriba, nombre y curso abajo */}
+              <div className="flex flex-col gap-2 min-w-0">
+                <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-sm select-none">
+                  {getInitials(alumno)}
+                </div>
+                <div className="min-w-0">
+                  <p className="font-semibold leading-tight">{displayAlumno(alumno)}</p>
+                  <p className="text-sm text-muted-foreground">{inscripcion?.cursos?.nombre ?? 'Sin curso asignado'}</p>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold leading-tight">{displayAlumno(alumno)}</p>
-                <p className="text-sm text-muted-foreground">{inscripcion?.cursos?.nombre ?? 'Sin curso asignado'}</p>
-              </div>
-              <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+              {/* Derecha: botones apilados */}
+              <div className="flex flex-col gap-2 shrink-0">
                 {moduloContenidos && inscripcion?.curso_id && (
                   <Button variant="outline" size="sm" render={<Link href={`/dashboard/${slug}/contenidos/${inscripcion.curso_id}`} />}>
                     Contenidos
                   </Button>
                 )}
                 <Button size="sm" render={<Link href={`/dashboard/${slug}/libreta/${alumno.id}`} />}>
-                  Ver libreta
+                  Ver boletín
                   <ArrowRight data-icon="inline-end" />
                 </Button>
               </div>
