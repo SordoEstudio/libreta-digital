@@ -15,6 +15,7 @@ import { createClient } from '@/lib/supabase/client'
 import {
   Building2, BarChart3, LayoutDashboard, GraduationCap,
   Users, BookOpen, LogOut, Settings, Library, BookMarked, MessageSquare, Layers, NotebookPen,
+  FolderOpen, FileText,
 } from 'lucide-react'
 import { NotificationBell } from '@/components/notification-bell'
 
@@ -149,15 +150,35 @@ export function AppSidebar({ session }: AppSidebarProps) {
                 )}
 
                 {isResponsable && !isAdminLevel && !isDocente && (
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      render={<Link href={`/dashboard/${activeSlug}/mis-alumnos`} />}
-                      isActive={pathname.startsWith(`/dashboard/${activeSlug}/mis-alumnos`)}
-                    >
-                      <GraduationCap />
-                      Mis alumnos
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
+                  <>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        render={<Link href={`/dashboard/${activeSlug}/contenidos`} />}
+                        isActive={pathname.startsWith(`/dashboard/${activeSlug}/contenidos`)}
+                      >
+                        <FolderOpen />
+                        Contenidos
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        render={<Link href={`/dashboard/${activeSlug}/comunicados`} />}
+                        isActive={pathname.startsWith(`/dashboard/${activeSlug}/comunicados`)}
+                      >
+                        <MessageSquare />
+                        Comunicados
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        render={<Link href={`/dashboard/${activeSlug}/mis-alumnos`} />}
+                        isActive={pathname.startsWith(`/dashboard/${activeSlug}/mis-alumnos`) || pathname.startsWith(`/dashboard/${activeSlug}/libreta`)}
+                      >
+                        <FileText />
+                        Boletines
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  </>
                 )}
 
                 {(isAdminLevel || isDocente) && (
