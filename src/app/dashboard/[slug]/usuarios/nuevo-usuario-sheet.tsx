@@ -37,9 +37,7 @@ export default function NuevoUsuarioSheet({ instId }: Props) {
   const [dni, setDni] = useState('')
   const [direccion, setDireccion] = useState('')
   const [usaGoogle, setUsaGoogle] = useState(false)
-  const emailLower = email.toLowerCase()
-  const esGmailDefinitivo = emailLower.endsWith('@gmail.com') || emailLower.endsWith('@googlemail.com')
-  const tieneEmail = email.includes('@')
+  const esGmail = email.toLowerCase().endsWith('@gmail.com')
   const [inviteLink, setInviteLink] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
@@ -53,9 +51,9 @@ export default function NuevoUsuarioSheet({ instId }: Props) {
   const [asignacionHecha, setAsignacionHecha] = useState(false)
 
   useEffect(() => {
-    if (esGmailDefinitivo) setUsaGoogle(true)
+    if (esGmail) setUsaGoogle(true)
     else setUsaGoogle(false)
-  }, [esGmailDefinitivo])
+  }, [esGmail])
 
   useEffect(() => {
     if (!inviteLink || rol !== 'responsable') return
@@ -306,7 +304,7 @@ export default function NuevoUsuarioSheet({ instId }: Props) {
                 />
               </div>
 
-              {tieneEmail && (
+              {esGmail && (
                 <label className="flex items-center gap-2.5 cursor-pointer">
                   <input
                     type="checkbox"
@@ -314,9 +312,7 @@ export default function NuevoUsuarioSheet({ instId }: Props) {
                     onChange={e => setUsaGoogle(e.target.checked)}
                     className="size-4 accent-primary"
                   />
-                  <span className="text-sm text-muted-foreground">
-                    Ingresa con Google{esGmailDefinitivo ? '' : ' (Google Workspace)'}
-                  </span>
+                  <span className="text-sm">Ingresa con Google</span>
                 </label>
               )}
 
