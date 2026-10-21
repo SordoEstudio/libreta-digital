@@ -15,7 +15,7 @@ const TIPOS = [
   { value: 'conceptual', label: 'Conceptual' },
 ]
 
-interface Periodo { id: string; nombre: string; orden: number }
+interface Periodo { id: string; nombre: string; orden: number; cerrado_at?: string | null }
 interface Dimension { id: string; nombre: string; orden: number }
 interface Unidad { id: string; nombre: string }
 
@@ -143,7 +143,9 @@ export default function NuevaEvalRefSheet({ materiaId, periodos, dimensiones, un
                   <SelectContent>
                     <SelectItem value="">Sin período</SelectItem>
                     {periodos.map(p => (
-                      <SelectItem key={p.id} value={p.id}>{p.nombre}</SelectItem>
+                      <SelectItem key={p.id} value={p.id} disabled={!!p.cerrado_at}>
+                        {p.nombre}{p.cerrado_at ? ' (cerrado)' : ''}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
