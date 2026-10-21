@@ -1,6 +1,6 @@
 # QA — Nuevas funcionalidades (Octubre 2026)
 
-**Alcance:** Dimensiones por materia · Notas por dimensión (multi-columna) · Peso opcional (promedio directo) · Plantillas de dimensiones · Recuperatorios por dimensión · Notas de referencia (con dimensiones y período) · Cuaderno del docente · Cierre de período · Comunicados con confirmación · Cuaderno v2 (edición inline de proceso, acciones por columna) · Unidades por materia · Cuaderno v3 (gradebook unificado: libreta inline, recuperatorios, smart defaults, drill-down) · Módulo de contenidos (docente editor + responsable viewer) · Boletín unificado + mobile (Compartir/Guardar PDF) · Mobile UX (header, bottom bar por rol, orientation guard)  
+**Alcance:** Dimensiones por materia · Notas por dimensión (multi-columna) · Peso opcional (promedio directo) · Plantillas de dimensiones · Recuperatorios por dimensión · Notas de referencia (con dimensiones y período) · Cuaderno del docente · Cierre de período · Comunicados con confirmación · Cuaderno v2 (edición inline de proceso, acciones por columna) · Unidades por materia · Cuaderno v3 (gradebook unificado: libreta inline, recuperatorios, smart defaults, drill-down) · Módulo de contenidos (docente editor + responsable viewer) · Boletín unificado + mobile (Compartir/Guardar PDF) · Mobile UX (header, bottom bar por rol, orientation guard) · Home responsable rediseñado · Boletín acuse de recibo digital  
 **Roles necesarios:** superadmin, admin, docente, responsable (con email real para probar envíos)  
 **Entorno:** staging o local con Supabase + Resend en modo test
 
@@ -23,16 +23,16 @@
 > Las dimensiones se gestionan ahora dentro del sheet de edición de materia. No hay botón separado de "Dimensiones" en la tarjeta.
 
 ### 1.0 Edición unificada de materia
-- [ ] Admin abre curso → tarjeta de materia muestra badges de dimensiones apilados (uno por línea)
-- [ ] Click ✏️ en tarjeta → sheet abre con sección "Dimensiones" al pie
-- [ ] **Esperado:** no hay botón "Dimensiones" separado en la tarjeta (eliminado)
-- [ ] Dimensiones existentes aparecen en lista dentro del sheet
-- [ ] Dimensiones en la tarjeta muestran nombre, sin peso
+- [x] Admin abre curso → tarjeta de materia muestra badges de dimensiones apilados (uno por línea)
+- [x] Click ✏️ en tarjeta → sheet abre con sección "Dimensiones" al pie
+- [x] **Esperado:** no hay botón "Dimensiones" separado en la tarjeta (eliminado)
+- [x] Dimensiones existentes aparecen en lista dentro del sheet
+- [x] Dimensiones en la tarjeta muestran nombre, sin peso
 
 ### 1.1 Crear dimensiones
-- [ ] Admin abre sheet de materia → sección Dimensiones → campo "Nueva dimensión"
-- [ ] Escribir "Trabajo en clase" → Enter o click "Agregar"
-- [ ] Escribir "Examen" → Enter
+- [x] Admin abre sheet de materia → sección Dimensiones → campo "Nueva dimensión"
+- [x] Escribir "Trabajo en clase" → Enter o click "Agregar"
+- [x] Escribir "Examen" → Enter
 - **Esperado:** ambas aparecen en lista dentro del sheet
 
 ### 1.2 Peso opcional — promedio directo
@@ -43,35 +43,35 @@
 - [ ] Libreta del alumno muestra "Promedio directo" para dimensiones sin peso
 
 ### 1.3 Validaciones
-- [ ] Intentar crear dimensión con nombre vacío → error
-- [ ] Intentar crear dimensión con peso negativo → error
+- [x] Intentar crear dimensión con nombre vacío → error
+- [x] Intentar crear dimensión con peso negativo → error
 
 ### 1.4 Editar y eliminar
-- [ ] Editar nombre de dimensión → cambio persiste
-- [ ] Eliminar dimensión → desaparece de la lista
-- [ ] Verificar que evaluaciones vinculadas a esa dimensión no se rompen
+- [x] Editar nombre de dimensión → cambio persiste
+- [x] Eliminar dimensión → desaparece de la lista
+- [x] Verificar que evaluaciones vinculadas a esa dimensión no se rompen
 
 ### 1.5 Asignar evaluación a dimensiones (multi-select)
-- [ ] Ir a Evaluaciones de la materia → crear nueva evaluación
-- [ ] Si la materia tiene dimensiones, aparece sección "Dimensiones (opcional)" con checkboxes
-- [ ] Seleccionar 2 dimensiones → guardar
-- [ ] **Esperado:** evaluación aparece en la lista; al cargar notas, tabla tiene una columna por dimensión
-- [ ] Editar evaluación → checkboxes muestran las dimensiones asignadas → desmarcar una → guardar
-- [ ] **Esperado:** columna de esa dimensión desaparece en el editor de notas
+- [x] Ir a Evaluaciones de la materia → crear nueva evaluación
+- [x] Si la materia tiene dimensiones, aparece sección "Dimensiones (opcional)" con checkboxes
+- [x] Seleccionar 2 dimensiones → guardar
+- [x] **Esperado:** evaluación aparece en la lista; al cargar notas, tabla tiene una columna por dimensión
+- [x] Editar evaluación → checkboxes muestran las dimensiones asignadas → desmarcar una → guardar
+- [x] **Esperado:** columna de esa dimensión desaparece en el editor de notas
 
 ### 1.6 Cargar notas por dimensión
-- [ ] Abrir editor de notas de evaluación con 2 dimensiones asignadas (ej. Oral, Escrito)
-- [ ] **Esperado:** tabla tiene columnas Alumno · Oral · Escrito · Ausente
-- [ ] Ingresar nota 8 para Oral y 5 para Escrito en alumno García
-- [ ] Guardar → recargar
-- [ ] **Esperado:** notas persisten en las columnas correctas
-- [ ] Marcar alumno como Ausente → ambas columnas se vacían y deshabilitan
-- [ ] Guardar → **Esperado:** alumno queda con "A" en ambas dimensiones
-- [ ] Abrir libreta del alumno → nota de Escrito bajo dimensión "Escrito", nota de Oral bajo "Oral"
+- [x] Abrir editor de notas de evaluación con 2 dimensiones asignadas (ej. Oral, Escrito)
+- [x] **Esperado:** tabla tiene columnas Alumno · Oral · Escrito · Ausente
+- [x] Ingresar nota 8 para Oral y 5 para Escrito en alumno García
+- [x] Guardar → recargar
+- [x] **Esperado:** notas persisten en las columnas correctas
+- [x] Marcar alumno como Ausente → ambas columnas se vacían y deshabilitan
+- [x] Guardar → **Esperado:** alumno queda con "A" en ambas dimensiones
+- [x] Abrir libreta del alumno → nota de Escrito bajo dimensión "Escrito", nota de Oral bajo "Oral"
 
 ### 1.7 Evaluación sin dimensiones asignadas
-- [ ] Evaluación sin dimensiones → editor muestra columna única "Nota" (comportamiento previo)
-- [ ] Sin regresión respecto a evaluaciones ya existentes
+- [x] Evaluación sin dimensiones → editor muestra columna única "Nota" (comportamiento previo)
+- [x] Sin regresión respecto a evaluaciones ya existentes
 
 ---
 
@@ -80,51 +80,51 @@
 **Ruta:** `Configuración → Dim. plantillas` (sidebar, solo admin)
 
 ### 2.1 Crear plantilla
-- [ ] Admin abre "Dim. plantillas" en sidebar
-- [ ] Click "Nueva plantilla" → sheet lateral abre
-- [ ] Nombre: "Oral + Escrito", agregar ítems: "Oral" peso 30, "Escrito" peso 70
-- [ ] Guardar
-- [ ] **Esperado:** plantilla aparece en lista con "2 dimensiones: Oral (30%), Escrito (70%)"
+- [x] Admin abre "Dim. plantillas" en sidebar
+- [x] Click "Nueva plantilla" → sheet lateral abre
+- [x] Nombre: "Oral + Escrito", agregar ítems: "Oral" peso 30, "Escrito" peso 70
+- [x] Guardar
+- [x] **Esperado:** plantilla aparece en lista con "2 dimensiones: Oral (30%), Escrito (70%)"
 
 ### 2.2 Plantilla con promedio directo
-- [ ] Crear plantilla "Promedio directo" con ítems sin peso
-- [ ] **Esperado:** plantilla guardada, ítems muestran nombre sin porcentaje
+- [x] Crear plantilla "Promedio directo" con ítems sin peso
+- [x] **Esperado:** plantilla guardada, ítems muestran nombre sin porcentaje
 
 ### 2.3 Validaciones de creación
-- [ ] Intentar guardar con nombre vacío → botón deshabilitado
-- [ ] Intentar guardar sin ítems → botón deshabilitado
-- [ ] Ítem con nombre vacío → botón deshabilitado
+- [x] Intentar guardar con nombre vacío → botón deshabilitado
+- [x] Intentar guardar sin ítems → botón deshabilitado
+- [x] Ítem con nombre vacío → botón deshabilitado
 
 ### 2.4 Eliminar plantilla
-- [ ] Click ícono eliminar en plantilla → confirmación → plantilla desaparece
-- [ ] **Esperado:** toast confirmación. Materias donde ya se aplicó **no** cambian.
+- [x] Click ícono eliminar en plantilla → confirmación → plantilla desaparece
+- [x] **Esperado:** toast confirmación. Materias donde ya se aplicó **no** cambian.
 
 ### 2.5 Aplicar plantilla a una materia
-- [ ] Ir a Configuración → Materias → [materia con dimensiones existentes]
-- [ ] Abrir sheet "Dimensiones"
-- [ ] Al fondo del sheet: sección "Aplicar plantilla" con select visible (si hay plantillas)
-- [ ] Seleccionar plantilla → click "Aplicar" → AlertDialog de confirmación
-- [ ] Confirmar
-- [ ] **Esperado:** dimensiones reemplazadas por los ítems de la plantilla, toast éxito
+- [x] Ir a Configuración → Materias → [materia con dimensiones existentes]
+- [x] Abrir sheet "Dimensiones"
+- [x] Al fondo del sheet: sección "Aplicar plantilla" con select visible (si hay plantillas)
+- [x] Seleccionar plantilla → click "Aplicar" → AlertDialog de confirmación
+- [x] Confirmar
+- [x] **Esperado:** dimensiones reemplazadas por los ítems de la plantilla, toast éxito
 
 ### 2.6 Aplicar plantilla reemplaza dimensiones existentes
-- [ ] Materia con dimensiones A, B, C → aplicar plantilla con ítems X, Y
-- [ ] **Esperado:** dimensiones A, B, C eliminadas; X e Y presentes
+- [x] Materia con dimensiones A, B, C → aplicar plantilla con ítems X, Y
+- [x] **Esperado:** dimensiones A, B, C eliminadas; X e Y presentes
 
 ### 2.7 Aplicar plantilla a toda la institución (bulk)
-- [ ] Ir a `Configuración → Dim. plantillas`
-- [ ] Cada plantilla tiene botón "Aplicar a todas las materias"
-- [ ] Click → AlertDialog confirma: "dimensiones de todas las materias serán reemplazadas"
-- [ ] Confirmar
-- [ ] **Esperado:** toast "Plantilla aplicada a N materia(s)", todas las materias de todos los cursos con nuevas dimensiones
+- [x] Ir a `Configuración → Dim. plantillas`
+- [x] Cada plantilla tiene botón "Aplicar a todas las materias"
+- [x] Click → AlertDialog confirma: "dimensiones de todas las materias serán reemplazadas"
+- [x] Confirmar
+- [x] **Esperado:** toast "Plantilla aplicada a N materia(s)", todas las materias de todos los cursos con nuevas dimensiones
 
 ### 2.8 Sin plantillas creadas
-- [ ] Institución sin ninguna plantilla → no hay botones de aplicar
-- [ ] Sheet de dimensiones de materia → sección "Aplicar plantilla" **no aparece**
+- [x] Institución sin ninguna plantilla → no hay botones de aplicar
+- [x] Sheet de dimensiones de materia → sección "Aplicar plantilla" **no aparece**
 
 ### 2.9 Aislamiento multi-tenant
-- [ ] Admin de institución A no puede aplicar plantillas de institución B
-- [ ] Intentar `POST /api/v1/materias/[id_B]/dimensiones/aplicar-plantilla` con `plantilla_id` de institución A → 404
+- [x] Admin de institución A no puede aplicar plantillas de institución B
+- [x] Intentar `POST /api/v1/materias/[id_B]/dimensiones/aplicar-plantilla` con `plantilla_id` de institución A → 404
 
 ---
 
@@ -133,41 +133,41 @@
 **Ruta:** `Materias → [materia] → Evaluaciones` y editor de notas
 
 ### 3.1 Habilitar recuperatorio en evaluación
-- [ ] Crear evaluación con "Permite recuperatorio" activado
-- [ ] **Esperado:** en el editor de notas de esa evaluación aparece sección de recuperatorio al pie
+- [x] Crear evaluación con "Permite recuperatorio" activado
+- [x] **Esperado:** en el editor de notas de esa evaluación aparece sección de recuperatorio al pie
 
 ### 3.2 Generar recuperatorio — requiere desaprobados
-- [ ] Cargar notas donde todos aprueban (todos ≥ nota_aprobacion) → botón "Generar recuperatorio" aparece **deshabilitado**
-- [ ] Modificar una nota por debajo del umbral → botón se habilita
-- [ ] Click → recuperatorio creado
-- [ ] **Esperado:** nueva evaluación "[nombre] — Recuperatorio" aparece en lista, badge "Recuperatorio"
-- [ ] Intentar generar nuevamente → error "Ya existe un recuperatorio"
+- [x] Cargar notas donde todos aprueban (todos ≥ nota_aprobacion) → botón "Generar recuperatorio" aparece **deshabilitado**
+- [x] Modificar una nota por debajo del umbral → botón se habilita
+- [x] Click → recuperatorio creado
+- [x] **Esperado:** nueva evaluación "[nombre] — Recuperatorio" aparece en lista, badge "Recuperatorio"
+- [x] Intentar generar nuevamente → error "Ya existe un recuperatorio"
 
 ### 3.3 Recuperatorio hereda dimensiones
-- [ ] Evaluación original tiene dimensiones asignadas (ej. Oral, Escrito)
-- [ ] Generar recuperatorio
-- [ ] Abrir editor de notas del recuperatorio
-- [ ] **Esperado:** tabla tiene columnas Oral y Escrito (mismas dimensiones que el original)
+- [x] Evaluación original tiene dimensiones asignadas (ej. Oral, Escrito)
+- [x] Generar recuperatorio
+- [x] Abrir editor de notas del recuperatorio
+- [x] **Esperado:** tabla tiene columnas Oral y Escrito (mismas dimensiones que el original)
 
 ### 3.4 Filtro de alumnos elegibles
-- [ ] Evaluación con 4 alumnos: 2 aprobaron, 2 desaprobaron
-- [ ] Generar recuperatorio → abrir editor
-- [ ] **Esperado:** solo aparecen los 2 alumnos desaprobados
-- [ ] Los 2 aprobados **no aparecen** en el recuperatorio
+- [x] Evaluación con 4 alumnos: 2 aprobaron, 2 desaprobaron
+- [x] Generar recuperatorio → abrir editor
+- [x] **Esperado:** solo aparecen los 2 alumnos desaprobados
+- [x] Los 2 aprobados **no aparecen** en el recuperatorio
 
 ### 3.5 Bloqueo por dimensión
-- [ ] Evaluación con dims Oral y Escrito. Alumno aprobó Oral (8) pero reprobó Escrito (3)
-- [ ] En recuperatorio → alumno aparece
-- [ ] Columna Oral: muestra "✓ Aprobado" (bloqueada, no editable)
-- [ ] Columna Escrito: input habilitado para cargar nota
+- [x] Evaluación con dims Oral y Escrito. Alumno aprobó Oral (8) pero reprobó Escrito (3)
+- [x] En recuperatorio → alumno aparece
+- [x] Columna Oral: muestra "✓ Aprobado" (bloqueada, no editable)
+- [x] Columna Escrito: input habilitado para cargar nota
 
 ### 3.6 Alumno ausente en original
-- [ ] Alumno marcado como ausente en la evaluación original
-- [ ] **Esperado:** aparece en el recuperatorio (ausente = desaprobado)
+- [x] Alumno marcado como ausente en la evaluación original
+- [x] **Esperado:** aparece en el recuperatorio (ausente = desaprobado)
 
 ### 3.7 Restricciones
-- [ ] Evaluación sin "permite_recuperatorio" → botón no aparece
-- [ ] No se puede crear recuperatorio de un recuperatorio
+- [x] Evaluación sin "permite_recuperatorio" → botón no aparece
+- [x] No se puede crear recuperatorio de un recuperatorio
 
 ---
 
@@ -806,6 +806,107 @@
 - [ ] Grid de cards donde la card completa es un link al boletín del alumno
 - [ ] Badge "Inactivo" solo si alumno no activo
 - [ ] Sin CardFooter con botón separado (toda la card es el botón)
+
+---
+
+## 16. Home responsable — rediseño
+
+**Ruta:** `/dashboard/[slug]` como responsable puro (sin rol admin ni docente)
+
+### 16.1 Header de bienvenida
+- [ ] Mensaje "Buen día, [primer nombre]" (o tarde/noche según hora local)
+- [ ] Fecha de hoy formateada en español (ej. "miércoles 21 de octubre de 2026")
+- [ ] Badge con nombre del año lectivo activo
+- [ ] Sin sección "Últimas notas" (eliminada)
+
+### 16.2 Tarjetas de alumnos
+- [ ] Una card por alumno vinculado
+- [ ] Avatar con iniciales del alumno (sin foto)
+- [ ] Nombre completo y curso visible
+- [ ] Botones CTA en la card: "Ver boletín" y otro acción disponible
+- [ ] Click "Ver boletín" → navega a `/libreta/[alumno_id]`
+
+### 16.3 Accesos rápidos
+- [ ] Grilla 2 columnas con íconos grandes
+- [ ] Ítems: Boletín, Comunicados, Contenidos (solo si `modulo_contenidos = true`), Ayuda
+- [ ] Click en cada ítem → navega a la ruta correspondiente
+- [ ] Sin módulo de contenidos: ítem "Contenidos" no aparece en la grilla
+
+### 16.4 Banner de comunicados pendientes
+- [ ] Si hay comunicados sin confirmar → banner visible encima de las cards
+- [ ] Sin comunicados pendientes → banner no aparece
+
+### 16.5 Aislamiento por rol
+- [ ] Admin o docente en `/dashboard/[slug]` → ve el home de su rol (no este home)
+- [ ] Responsable sin alumnos vinculados → home carga sin tarjetas (EmptyState o mensaje apropiado)
+
+---
+
+## 17. Boletín — acuse de recibo digital
+
+**Prerequisito:** al menos 1 período cerrado (`cerrado_at IS NOT NULL`) en el año lectivo activo. Responsable con al menos 1 alumno vinculado.
+
+### 17.1 Visibilidad: solo períodos cerrados
+
+- [ ] Responsable abre boletín de un alumno → solo ve evaluaciones de períodos con `cerrado_at != null`
+- [ ] Períodos activos (no cerrados) → **no aparecen** en el boletín del responsable
+- [ ] Admin o docente → ven todos los períodos independientemente de si están cerrados
+
+### 17.2 Pantalla de confirmación (gate)
+
+- [ ] Responsable accede a `/libreta/[alumno_id]` con al menos 1 período cerrado sin acuse → redirect a `/confirmar`
+- [ ] Pantalla muestra: nombre del alumno, nombre de la institución, lista de períodos pendientes con ícono CheckCircle
+- [ ] Texto aclaratorio: "Al continuar confirmás haber recibido el boletín..."
+- [ ] Nota al pie: "Esta confirmación queda registrada con fecha y hora. No se puede deshacer."
+
+### 17.3 Confirmación batch
+
+- [ ] Se publican Período 1 y Período 2 antes del primer acceso del responsable
+- [ ] Responsable entra → pantalla de confirmación muestra **ambos períodos** en la lista
+- [ ] Click "Confirmar y ver boletín" → un solo POST inserta acuses para los 2 períodos
+- [ ] Redirect a `/boletin` después de confirmar
+- [ ] Reentrar a `/libreta/[alumno_id]` → sin pantalla de confirmación (ya confirmados)
+
+### 17.4 Nueva confirmación al publicar nuevo período
+
+- [ ] Responsable ya confirmó Período 1 y Período 2
+- [ ] Admin cierra Período 3
+- [ ] Responsable entra a `/libreta/[alumno_id]` → pantalla de confirmación muestra **solo Período 3**
+- [ ] Confirmar → acuse insertado solo para Período 3
+- [ ] Reentrar → sin pantalla (todos confirmados)
+
+### 17.5 Idempotencia
+
+- [ ] Enviar misma confirmación dos veces (doble click o reintento) → sin error, sin duplicados en DB
+- [ ] Boletín sigue siendo accesible (no se bloquea por conflicto)
+
+### 17.6 Acceso directo a /boletin sin confirmar
+
+- [ ] Responsable accede directo a `/libreta/[alumno_id]/boletin` sin pasar por gate
+- [ ] **Esperado:** boletín carga pero solo muestra evaluaciones de períodos **cerrados** (filtro server-side)
+- [ ] Si hay períodos sin confirmar → el contenido visible es el correcto (los cerrados), la confirmación es UX no security gate
+
+### 17.7 Admin — página de acuses
+
+- [ ] Admin accede a `/dashboard/[slug]/acuses` (link "Acuses" en sidebar sección Configuración)
+- [ ] Dropdown de períodos → lista solo períodos cerrados del año activo
+- [ ] Tabla: columnas Alumno · Curso (oculta en mobile) · Responsables · Estado
+- [ ] Cada fila de responsable: ícono verde con fecha si confirmó, ícono gris si no
+- [ ] Columna Estado: `2/2` verde si todos confirmaron, `0/2` rojo si ninguno, `1/2` ámbar si parcial
+- [ ] Resumen debajo del título: "N/M familias confirmaron"
+- [ ] Alumno sin responsables → columna Responsables muestra "Sin responsables", Estado "—"
+
+### 17.8 Admin — filtro por período
+
+- [ ] Cambiar período en el dropdown → tabla recarga con acuses del período seleccionado
+- [ ] URL actualiza a `?periodo_id=[id]` (navegación preservable)
+- [ ] Sin períodos cerrados → mensaje "No hay períodos cerrados para mostrar."
+
+### 17.9 Restricción de acceso — acuses
+
+- [ ] Docente intenta acceder a `/acuses` → redirect a `/dashboard/[slug]`
+- [ ] Responsable intenta `POST /api/v1/boletin-acuses` con `alumno_id` de un alumno que no es el suyo → 400 o 403
+- [ ] Responsable intenta confirmar período no cerrado → 400
 
 ---
 
