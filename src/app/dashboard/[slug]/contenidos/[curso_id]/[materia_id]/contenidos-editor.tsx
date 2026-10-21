@@ -177,38 +177,40 @@ export default function ContenidosEditor({ unidades: initialUnidades, dimensione
                           )}
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
-                          {item.tipo === 'link' && item.url && (
-                            <a href={item.url} target="_blank" rel="noopener noreferrer">
-                              <Button variant="outline" size="sm" className="h-7 text-xs">
-                                <ExternalLink className="size-3" />
-                                Abrir
-                              </Button>
-                            </a>
-                          )}
-                          {item.tipo === 'archivo' && item.signedUrl && (
-                            <a href={`/api/v1/contenidos/items/${item.id}/download`}>
-                              <Button variant="outline" size="sm" className="h-7 text-xs">
-                                <Download className="size-3" />
-                                Descargar
-                              </Button>
-                            </a>
-                          )}
-                          {item.tipo === 'imagen' && item.signedUrl && (
-                            <>
-                              <a href={item.signedUrl} target="_blank" rel="noopener noreferrer">
-                                <Button variant="outline" size="sm" className="h-7 text-xs">
+                          <div className="flex flex-col gap-1">
+                            {item.tipo === 'link' && item.url && (
+                              <a href={item.url} target="_blank" rel="noopener noreferrer">
+                                <Button variant="outline" size="sm" className="h-7 text-xs w-full">
                                   <ExternalLink className="size-3" />
-                                  Ver
+                                  Abrir
                                 </Button>
                               </a>
+                            )}
+                            {item.tipo === 'archivo' && item.signedUrl && (
                               <a href={`/api/v1/contenidos/items/${item.id}/download`}>
-                                <Button variant="outline" size="sm" className="h-7 text-xs">
+                                <Button variant="outline" size="sm" className="h-7 text-xs w-full">
                                   <Download className="size-3" />
                                   Descargar
                                 </Button>
                               </a>
-                            </>
-                          )}
+                            )}
+                            {item.tipo === 'imagen' && item.signedUrl && (
+                              <>
+                                <a href={item.signedUrl} target="_blank" rel="noopener noreferrer">
+                                  <Button variant="outline" size="sm" className="h-7 text-xs w-full">
+                                    <ExternalLink className="size-3" />
+                                    Ver
+                                  </Button>
+                                </a>
+                                <a href={`/api/v1/contenidos/items/${item.id}/download`}>
+                                  <Button variant="outline" size="sm" className="h-7 text-xs w-full">
+                                    <Download className="size-3" />
+                                    Descargar
+                                  </Button>
+                                </a>
+                              </>
+                            )}
+                          </div>
                           {isEditor && (
                             <>
                               <Button
