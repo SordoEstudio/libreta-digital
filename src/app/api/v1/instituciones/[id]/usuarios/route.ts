@@ -12,6 +12,7 @@ const CreateSchema = z.object({
   apellido: z.string().optional(),
   rol: z.enum(['admin', 'docente', 'responsable']),
   send_invite: z.boolean().default(true),
+  usa_google: z.boolean().default(false),
   telefono: z.string().optional(),
   dni: z.string().optional(),
   direccion: z.string().optional(),
@@ -78,7 +79,7 @@ export async function POST(request: NextRequest, { params }: Params) {
   const parsed = CreateSchema.safeParse(body)
   if (!parsed.success) return Err.validation(parsed.error.issues[0].message)
 
-  const { email, nombre, apellido, rol, telefono, dni, direccion } = parsed.data
+  const { email, nombre, apellido, rol, telefono, dni, direccion, usa_google } = parsed.data
   const supabase = await createClient()
   const admin = createAdminClient()
 
@@ -137,7 +138,7 @@ export async function POST(request: NextRequest, { params }: Params) {
 
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? 'https://libretadigital.app').replace(/\/$/, '')
   let setup_url: string | undefined
-  if (isNewUser) {
+  if (isNewUser && !usa_google) {
     const { data: linkData } = await admin.auth.admin.generateLink({
       type: 'recovery',
       email,

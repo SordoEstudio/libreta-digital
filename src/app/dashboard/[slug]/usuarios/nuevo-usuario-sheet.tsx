@@ -36,6 +36,7 @@ export default function NuevoUsuarioSheet({ instId }: Props) {
   const [telefono, setTelefono] = useState('')
   const [dni, setDni] = useState('')
   const [direccion, setDireccion] = useState('')
+  const [usaGoogle, setUsaGoogle] = useState(false)
   const [inviteLink, setInviteLink] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
@@ -68,6 +69,7 @@ export default function NuevoUsuarioSheet({ instId }: Props) {
       setTelefono('')
       setDni('')
       setDireccion('')
+      setUsaGoogle(false)
       setInviteLink(null)
       setCopied(false)
       setPersonaIdCreada(null)
@@ -88,7 +90,7 @@ export default function NuevoUsuarioSheet({ instId }: Props) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        nombre, email, rol, send_invite: true,
+        nombre, email, rol, send_invite: true, usa_google: usaGoogle,
         ...(apellido && { apellido }),
         ...(telefono && { telefono }),
         ...(dni && { dni }),
@@ -296,6 +298,16 @@ export default function NuevoUsuarioSheet({ instId }: Props) {
                 />
               </div>
 
+              <label className="flex items-center gap-2.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={usaGoogle}
+                  onChange={e => setUsaGoogle(e.target.checked)}
+                  className="size-4 accent-primary"
+                />
+                <span className="text-sm">Ingresa con Google</span>
+              </label>
+
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="us-rol">Rol *</Label>
                 <Select value={rol} onValueChange={v => setRol(v ?? '')}>
@@ -343,7 +355,9 @@ export default function NuevoUsuarioSheet({ instId }: Props) {
               </div>
 
               <p className="text-xs text-muted-foreground">
-                Se creará una cuenta y se enviará un email de bienvenida con link de acceso.
+                {usaGoogle
+                  ? 'Se enviará un email indicando que ingrese con su cuenta de Google.'
+                  : 'Se enviará un email con link para crear contraseña.'}
               </p>
 
               <Button type="submit" disabled={loading || !nombre || !apellido || !email || !rol} className="mt-2">
