@@ -127,7 +127,7 @@ export function BottomTabBar({ session }: BottomTabBarProps) {
 
   return (
     <nav
-      className="md:hidden flex shrink-0 border-t bg-background"
+      className="md:hidden flex shrink-0 border-t border-white/10 bg-harvi-dark"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
       {tabs.map(tab => {
@@ -138,7 +138,7 @@ export function BottomTabBar({ session }: BottomTabBarProps) {
             href={tab.href}
             className={cn(
               'flex flex-1 flex-col items-center justify-center gap-0.5 py-2.5 text-[10px] font-medium transition-colors',
-              active ? 'text-primary' : 'text-muted-foreground hover:text-foreground',
+              active ? 'text-primary' : 'text-white/45 hover:text-white/80',
             )}
           >
             <tab.icon className="size-5" />
@@ -149,7 +149,7 @@ export function BottomTabBar({ session }: BottomTabBarProps) {
       {showMas && (
         <button
           onClick={toggleSidebar}
-          className="flex flex-1 flex-col items-center justify-center gap-0.5 py-2.5 text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors"
+          className="flex flex-1 flex-col items-center justify-center gap-0.5 py-2.5 text-[10px] font-medium text-white/45 hover:text-white/80 transition-colors"
         >
           <MoreHorizontal className="size-5" />
           Más
