@@ -66,17 +66,28 @@ export default async function EvaluacionesInstitucionalesPage({ params }: Params
     .is('deleted_at', null)
     .order('orden')
 
-  // Count instances per template
+  // Count instances per template — only count evaluaciones in non-deleted materias
   const templateIds = (templates ?? []).map(t => t.id)
   const countMap: Record<string, number> = {}
   if (templateIds.length > 0) {
-    const { data: instances } = await supabase
-      .from('evaluaciones')
-      .select('template_id')
-      .in('template_id', templateIds)
+    const { data: materiasActivas } = await supabase
+      .from('materias')
+      .select('id')
+      .eq('institucion_id', inst.id)
       .is('deleted_at', null)
-    for (const row of instances ?? []) {
-      if (row.template_id) countMap[row.template_id] = (countMap[row.template_id] ?? 0) + 1
+
+    const activaMateriaIds = (materiasActivas ?? []).map(m => m.id)
+
+    if (activaMateriaIds.length > 0) {
+      const { data: instances } = await supabase
+        .from('evaluaciones')
+        .select('template_id')
+        .in('template_id', templateIds)
+        .in('materia_id', activaMateriaIds)
+        .is('deleted_at', null)
+      for (const row of instances ?? []) {
+        if (row.template_id) countMap[row.template_id] = (countMap[row.template_id] ?? 0) + 1
+      }
     }
   }
 
