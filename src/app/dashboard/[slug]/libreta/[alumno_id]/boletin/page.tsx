@@ -44,7 +44,7 @@ export default async function BoletinPage({ params }: Params) {
       id, valor_numerico, valor_literal, observacion, dimension_id,
       materias_dimensiones(id, nombre, peso, orden),
       evaluaciones(id, nombre, tipo, peso, periodo_id, template_id,
-        periodos(nombre, orden),
+        periodos(nombre, orden, cerrado_at),
         materias(id, materias_catalogo(nombre)),
         evaluaciones_template(id, nombre, tipo, orden)
       )
@@ -85,7 +85,7 @@ export default async function BoletinPage({ params }: Params) {
   type Evaluacion = {
     id: string; nombre: string; tipo: string; peso: number; periodo_id: string | null
     template_id: string | null
-    periodos: { nombre: string; orden: number } | null
+    periodos: { nombre: string; orden: number; cerrado_at: string | null } | null
     materias: { id: string; materias_catalogo: { nombre: string } | null } | null
     evaluaciones_template: EvalTemplate | null
   }
@@ -112,10 +112,19 @@ export default async function BoletinPage({ params }: Params) {
     dimensions: Map<string, Dimension>
   }
 
+  // Responsables only see notes from closed periods
+  const notasVisible = isResponsableOnly
+    ? (notas ?? []).filter(n => {
+        const ev = n.evaluaciones as Evaluacion | null
+        if (!ev?.periodo_id) return true // definitiva_anual always visible
+        return ev.periodos?.cerrado_at != null
+      })
+    : (notas ?? [])
+
   const templateColMap = new Map<string, TemplateCol>()
   const materiaDataMap = new Map<string, MateriaData>()
 
-  for (const nota of (notas ?? [])) {
+  for (const nota of notasVisible) {
     const ev = nota.evaluaciones as Evaluacion | null
     if (!ev?.materias) continue
     const matId = ev.materias.id
@@ -227,7 +236,9 @@ export default async function BoletinPage({ params }: Params) {
 
         {/* Notas — tabla unificada */}
         {noData ? (
-          <p className="text-center text-muted-foreground py-8">Sin notas registradas.</p>
+          <p className="text-center text-muted-foreground py-8">
+            {isResponsableOnly ? 'Aún no hay períodos publicados.' : 'Sin notas registradas.'}
+          </p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse">
