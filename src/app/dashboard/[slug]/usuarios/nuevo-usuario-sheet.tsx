@@ -37,6 +37,7 @@ export default function NuevoUsuarioSheet({ instId }: Props) {
   const [dni, setDni] = useState('')
   const [direccion, setDireccion] = useState('')
   const [usaGoogle, setUsaGoogle] = useState(false)
+  const esGmail = email.toLowerCase().endsWith('@gmail.com')
   const [inviteLink, setInviteLink] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
@@ -48,6 +49,11 @@ export default function NuevoUsuarioSheet({ instId }: Props) {
   const [loadingAlumnos, setLoadingAlumnos] = useState(false)
   const [asignando, setAsignando] = useState(false)
   const [asignacionHecha, setAsignacionHecha] = useState(false)
+
+  useEffect(() => {
+    if (esGmail) setUsaGoogle(true)
+    else setUsaGoogle(false)
+  }, [esGmail])
 
   useEffect(() => {
     if (!inviteLink || rol !== 'responsable') return
@@ -298,15 +304,17 @@ export default function NuevoUsuarioSheet({ instId }: Props) {
                 />
               </div>
 
-              <label className="flex items-center gap-2.5 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={usaGoogle}
-                  onChange={e => setUsaGoogle(e.target.checked)}
-                  className="size-4 accent-primary"
-                />
-                <span className="text-sm">Ingresa con Google</span>
-              </label>
+              {esGmail && (
+                <label className="flex items-center gap-2.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={usaGoogle}
+                    onChange={e => setUsaGoogle(e.target.checked)}
+                    className="size-4 accent-primary"
+                  />
+                  <span className="text-sm">Ingresa con Google</span>
+                </label>
+              )}
 
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="us-rol">Rol *</Label>
