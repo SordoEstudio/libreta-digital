@@ -2,6 +2,7 @@ import { requireSession, isSuperadmin, hasAnyRole } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect, notFound } from 'next/navigation'
+import Link from 'next/link'
 import ContenidosEditor from './contenidos-editor'
 
 export type ContenidoItem = {
@@ -49,20 +50,56 @@ export default async function ContenidosMateriaPage({ params }: Params) {
 
   const isEditor = isSuperadmin(session) || hasAnyRole(session, inst.id, ['admin', 'docente'])
   const canView  = isEditor || hasAnyRole(session, inst.id, ['responsable'])
+  const isOnlyResponsable = !isEditor && hasAnyRole(session, inst.id, ['responsable'])
 
   if (!canView) redirect(`/dashboard/${slug}`)
 
-  const { data: materia } = await supabase
-    .from('materias')
-    .select('id, materias_catalogo(nombre)')
-    .eq('id', materia_id)
-    .eq('institucion_id', inst.id)
-    .is('deleted_at', null)
-    .single()
+  const [materiaRes, cursoRes] = await Promise.all([
+    supabase
+      .from('materias')
+      .select('id, materias_catalogo(nombre)')
+      .eq('id', materia_id)
+      .eq('institucion_id', inst.id)
+      .is('deleted_at', null)
+      .single(),
+    supabase
+      .from('cursos')
+      .select('*')
+      .eq('id', curso_id)
+      .eq('institucion_id', inst.id)
+      .is('deleted_at', null)
+      .single(),
+  ])
 
+  const materia = materiaRes.data
   if (!materia) notFound()
 
   const materiaNombre = (materia.materias_catalogo as { nombre: string } | null)?.nombre ?? 'Materia'
+  const cursoNombre = cursoRes.data?.nombre ?? ''
+
+  // Responsable: find which of their alumnos are in this curso
+  type AlumnoSimple = { id: string; nombre: string; apellido: string | null }
+  let alumnosEnCurso: AlumnoSimple[] = []
+
+  if (isOnlyResponsable && session.persona_id) {
+    const [inscRes, vinRes] = await Promise.all([
+      supabase
+        .from('alumno_inscripciones')
+        .select('alumnos(id, nombre, apellido)')
+        .eq('curso_id', curso_id)
+        .eq('activo', true)
+        .is('deleted_at', null),
+      supabase
+        .from('alumno_responsables')
+        .select('alumno_id')
+        .eq('persona_id', session.persona_id)
+        .eq('institucion_id', inst.id),
+    ])
+    const vinSet = new Set((vinRes.data ?? []).map(v => v.alumno_id))
+    alumnosEnCurso = ((inscRes.data ?? []) as { alumnos: AlumnoSimple | null }[])
+      .map(i => i.alumnos)
+      .filter((a): a is AlumnoSimple => a !== null && vinSet.has(a.id))
+  }
 
   const unidadesQuery = supabase
     .from('unidades')
@@ -121,8 +158,19 @@ export default async function ContenidosMateriaPage({ params }: Params) {
   return (
     <div className="flex flex-col gap-6">
       <div>
+        <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-1">
+          <Link href={`/dashboard/${slug}/contenidos`} className="hover:text-foreground transition-colors">Contenidos</Link>
+          <span>/</span>
+          <Link href={`/dashboard/${slug}/contenidos/${curso_id}`} className="hover:text-foreground transition-colors">{cursoNombre}</Link>
+          <span>/</span>
+          <span>{materiaNombre}</span>
+        </div>
         <h1 className="text-2xl font-semibold">{materiaNombre}</h1>
-        <p className="text-muted-foreground text-sm">Contenidos</p>
+        {alumnosEnCurso.length > 0 && (
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {alumnosEnCurso.map(a => a.apellido ? `${a.apellido}, ${a.nombre}` : a.nombre).join(' · ')}
+          </p>
+        )}
       </div>
       <ContenidosEditor
         unidades={unidadConItems}
