@@ -1,11 +1,9 @@
 import { requireSession, isSuperadmin, hasAnyRole } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
-import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/empty-state'
-import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
-import { BookMarked } from 'lucide-react'
+import { BookMarked, ChevronRight } from 'lucide-react'
 
 type Params = { params: Promise<{ slug: string; curso_id: string }> }
 
@@ -44,22 +42,27 @@ export default async function ContenidosCursoPage({ params }: Params) {
 
   if (!curso) notFound()
 
-  // Verify responsable has an alumno enrolled in this curso
+  type AlumnoSimple = { id: string; nombre: string; apellido: string | null }
+  let alumnosEnCurso: AlumnoSimple[] = []
+
   if (isOnlyResponsable && session.persona_id) {
+    type InscripcionRaw = { curso_id: string; activo: boolean; deleted_at: string | null }
+    type VincRaw = { alumnos: AlumnoSimple & { alumno_inscripciones: InscripcionRaw[] } | null }
+
     const { data: vinculaciones } = await supabase
       .from('alumno_responsables')
-      .select('alumnos(alumno_inscripciones(curso_id, activo, deleted_at))')
+      .select('alumnos(id, nombre, apellido, alumno_inscripciones(curso_id, activo, deleted_at))')
       .eq('persona_id', session.persona_id)
       .eq('institucion_id', inst.id)
 
-    type InscripcionRaw = { curso_id: string; activo: boolean; deleted_at: string | null }
-    type AlumnoRaw = { alumno_inscripciones: InscripcionRaw[] } | null
+    for (const v of (vinculaciones ?? []) as VincRaw[]) {
+      const alumno = v.alumnos
+      if (!alumno) continue
+      const enrolled = alumno.alumno_inscripciones.some(i => i.curso_id === curso_id && i.activo && !i.deleted_at)
+      if (enrolled) alumnosEnCurso.push({ id: alumno.id, nombre: alumno.nombre, apellido: alumno.apellido })
+    }
 
-    const hasAccess = (vinculaciones ?? []).some(v =>
-      ((v.alumnos as AlumnoRaw)?.alumno_inscripciones ?? [])
-        .some(i => i.curso_id === curso_id && i.activo && !i.deleted_at)
-    )
-    if (!hasAccess) redirect(`/dashboard/${slug}/contenidos`)
+    if (alumnosEnCurso.length === 0) redirect(`/dashboard/${slug}/contenidos`)
   }
 
   // Fetch materias con nombre del catálogo
@@ -113,14 +116,22 @@ export default async function ContenidosCursoPage({ params }: Params) {
     redirect(`/dashboard/${slug}/contenidos/${curso_id}/${materias[0].id}`)
   }
 
+  const alumnosLabel = alumnosEnCurso.length > 0
+    ? alumnosEnCurso.map(a => a.apellido ? `${a.apellido}, ${a.nombre}` : a.nombre).join(' · ')
+    : null
+
   return (
-    <div className="p-6 max-w-3xl mx-auto">
-      <div className="mb-6">
-        <Link href={`/dashboard/${slug}/contenidos`} className="text-sm text-muted-foreground hover:underline">
-          ← Contenidos
-        </Link>
-        <h1 className="text-2xl font-semibold mt-1">{curso.nombre}</h1>
-        <p className="text-muted-foreground text-sm">Seleccioná una materia</p>
+    <div className="flex flex-col gap-6">
+      <div>
+        <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-1">
+          <Link href={`/dashboard/${slug}/contenidos`} className="hover:text-foreground transition-colors">Contenidos</Link>
+          <span>/</span>
+          <span>{curso.nombre}</span>
+        </div>
+        <h1 className="text-2xl font-semibold">{curso.nombre}</h1>
+        {alumnosLabel && (
+          <p className="text-sm text-muted-foreground mt-0.5">{alumnosLabel}</p>
+        )}
       </div>
 
       {materias.length === 0 ? (
@@ -130,22 +141,25 @@ export default async function ContenidosCursoPage({ params }: Params) {
           description="Este curso no tiene materias registradas."
         />
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="flex flex-col gap-2">
           {materias.map(materia => {
             const counts = countMap.get(materia.id)
             const nombre = materia.materias_catalogo?.nombre ?? 'Materia'
             return (
               <Link key={materia.id} href={`/dashboard/${slug}/contenidos/${curso_id}/${materia.id}`}>
-                <Card className="hover:border-primary/50 transition-colors cursor-pointer h-full">
-                  <CardHeader>
-                    <CardTitle className="text-base">{nombre}</CardTitle>
+                <div className="flex items-center gap-3 rounded-lg border px-4 py-3.5 hover:bg-muted/50 transition-colors">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium">{nombre}</p>
                     {counts && (
-                      <CardDescription>
-                        {counts.unidades > 0 ? `${counts.unidades} unidad${counts.unidades !== 1 ? 'es' : ''} · ${counts.items} material${counts.items !== 1 ? 'es' : ''}` : 'Sin materiales publicados'}
-                      </CardDescription>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {counts.unidades > 0
+                          ? `${counts.unidades} unidad${counts.unidades !== 1 ? 'es' : ''} · ${counts.items} material${counts.items !== 1 ? 'es' : ''}`
+                          : 'Sin materiales publicados'}
+                      </p>
                     )}
-                  </CardHeader>
-                </Card>
+                  </div>
+                  <ChevronRight className="size-4 text-muted-foreground shrink-0" />
+                </div>
               </Link>
             )
           })}
