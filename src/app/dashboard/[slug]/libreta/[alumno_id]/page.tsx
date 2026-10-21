@@ -72,6 +72,7 @@ export default async function LibretaPage({ params }: Params) {
   const { data: existingAcuses } = await supabase
     .from('boletin_acuses')
     .select('periodo_id')
+    .eq('alumno_id', alumno_id)
     .eq('persona_id', session.persona_id)
     .in('periodo_id', closedIds)
 
