@@ -32,7 +32,7 @@ interface Evaluacion {
 
 interface Props {
   evaluacion: Evaluacion
-  periodos: Array<{ id: string; nombre: string }>
+  periodos: Array<{ id: string; nombre: string; cerrado_at?: string | null }>
   dimensiones: Array<{ id: string; nombre: string }>
   isAdmin: boolean
   showLabel?: boolean
@@ -179,7 +179,9 @@ export default function EditarEvaluacionSheet({ evaluacion, periodos, dimensione
                 <SelectContent>
                   <SelectItem value="__anual__">Sin período — evaluación anual</SelectItem>
                   {periodos.map(p => (
-                    <SelectItem key={p.id} value={p.id}>{p.nombre}</SelectItem>
+                    <SelectItem key={p.id} value={p.id} disabled={!!p.cerrado_at}>
+                      {p.nombre}{p.cerrado_at ? ' (cerrado)' : ''}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>

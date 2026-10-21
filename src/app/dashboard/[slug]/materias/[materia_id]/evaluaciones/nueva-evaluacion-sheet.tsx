@@ -120,15 +120,12 @@ export default function NuevaEvaluacionSheet({ materiaId, periodos, dimensiones,
                 <SelectContent>
                   <SelectItem value="__anual__">Sin período — evaluación anual</SelectItem>
                   {periodos.map(p => (
-                    <SelectItem key={p.id} value={p.id}>
+                    <SelectItem key={p.id} value={p.id} disabled={!!p.cerrado_at}>
                       {p.nombre}{p.cerrado_at ? ' (cerrado)' : ''}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {periodoId && periodoId !== '__anual__' && periodos.find(p => p.id === periodoId)?.cerrado_at && (
-                <p className="text-xs text-amber-600">Este período está cerrado — no se pueden crear evaluaciones.</p>
-              )}
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -173,7 +170,7 @@ export default function NuevaEvaluacionSheet({ materiaId, periodos, dimensiones,
 
             <Button
               type="submit"
-              disabled={loading || !nombre || !tipo || !!(periodoId && periodoId !== '__anual__' && periodos.find(p => p.id === periodoId)?.cerrado_at)}
+              disabled={loading || !nombre || !tipo}
               className="mt-2"
             >
               {loading && <Loader2 data-icon="inline-start" className="animate-spin" />}
