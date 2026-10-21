@@ -15,7 +15,7 @@ import { createClient } from '@/lib/supabase/client'
 import {
   Building2, BarChart3, LayoutDashboard, GraduationCap,
   Users, BookOpen, LogOut, Settings, Library, BookMarked, MessageSquare, Layers, NotebookPen,
-  FolderOpen, FileText,
+  FolderOpen, FileText, HelpCircle,
 } from 'lucide-react'
 import { NotificationBell } from '@/components/notification-bell'
 
@@ -292,6 +292,17 @@ export function AppSidebar({ session }: AppSidebarProps) {
           {activeSlug && (
             <SidebarMenuItem>
               <NotificationBell />
+            </SidebarMenuItem>
+          )}
+          {activeSlug && (
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                render={<Link href={`/dashboard/${activeSlug}/ayuda`} />}
+                isActive={pathname.startsWith(`/dashboard/${activeSlug}/ayuda`)}
+              >
+                <HelpCircle />
+                Ayuda
+              </SidebarMenuButton>
             </SidebarMenuItem>
           )}
           <SidebarMenuItem>
