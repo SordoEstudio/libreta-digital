@@ -21,6 +21,7 @@ export default function NuevoAlumnoSheet({ instId, cursos }: Props) {
   const [loading, setLoading] = useState(false)
   const [nombre, setNombre] = useState('')
   const [apellido, setApellido] = useState('')
+  const [email, setEmail] = useState('')
   const [cursoId, setCursoId] = useState('')
   const [fechaNacimiento, setFechaNacimiento] = useState('')
   const [dni, setDni] = useState('')
@@ -33,6 +34,7 @@ export default function NuevoAlumnoSheet({ instId, cursos }: Props) {
 
     const body: Record<string, string> = { nombre }
     if (apellido) body.apellido = apellido
+    if (email) body.email = email
     if (cursoId) body.curso_id = cursoId
     if (fechaNacimiento) body.fecha_nacimiento = fechaNacimiento
     if (dni) body.dni = dni
@@ -57,6 +59,7 @@ export default function NuevoAlumnoSheet({ instId, cursos }: Props) {
     setOpen(false)
     setNombre('')
     setApellido('')
+    setEmail('')
     setCursoId('')
     setFechaNacimiento('')
     setDni('')
@@ -86,6 +89,17 @@ export default function NuevoAlumnoSheet({ instId, cursos }: Props) {
                 onChange={e => setApellido(e.target.value)}
                 placeholder="Ej: García"
                 required
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="al-email">Email</Label>
+              <Input
+                id="al-email"
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="alumno@ejemplo.com"
               />
             </div>
 

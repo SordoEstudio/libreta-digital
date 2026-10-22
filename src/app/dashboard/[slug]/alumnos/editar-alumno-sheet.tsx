@@ -23,6 +23,7 @@ export default function EditarAlumnoSheet({ alumnoId, alumnoNombre, open, onOpen
 
   const [nombre, setNombre] = useState('')
   const [apellido, setApellido] = useState('')
+  const [email, setEmail] = useState('')
   const [fechaNacimiento, setFechaNacimiento] = useState('')
   const [dni, setDni] = useState('')
   const [telefono, setTelefono] = useState('')
@@ -37,6 +38,7 @@ export default function EditarAlumnoSheet({ alumnoId, alumnoNombre, open, onOpen
         const d = json.data ?? {}
         setNombre(d.nombre ?? '')
         setApellido(d.apellido ?? '')
+        setEmail(d.email ?? '')
         setFechaNacimiento(d.fecha_nacimiento ?? '')
         setDni(d.dni ?? '')
         setTelefono(d.telefono ?? '')
@@ -56,6 +58,7 @@ export default function EditarAlumnoSheet({ alumnoId, alumnoNombre, open, onOpen
       body: JSON.stringify({
         nombre: nombre || undefined,
         apellido: apellido || null,
+        email: email || null,
         fecha_nacimiento: fechaNacimiento || null,
         dni: dni || null,
         telefono: telefono || null,
@@ -97,6 +100,17 @@ export default function EditarAlumnoSheet({ alumnoId, alumnoNombre, open, onOpen
                 onChange={e => setApellido(e.target.value)}
                 placeholder="Ej: García"
                 autoFocus
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="ea-email">Email</Label>
+              <Input
+                id="ea-email"
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="alumno@ejemplo.com"
               />
             </div>
 
