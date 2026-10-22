@@ -5,7 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getSession, isSuperadmin, hasAnyRole } from '@/lib/auth'
 import { ok, created, Err } from '@/lib/api'
 import { CreateComunicadoSchema, deduplicarResponsables } from '@/lib/comunicados'
-import { sendComunicado } from '@/lib/email'
+import { sendComunicadoBatch } from '@/lib/email'
 
 export async function POST(request: NextRequest) {
   const session = await getSession()
@@ -132,16 +132,20 @@ export async function POST(request: NextRequest) {
     .update({ enviado_at: new Date().toISOString() })
     .eq('id', comunicado.id)
 
-  // Fire-and-forget
+  // Fire-and-forget batch send
   const confByPersona = new Map(confirmaciones.map(c => [c.persona_id, c.id]))
-  Promise.all(
-    responsables.map(r => {
-      const confId = confByPersona.get(r.persona_id)
-      if (!confId) return Promise.resolve()
-      const confirm_url = `${appUrl}/confirmar/${confId}`
-      return sendComunicado(r.email, { titulo, contenido, institucion_nombre, confirm_url, logo_url }, confId)
-        .catch(console.error)
-    })
+  void sendComunicadoBatch(
+    responsables
+      .map(r => {
+        const confId = confByPersona.get(r.persona_id)
+        if (!confId) return null
+        return {
+          email: r.email,
+          props: { titulo, contenido, institucion_nombre, confirm_url: `${appUrl}/confirmar/${confId}`, logo_url },
+          confId,
+        }
+      })
+      .filter((x): x is NonNullable<typeof x> => x !== null)
   )
 
   return created({ ...comunicado, emails_enviados: responsables.length })

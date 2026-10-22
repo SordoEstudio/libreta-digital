@@ -68,3 +68,27 @@ export async function sendComunicado(to: string, props: ComunicadoEmailProps, co
   if (error) console.error('[email] sendComunicado failed:', error.message)
   return !error
 }
+
+export type ComunicadoBatchItem = {
+  email: string
+  props: ComunicadoEmailProps
+  confId: string
+}
+
+export async function sendComunicadoBatch(items: ComunicadoBatchItem[]): Promise<void> {
+  if (items.length === 0) return
+  const resend = getResend()
+  const CHUNK = 100
+  for (let i = 0; i < items.length; i += CHUNK) {
+    const chunk = items.slice(i, i + CHUNK)
+    const { error } = await resend.batch.send(
+      chunk.map(item => ({
+        from: FROM_ADDRESS,
+        to: [item.email],
+        subject: `${item.props.titulo} — ${item.props.institucion_nombre}`,
+        react: createElement(ComunicadoEmail, item.props),
+      }))
+    )
+    if (error) console.error('[email] sendComunicadoBatch chunk failed:', error.message)
+  }
+}
