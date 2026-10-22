@@ -12,17 +12,17 @@ import { toast } from 'sonner'
 
 const PLANTILLAS = [
   { value: 'ninguna', label: 'Sin períodos' },
-  { value: 'bimestral', label: 'Bimestral (1er, 2do, 3er, 4to bimestre)' },
+  { value: 'cuatrimestral', label: 'Cuatrimestral (1er, 2do cuatrimestre)' },
   { value: 'trimestral', label: 'Trimestral (1er, 2do, 3er trimestre)' },
-  { value: 'cuatrimestral', label: 'Cuatrimestral (1er, 2do, 3er cuatrimestre)' },
-  { value: 'semestral', label: 'Semestral (1er, 2do semestre)' },
+  { value: 'bimestral4', label: 'Bimestral (1er al 4to bimestre)' },
+  { value: 'bimestral5', label: 'Bimestral (1er al 5to bimestre)' },
 ]
 
 const PERIODOS_PLANTILLA: Record<string, string[]> = {
-  bimestral: ['1er Bimestre', '2do Bimestre', '3er Bimestre', '4to Bimestre'],
+  cuatrimestral: ['1er Cuatrimestre', '2do Cuatrimestre'],
   trimestral: ['1er Trimestre', '2do Trimestre', '3er Trimestre'],
-  cuatrimestral: ['1er Cuatrimestre', '2do Cuatrimestre', '3er Cuatrimestre'],
-  semestral: ['1er Semestre', '2do Semestre'],
+  bimestral4: ['1er Bimestre', '2do Bimestre', '3er Bimestre', '4to Bimestre'],
+  bimestral5: ['1er Bimestre', '2do Bimestre', '3er Bimestre', '4to Bimestre', '5to Bimestre'],
 }
 
 interface Props {
@@ -35,7 +35,7 @@ export default function NuevoAñoSheet({ instId }: Props) {
   const [loading, setLoading] = useState(false)
   const [nombre, setNombre] = useState('')
   const [activo, setActivo] = useState(false)
-  const [plantilla, setPlantilla] = useState('trimestral')
+  const [plantilla, setPlantilla] = useState('cuatrimestral')
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -69,7 +69,7 @@ export default function NuevoAñoSheet({ instId }: Props) {
     setOpen(false)
     setNombre('')
     setActivo(false)
-    setPlantilla('trimestral')
+    setPlantilla('cuatrimestral')
     setLoading(false)
     router.refresh()
   }
