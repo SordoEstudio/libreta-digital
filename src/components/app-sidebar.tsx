@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup,
   SidebarGroupContent, SidebarGroupLabel, SidebarHeader,
@@ -31,6 +32,7 @@ export function AppSidebar({ session }: AppSidebarProps) {
   const activeSlug = slugMatch?.[1]
 
   const [logoCuadrado, setLogoCuadrado] = useState<string | null>(null)
+  const [logoutOpen, setLogoutOpen] = useState(false)
   useEffect(() => {
     if (!activeSlug) { setLogoCuadrado(null); return }
     fetch(`/api/v1/instituciones/branding?slug=${activeSlug}`)
@@ -315,7 +317,7 @@ export function AppSidebar({ session }: AppSidebarProps) {
                 <span className="text-xs text-white/60 truncate">{session.email}</span>
               </div>
               <button
-                onClick={handleLogout}
+                onClick={() => setLogoutOpen(true)}
                 className="shrink-0 text-white/40 hover:text-white/80 transition-colors group-data-[collapsible=icon]:hidden"
                 title="Cerrar sesión"
               >
@@ -340,12 +342,22 @@ export function AppSidebar({ session }: AppSidebarProps) {
             </SidebarMenuItem>
           )}
           <SidebarMenuItem className="group-data-[collapsible=icon]:block hidden">
-            <SidebarMenuButton onClick={handleLogout}>
+            <SidebarMenuButton onClick={() => setLogoutOpen(true)}>
               <LogOut />
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
+
+      <ConfirmDialog
+        open={logoutOpen}
+        onOpenChange={setLogoutOpen}
+        title="¿Cerrar sesión?"
+        description="Tu sesión se cerrará en este dispositivo."
+        confirmLabel="Cerrar sesión"
+        destructive={false}
+        onConfirm={handleLogout}
+      />
     </Sidebar>
   )
 }

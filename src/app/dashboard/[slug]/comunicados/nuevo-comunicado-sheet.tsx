@@ -61,7 +61,12 @@ export default function NuevoComunicadoSheet({ cursos }: Props) {
     }
 
     const enviados: number = json.data?.emails_enviados ?? 0
-    toast.success(`Comunicado enviado (${enviados} destinatario${enviados !== 1 ? 's' : ''})`)
+    const warning: string | undefined = json.data?.warning
+    if (warning) {
+      toast.warning(warning)
+    } else {
+      toast.success(`Comunicado enviado (${enviados} destinatario${enviados !== 1 ? 's' : ''})`)
+    }
     handleClose()
     router.refresh()
   }
