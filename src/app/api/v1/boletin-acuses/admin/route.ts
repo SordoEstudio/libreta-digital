@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getSession, hasRole, isSuperadmin } from '@/lib/auth'
 import { created, ok, Err } from '@/lib/api'
+import { logActividad } from '@/lib/actividad'
 
 const PostSchema = z.object({
   alumno_id: z.string().uuid(),
@@ -42,6 +43,15 @@ export async function POST(request: NextRequest) {
 
   if (error) return Err.server(error.message)
 
+  logActividad({
+    institucion_id,
+    persona_id: session.persona_id,
+    accion: 'confirmar_boletin',
+    entidad: 'boletin_acuse',
+    entidad_id: alumno_id,
+    metadata: { alumno_id, persona_id, periodo_id },
+  })
+
   return created({ confirmed: 1 })
 }
 
@@ -68,6 +78,15 @@ export async function DELETE(request: NextRequest) {
     .eq('periodo_id', periodo_id)
 
   if (error) return Err.server(error.message)
+
+  logActividad({
+    institucion_id,
+    persona_id: session.persona_id,
+    accion: 'quitar_confirmacion_boletin',
+    entidad: 'boletin_acuse',
+    entidad_id: alumno_id,
+    metadata: { alumno_id, persona_id, periodo_id },
+  })
 
   return ok({ deleted: 1 })
 }

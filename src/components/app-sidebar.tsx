@@ -15,7 +15,7 @@ import { createClient } from '@/lib/supabase/client'
 import {
   Building2, BarChart3, LayoutDashboard, GraduationCap,
   BookOpen, LogOut, Settings, Library, BookMarked, MessageSquare, Layers, NotebookPen,
-  FolderOpen, FileText, HelpCircle, ClipboardCheck, UserCog, UsersRound,
+  FolderOpen, FileText, HelpCircle, ClipboardCheck, UserCog, UsersRound, Activity,
 } from 'lucide-react'
 import { NotificationBell } from '@/components/notification-bell'
 
@@ -286,6 +286,15 @@ export function AppSidebar({ session }: AppSidebarProps) {
                   >
                     <ClipboardCheck />
                     Acuses
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    render={<Link href={`/dashboard/${activeSlug}/actividad`} />}
+                    isActive={pathname.startsWith(`/dashboard/${activeSlug}/actividad`)}
+                  >
+                    <Activity />
+                    Actividad
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               </SidebarMenu>

@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getSession, isSuperadmin, hasRole } from '@/lib/auth'
 import { ok, Err } from '@/lib/api'
+import { logActividad } from '@/lib/actividad'
 
 const PatchSchema = z.object({
   rol: z.enum(['admin', 'docente', 'responsable']).optional(),
@@ -56,5 +57,22 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     .single()
 
   if (error) return Err.server(error.message)
+
+  const accion = activo === false ? 'desactivar_usuario'
+    : activo === true ? 'activar_usuario'
+    : rol !== undefined ? 'cambiar_rol'
+    : 'editar_usuario'
+
+  logActividad({
+    institucion_id,
+    persona_id: session.persona_id,
+    accion,
+    entidad: 'usuario',
+    entidad_id: persona_id,
+    metadata: rol !== undefined ? { rol_nuevo: rol }
+      : activo !== undefined ? {}
+      : Object.fromEntries(Object.entries(parsed.data).filter(([k]) => !['rol', 'activo'].includes(k))),
+  })
+
   return ok(data)
 }

@@ -5,6 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getSession, isSuperadmin, hasRole, hasAnyRole } from '@/lib/auth'
 import { ok, created, Err } from '@/lib/api'
 import { sendBienvenida } from '@/lib/email'
+import { logActividad } from '@/lib/actividad'
 
 const CreateSchema = z.object({
   email: z.string().email(),
@@ -155,6 +156,15 @@ export async function POST(request: NextRequest, { params }: Params) {
     login_url: `${appUrl}/login`,
     setup_url,
     logo_url: inst?.logo_rectangular_url ?? undefined,
+  })
+
+  logActividad({
+    institucion_id,
+    persona_id: session.persona_id,
+    accion: 'crear_usuario',
+    entidad: 'usuario',
+    entidad_id: persona_id,
+    metadata: { nombre, email, rol },
   })
 
   return created({ persona_id, email, rol, setup_url: setup_url ?? null })

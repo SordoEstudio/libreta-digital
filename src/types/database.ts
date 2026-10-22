@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      actividad_log: {
+        Row: {
+          id: string
+          institucion_id: string
+          persona_id: string | null
+          accion: string
+          entidad: string | null
+          entidad_id: string | null
+          metadata: Record<string, unknown> | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          institucion_id: string
+          persona_id?: string | null
+          accion: string
+          entidad?: string | null
+          entidad_id?: string | null
+          metadata?: Record<string, unknown> | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          institucion_id?: string
+          persona_id?: string | null
+          accion?: string
+          entidad?: string | null
+          entidad_id?: string | null
+          metadata?: Record<string, unknown> | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "actividad_log_institucion_id_fkey"
+            columns: ["institucion_id"]
+            isOneToOne: false
+            referencedRelation: "instituciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "actividad_log_persona_id_fkey"
+            columns: ["persona_id"]
+            isOneToOne: false
+            referencedRelation: "personas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       alumno_inscripciones: {
         Row: {
           activo: boolean

@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getSession, isSuperadmin, hasRole } from '@/lib/auth'
 import { ok, Err } from '@/lib/api'
+import { logActividad } from '@/lib/actividad'
 
 type Params = { params: Promise<{ id: string; persona_id: string }> }
 
@@ -34,6 +35,15 @@ export async function POST(_request: NextRequest, { params }: Params) {
   })
 
   if (error) return Err.server(error.message)
+
+  logActividad({
+    institucion_id,
+    persona_id: session.persona_id,
+    accion: 'invitar_usuario',
+    entidad: 'usuario',
+    entidad_id: persona_id,
+    metadata: { email: persona.email },
+  })
 
   return ok({ link: linkData?.properties?.action_link ?? null })
 }
