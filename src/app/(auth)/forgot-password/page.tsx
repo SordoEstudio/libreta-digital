@@ -47,13 +47,22 @@ export default function ForgotPasswordPage() {
         </div>
 
         {sent ? (
-          <Alert>
-            <CheckCircle2 className="size-4" />
-            <AlertDescription>
-              Revisá tu bandeja de entrada. Si el email existe, recibirás un link para
-              crear tu contraseña.
-            </AlertDescription>
-          </Alert>
+          <div className="flex flex-col gap-3">
+            <Alert>
+              <CheckCircle2 className="size-4" />
+              <AlertDescription>
+                Revisá tu bandeja de entrada. Si el email existe, recibirás un link para
+                crear tu contraseña.
+              </AlertDescription>
+            </Alert>
+            <p className="text-xs text-muted-foreground">
+              ¿Tu cuenta usa Google? No necesitás contraseña —{' '}
+              <Link href="/login" className="underline underline-offset-4 hover:text-foreground">
+                ingresá con Google
+              </Link>{' '}
+              desde la pantalla de inicio.
+            </p>
+          </div>
         ) : (
           <>
             {error && (
