@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect, notFound } from 'next/navigation'
 import { CheckCircle2, XCircle } from 'lucide-react'
 import PeriodoSelectNav from './periodo-select-nav'
+import ConfirmarManualButton from './confirmar-manual-button'
 
 type PageProps = {
   params: Promise<{ slug: string }>
@@ -197,7 +198,7 @@ export default async function AcusesPage({ params, searchParams }: PageProps) {
                   ) : (
                     <div className="flex flex-col gap-1">
                       {row.responsables.map(r => (
-                        <div key={r.persona_id} className="flex items-center gap-2">
+                        <div key={r.persona_id} className="group flex items-center gap-2">
                           {r.confirmed_at ? (
                             <CheckCircle2 className="size-3.5 text-emerald-500 shrink-0" />
                           ) : (
@@ -209,6 +210,13 @@ export default async function AcusesPage({ params, searchParams }: PageProps) {
                               {new Date(r.confirmed_at).toLocaleDateString('es-AR')}
                             </span>
                           )}
+                          <ConfirmarManualButton
+                            alumnoId={row.alumnoId}
+                            personaId={r.persona_id}
+                            periodoId={activePeriodo.id}
+                            instId={inst.id}
+                            confirmed={!!r.confirmed_at}
+                          />
                         </div>
                       ))}
                     </div>

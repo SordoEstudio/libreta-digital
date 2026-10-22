@@ -49,6 +49,17 @@ export default async function ResponsablesPage({ params }: Params) {
 
   const responsableIds = personaIds
 
+  // Find alumnos self-linked (autoresponsable) to mark them
+  const autoAlumnoIds = new Set<string>()
+  if (responsableIds.length > 0) {
+    const { data: autoAlumnos } = await admin
+      .from('alumnos')
+      .select('id')
+      .eq('institucion_id', inst.id)
+      .in('persona_id', responsableIds)
+    for (const a of autoAlumnos ?? []) autoAlumnoIds.add(a.id)
+  }
+
   const alumnosByResponsable: Record<string, ChipItem[]> = {}
 
   if (responsableIds.length > 0) {
@@ -60,7 +71,10 @@ export default async function ResponsablesPage({ params }: Params) {
       const alumno = r.alumnos as ChipItem | null
       if (!alumno) continue
       if (!alumnosByResponsable[r.persona_id]) alumnosByResponsable[r.persona_id] = []
-      alumnosByResponsable[r.persona_id].push(alumno)
+      alumnosByResponsable[r.persona_id].push({
+        id: alumno.id,
+        nombre: autoAlumnoIds.has(alumno.id) ? `${alumno.nombre} (auto)` : alumno.nombre,
+      })
     }
   }
 

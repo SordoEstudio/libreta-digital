@@ -17,7 +17,9 @@ export default function PeriodoSelectNav({ periodos, activePeriodoId, slug }: Pr
       onValueChange={value => router.replace(`/dashboard/${slug}/acuses?periodo_id=${value}`)}
     >
       <SelectTrigger className="w-48">
-        <SelectValue placeholder="Período" />
+        <SelectValue placeholder="Período">
+          {periodos.find(p => p.id === activePeriodoId)?.nombre ?? 'Período'}
+        </SelectValue>
       </SelectTrigger>
       <SelectContent>
         {periodos.map(p => (
