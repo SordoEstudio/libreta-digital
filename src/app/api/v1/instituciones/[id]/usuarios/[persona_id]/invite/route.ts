@@ -55,7 +55,6 @@ export async function POST(_request: NextRequest, { params }: Params) {
 
   type InstRow = { nombre: string; logo_rectangular_url: string | null } | null
   const inst = membership?.instituciones as InstRow
-  const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? 'https://libretadigital.app').replace(/\/$/, '')
 
   void sendBienvenida(persona.email, {
     nombre: persona.nombre ?? persona.email,
