@@ -59,6 +59,7 @@ export default function AlumnoConfigSheet({ alumnoId, alumnoNombre, instId, open
   // Section open states
   const [datosOpen, setDatosOpen] = useState(true)
   const [respOpen, setRespOpen] = useState(true)
+  const [accesoOpen, setAccesoOpen] = useState(true)
 
   // Alumno fields
   const [alumnoPersonaId, setAlumnoPersonaId] = useState<string | null>(null)
@@ -92,6 +93,13 @@ export default function AlumnoConfigSheet({ alumnoId, alumnoNombre, instId, open
   const [desvinculating, setDesvinculating] = useState<string | null>(null)
   const [confirmDesvincular, setConfirmDesvincular] = useState<string | null>(null)
 
+  // Acceso alumno
+  const [tieneAccesoAlumno, setTieneAccesoAlumno] = useState(false)
+  const [accesoToggling, setAccesoToggling] = useState(false)
+  const [accesoInviteLink, setAccesoInviteLink] = useState<string | null>(null)
+  const [accesoInviteEmail, setAccesoInviteEmail] = useState<string | null>(null)
+  const [accesoLinkCopied, setAccesoLinkCopied] = useState(false)
+
   const isAutoResponsable = !!alumnoPersonaId && responsables.some(r => r.persona_id === alumnoPersonaId)
 
   async function loadAlumno() {
@@ -100,6 +108,7 @@ export default function AlumnoConfigSheet({ alumnoId, alumnoNombre, instId, open
     const json = await res.json()
     const d = json.data ?? {}
     setAlumnoPersonaId(d.persona_id ?? null)
+    setTieneAccesoAlumno(!!d.tiene_acceso_alumno)
     setApellido(d.apellido ?? '')
     setNombre(d.nombre ?? '')
     setEmail(d.email ?? '')
@@ -178,6 +187,34 @@ export default function AlumnoConfigSheet({ alumnoId, alumnoNombre, instId, open
         toast.success('Alumno asignado como responsable')
       }
       await Promise.all([loadAlumno(), loadResponsables()])
+      router.refresh()
+    }
+  }
+
+  async function handleAccesoToggle() {
+    setAccesoToggling(true)
+    if (tieneAccesoAlumno) {
+      const res = await fetch(`/api/v1/alumnos/${alumnoId}/acceso`, { method: 'DELETE' })
+      const json = await res.json()
+      setAccesoToggling(false)
+      if (!res.ok) { toast.error(json.error?.message ?? 'Error'); return }
+      setTieneAccesoAlumno(false)
+      toast.success('Acceso del alumno revocado')
+      router.refresh()
+    } else {
+      const res = await fetch(`/api/v1/alumnos/${alumnoId}/acceso`, { method: 'POST' })
+      const json = await res.json()
+      setAccesoToggling(false)
+      if (!res.ok) { toast.error(json.error?.message ?? 'Error al asignar acceso'); return }
+      if (json.data?.ya_existia) { toast.info('Ya tenía acceso'); setTieneAccesoAlumno(true); return }
+      setTieneAccesoAlumno(true)
+      if (json.data?.setup_url) {
+        setAccesoInviteLink(json.data.setup_url)
+        setAccesoInviteEmail(json.data.email)
+      } else {
+        toast.success('Acceso asignado')
+      }
+      await loadAlumno()
       router.refresh()
     }
   }
@@ -522,6 +559,68 @@ export default function AlumnoConfigSheet({ alumnoId, alumnoNombre, instId, open
                           </Button>
                         </form>
                       )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* ── Acceso del alumno ── */}
+            <div className="border-t">
+              <button
+                className="flex items-center justify-between w-full px-4 py-3 text-sm font-semibold text-left"
+                onClick={() => setAccesoOpen(v => !v)}
+              >
+                Acceso del alumno
+                <ChevronDown className={cn('size-4 text-muted-foreground transition-transform', !accesoOpen && '-rotate-90')} />
+              </button>
+
+              {accesoOpen && (
+                <div className="flex flex-col gap-3 px-4 pb-4">
+                  <label className={cn('flex items-center gap-2.5 cursor-pointer rounded-lg border px-3 py-2.5', tieneAccesoAlumno && 'border-primary/30 bg-primary/5')}>
+                    <input
+                      type="checkbox"
+                      checked={tieneAccesoAlumno}
+                      onChange={handleAccesoToggle}
+                      disabled={accesoToggling || (!tieneAccesoAlumno && !email)}
+                      className="size-4 accent-primary"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium leading-tight">Puede ver su libreta</p>
+                      <p className="text-xs text-muted-foreground">
+                        {tieneAccesoAlumno
+                          ? 'El alumno puede iniciar sesión y ver su boletín'
+                          : !email
+                            ? 'Requiere email del alumno'
+                            : 'El alumno no tiene acceso propio'}
+                      </p>
+                    </div>
+                    {accesoToggling && <Loader2 className="size-3.5 animate-spin text-muted-foreground" />}
+                  </label>
+
+                  {accesoInviteLink && (
+                    <div className="flex flex-col gap-2 rounded-lg border border-emerald-200 bg-emerald-50/50 p-3 dark:border-emerald-800/50 dark:bg-emerald-950/20">
+                      <p className="text-xs text-muted-foreground">
+                        Se envió email a <strong>{accesoInviteEmail}</strong>. Si no llega, compartí este link:
+                      </p>
+                      <div className="flex items-center gap-2 rounded-md border bg-background px-2 py-1.5 text-xs font-mono break-all">
+                        <Link2 className="size-3 shrink-0 text-muted-foreground" />
+                        <span className="flex-1 text-muted-foreground">{accesoInviteLink}</span>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                          await navigator.clipboard.writeText(accesoInviteLink)
+                          setAccesoLinkCopied(true)
+                          setTimeout(() => setAccesoLinkCopied(false), 2000)
+                        }}
+                      >
+                        {accesoLinkCopied
+                          ? <><Check data-icon="inline-start" className="text-green-500" />Copiado</>
+                          : <><Copy data-icon="inline-start" />Copiar link</>
+                        }
+                      </Button>
                     </div>
                   )}
                 </div>

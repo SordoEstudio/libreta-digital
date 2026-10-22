@@ -21,8 +21,21 @@ export default async function LibretaPage({ params }: Params) {
     notFound()
   }
 
-  if (!isSuperadmin(session) && !hasAnyRole(session, inst.id, ['admin', 'docente', 'responsable']))
+  if (!isSuperadmin(session) && !hasAnyRole(session, inst.id, ['admin', 'docente', 'responsable', 'alumno']))
     redirect('/dashboard')
+
+  // Alumno gate: can only view their own libreta
+  if (!isSuperadmin(session) && hasRole(session, inst.id, 'alumno') &&
+      !hasAnyRole(session, inst.id, ['admin', 'docente', 'responsable'])) {
+    const { data: propioAlumno } = await supabase
+      .from('alumnos')
+      .select('id')
+      .eq('id', alumno_id)
+      .eq('persona_id', session.persona_id ?? '')
+      .maybeSingle()
+    if (!propioAlumno) redirect(`/dashboard/${slug}`)
+    redirect(`/dashboard/${slug}/libreta/${alumno_id}/boletin`)
+  }
 
   const isResponsableOnly =
     !isSuperadmin(session) &&

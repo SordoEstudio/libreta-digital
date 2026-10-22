@@ -24,7 +24,7 @@ export default async function InstitucionDashboardPage({ params }: Params) {
     notFound()
   }
 
-  if (!isSuperadmin(session) && !hasAnyRole(session, inst.id, ['admin', 'docente', 'responsable']))
+  if (!isSuperadmin(session) && !hasAnyRole(session, inst.id, ['admin', 'docente', 'responsable', 'alumno']))
     redirect('/dashboard')
 
   const isAdmin = isSuperadmin(session) || hasRole(session, inst.id, 'admin')
@@ -41,6 +41,19 @@ export default async function InstitucionDashboardPage({ params }: Params) {
 
   if (isResponsable && session.persona_id) {
     return <HomeResponsable instId={inst.id} slug={slug} personaId={session.persona_id} moduloContenidos={!!inst.modulo_contenidos} nombre={session.nombre} />
+  }
+
+  const isAlumno = hasRole(session, inst.id, 'alumno')
+  if (isAlumno && session.persona_id) {
+    // Find this alumno's own record and redirect to their boletín
+    const supabaseClient = await createClient()
+    const { data: propioAlumno } = await supabaseClient
+      .from('alumnos')
+      .select('id')
+      .eq('persona_id', session.persona_id)
+      .eq('institucion_id', inst.id)
+      .maybeSingle()
+    if (propioAlumno) redirect(`/dashboard/${slug}/libreta/${propioAlumno.id}/boletin`)
   }
 
   // Fallback: sin persona_id o rol no reconocido

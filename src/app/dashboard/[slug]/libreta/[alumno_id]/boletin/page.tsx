@@ -23,11 +23,28 @@ export default async function BoletinPage({ params }: Params) {
     if (isSuperadmin(session)) redirect('/dashboard/instituciones')
     notFound()
   }
-  if (!isSuperadmin(session) && !hasAnyRole(session, inst.id, ['admin', 'docente', 'responsable']))
+  if (!isSuperadmin(session) && !hasAnyRole(session, inst.id, ['admin', 'docente', 'responsable', 'alumno']))
     redirect('/dashboard')
 
+  const isAlumnoOnly = !isSuperadmin(session) &&
+    hasRole(session, inst.id, 'alumno') &&
+    !hasAnyRole(session, inst.id, ['admin', 'docente', 'responsable'])
+
+  // Alumno gate: can only view their own boletín
+  if (isAlumnoOnly) {
+    const { data: propioAlumno } = await supabase
+      .from('alumnos')
+      .select('id')
+      .eq('id', alumno_id)
+      .eq('persona_id', session.persona_id ?? '')
+      .maybeSingle()
+    if (!propioAlumno) redirect(`/dashboard/${slug}`)
+  }
+
   const isResponsableOnly = !isSuperadmin(session) && !hasRole(session, inst.id, 'admin') && !hasRole(session, inst.id, 'docente') && hasRole(session, inst.id, 'responsable')
-  const backHref = isResponsableOnly ? `/dashboard/${slug}/mis-alumnos` : `/dashboard/${slug}/alumnos`
+  const backHref = isAlumnoOnly
+    ? `/dashboard/${slug}`
+    : isResponsableOnly ? `/dashboard/${slug}/mis-alumnos` : `/dashboard/${slug}/alumnos`
 
   const { data: alumno } = await supabase
     .from('alumnos')

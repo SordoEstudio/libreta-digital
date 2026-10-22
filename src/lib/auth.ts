@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 
 export type Membership = {
   institucion_id: string
-  rol: 'superadmin' | 'admin' | 'docente' | 'responsable'
+  rol: 'superadmin' | 'admin' | 'docente' | 'responsable' | 'alumno'
 }
 
 export type SessionUser = {

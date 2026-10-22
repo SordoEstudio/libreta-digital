@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { getSession, isSuperadmin, hasRole } from '@/lib/auth'
 import { ok, Err } from '@/lib/api'
 
@@ -34,7 +35,22 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
   if (!data) return Err.notFound()
   if (!isSuperadmin(session) && !hasRole(session, data.institucion_id, 'admin')) return Err.forbidden()
-  return ok(data)
+
+  let tiene_acceso_alumno = false
+  if (data.persona_id) {
+    const admin = createAdminClient()
+    const { data: mb } = await admin
+      .from('memberships')
+      .select('id')
+      .eq('persona_id', data.persona_id)
+      .eq('institucion_id', data.institucion_id)
+      .eq('rol', 'alumno')
+      .eq('activo', true)
+      .maybeSingle()
+    tiene_acceso_alumno = !!mb
+  }
+
+  return ok({ ...data, tiene_acceso_alumno })
 }
 
 export async function PATCH(request: NextRequest, { params }: Params) {
