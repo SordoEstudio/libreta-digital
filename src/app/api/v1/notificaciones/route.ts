@@ -9,6 +9,8 @@ export async function GET(request: NextRequest) {
   if (!session.persona_id) return Err.forbidden()
 
   const leido = request.nextUrl.searchParams.get('leido')
+  const offset = Math.max(0, parseInt(request.nextUrl.searchParams.get('offset') ?? '0', 10) || 0)
+  const limit = 50
   const supabase = await createClient()
 
   let query = supabase
@@ -16,7 +18,7 @@ export async function GET(request: NextRequest) {
     .select('id, tipo, titulo, contenido, leido, created_at, metadata')
     .eq('persona_id', session.persona_id)
     .order('created_at', { ascending: false })
-    .limit(50)
+    .range(offset, offset + limit - 1)
 
   if (leido !== null) query = query.eq('leido', leido === 'true')
 
@@ -29,5 +31,5 @@ export async function GET(request: NextRequest) {
     .eq('persona_id', session.persona_id)
     .eq('leido', false)
 
-  return ok(data, { sin_leer: sin_leer ?? 0 })
+  return ok(data, { sin_leer: sin_leer ?? 0, has_more: (data?.length ?? 0) === limit })
 }

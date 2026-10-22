@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Bell } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
+import { Bell, Loader2 } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,21 +17,46 @@ interface Notificacion {
   created_at: string
 }
 
+const LIMIT = 50
+
 export function NotificationBell({ compact = false }: { compact?: boolean }) {
   const [items, setItems] = useState<Notificacion[]>([])
   const [sinLeer, setSinLeer] = useState(0)
   const [loaded, setLoaded] = useState(false)
+  const [hasMore, setHasMore] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
+
+  const fetchPage = useCallback(async (offset: number) => {
+    const res = await fetch(`/api/v1/notificaciones?offset=${offset}`)
+    const json = await res.json()
+    return {
+      items: (json.data ?? []) as Notificacion[],
+      sinLeer: json.meta?.sin_leer ?? 0,
+      hasMore: json.meta?.has_more ?? false,
+    }
+  }, [])
 
   useEffect(() => {
-    fetch('/api/v1/notificaciones')
-      .then(r => r.json())
-      .then(json => {
-        setItems((json.data ?? []).slice(0, 15))
-        setSinLeer(json.meta?.sin_leer ?? 0)
+    fetchPage(0)
+      .then(({ items, sinLeer, hasMore }) => {
+        setItems(items)
+        setSinLeer(sinLeer)
+        setHasMore(hasMore)
         setLoaded(true)
       })
       .catch(() => setLoaded(true))
-  }, [])
+  }, [fetchPage])
+
+  async function handleLoadMore() {
+    setLoadingMore(true)
+    try {
+      const { items: next, hasMore: more } = await fetchPage(items.length)
+      setItems(prev => [...prev, ...next])
+      setHasMore(more)
+    } finally {
+      setLoadingMore(false)
+    }
+  }
 
   function handleOpenChange(open: boolean) {
     if (open && sinLeer > 0) {
@@ -41,6 +66,44 @@ export function NotificationBell({ compact = false }: { compact?: boolean }) {
   }
 
   if (!loaded) return null
+
+  const listContent = (
+    <>
+      {items.length === 0 ? (
+        <p className="px-3 py-6 text-center text-sm text-muted-foreground">
+          Sin notificaciones nuevas
+        </p>
+      ) : (
+        <div className="max-h-80 divide-y overflow-y-auto">
+          {items.map(n => (
+            <div key={n.id} className="px-3 py-2.5">
+              <p className="text-sm font-medium leading-snug">{n.titulo}</p>
+              {n.contenido && (
+                <p className="mt-0.5 text-xs text-muted-foreground">{n.contenido}</p>
+              )}
+              <p className="mt-1 text-xs text-muted-foreground">
+                {new Date(n.created_at).toLocaleDateString('es-AR', {
+                  day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
+                })}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+      {hasMore && (
+        <div className="border-t px-3 py-2">
+          <button
+            onClick={handleLoadMore}
+            disabled={loadingMore}
+            className="flex w-full items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-foreground disabled:opacity-50"
+          >
+            {loadingMore && <Loader2 className="size-3 animate-spin" />}
+            Ver más
+          </button>
+        </div>
+      )}
+    </>
+  )
 
   if (compact) {
     return (
@@ -55,27 +118,7 @@ export function NotificationBell({ compact = false }: { compact?: boolean }) {
           <div className="border-b px-3 py-2">
             <p className="text-sm font-semibold">Notificaciones</p>
           </div>
-          {items.length === 0 ? (
-            <p className="px-3 py-6 text-center text-sm text-muted-foreground">
-              Sin notificaciones nuevas
-            </p>
-          ) : (
-            <div className="max-h-80 divide-y overflow-y-auto">
-              {items.map(n => (
-                <div key={n.id} className="px-3 py-2.5">
-                  <p className="text-sm font-medium leading-snug">{n.titulo}</p>
-                  {n.contenido && (
-                    <p className="mt-0.5 text-xs text-muted-foreground">{n.contenido}</p>
-                  )}
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {new Date(n.created_at).toLocaleDateString('es-AR', {
-                      day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
-                    })}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
+          {listContent}
         </DropdownMenuContent>
       </DropdownMenu>
     )
@@ -102,30 +145,7 @@ export function NotificationBell({ compact = false }: { compact?: boolean }) {
         <div className="border-b px-3 py-2">
           <p className="text-sm font-semibold">Notificaciones</p>
         </div>
-        {items.length === 0 ? (
-          <p className="px-3 py-6 text-center text-sm text-muted-foreground">
-            Sin notificaciones nuevas
-          </p>
-        ) : (
-          <div className="max-h-80 divide-y overflow-y-auto">
-            {items.map(n => (
-              <div key={n.id} className="px-3 py-2.5">
-                <p className="text-sm font-medium leading-snug">{n.titulo}</p>
-                {n.contenido && (
-                  <p className="mt-0.5 text-xs text-muted-foreground">{n.contenido}</p>
-                )}
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {new Date(n.created_at).toLocaleDateString('es-AR', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </p>
-              </div>
-            ))}
-          </div>
-        )}
+        {listContent}
       </DropdownMenuContent>
     </DropdownMenu>
   )
