@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { ConflictosAlert } from './conflictos-alert'
 import { detectConflicts, colorIndex } from '@/lib/horario-conflicts'
 import type { HorarioEvento } from '@/lib/horario-conflicts'
+import { OnboardingChecklist } from './onboarding-checklist'
 
 interface Props {
   instId: string
@@ -110,6 +111,15 @@ export default async function HomeAdmin({ instId, slug, instNombre, instTipo }: 
         <h1 className="text-2xl font-semibold">{instNombre}</h1>
         <p className="text-sm text-muted-foreground">{instTipo ?? 'Institución educativa'}</p>
       </div>
+
+      <OnboardingChecklist
+        slug={slug}
+        tieneAño={!!añoActivo}
+        tieneCursos={cursosCount > 0}
+        tieneMaterias={materias.length > 0}
+        tieneAlumnos={alumnosActivos.length > 0}
+        tieneDocentes={docentesCount > 0}
+      />
 
       <div className="grid gap-4 sm:grid-cols-3">
         <Card>
