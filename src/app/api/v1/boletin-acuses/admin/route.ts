@@ -36,8 +36,8 @@ export async function POST(request: NextRequest) {
   const { error } = await admin
     .from('boletin_acuses')
     .upsert(
-      { alumno_id, periodo_id, persona_id },
-      { onConflict: 'alumno_id,periodo_id,persona_id', ignoreDuplicates: true }
+      { alumno_id, periodo_id, persona_id, confirmado_por: session.persona_id },
+      { onConflict: 'alumno_id,periodo_id,persona_id', ignoreDuplicates: false }
     )
 
   if (error) return Err.server(error.message)

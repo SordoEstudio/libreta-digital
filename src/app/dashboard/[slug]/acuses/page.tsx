@@ -121,22 +121,25 @@ export default async function AcusesPage({ params, searchParams }: PageProps) {
   const { data: acusesData } = alumnoIds.length > 0
     ? await admin
         .from('boletin_acuses')
-        .select('alumno_id, persona_id, confirmed_at')
+        .select('alumno_id, persona_id, confirmed_at, confirmado_por, personas!boletin_acuses_confirmado_por_fkey(nombre)')
         .eq('periodo_id', activePeriodo.id)
         .in('alumno_id', alumnoIds)
     : { data: null }
 
-  type AcuseRow = { alumno_id: string; persona_id: string; confirmed_at: string }
+  type AcuseRow = { alumno_id: string; persona_id: string; confirmed_at: string; confirmado_por: string | null; personas: { nombre: string } | null }
   const acuseRows = (acusesData ?? []) as AcuseRow[]
   const acuseMap = new Map(
-    acuseRows.map(a => [`${a.alumno_id}:${a.persona_id}`, a.confirmed_at])
+    acuseRows.map(a => [`${a.alumno_id}:${a.persona_id}`, {
+      confirmed_at: a.confirmed_at,
+      confirmado_por_nombre: (a.personas as { nombre: string } | null)?.nombre ?? null,
+    }])
   )
 
   type TableRow = {
     alumnoId: string
     nombre: string
     curso: string
-    responsables: Array<{ persona_id: string; nombre: string; confirmed_at: string | null }>
+    responsables: Array<{ persona_id: string; nombre: string; confirmed_at: string | null; confirmado_por_nombre: string | null }>
     total: number
     confirmed: number
   }
@@ -145,10 +148,14 @@ export default async function AcusesPage({ params, searchParams }: PageProps) {
     .map(i => {
       if (!i.alumnos) return null
       const resps = respByAlumno.get(i.alumno_id) ?? []
-      const enriched = resps.map(r => ({
-        ...r,
-        confirmed_at: acuseMap.get(`${i.alumno_id}:${r.persona_id}`) ?? null,
-      }))
+      const enriched = resps.map(r => {
+        const acuse = acuseMap.get(`${i.alumno_id}:${r.persona_id}`)
+        return {
+          ...r,
+          confirmed_at: acuse?.confirmed_at ?? null,
+          confirmado_por_nombre: acuse?.confirmado_por_nombre ?? null,
+        }
+      })
       return {
         alumnoId: i.alumno_id,
         nombre: i.alumnos.apellido
@@ -208,6 +215,7 @@ export default async function AcusesPage({ params, searchParams }: PageProps) {
                           {r.confirmed_at && (
                             <span className="text-xs text-muted-foreground">
                               {new Date(r.confirmed_at).toLocaleDateString('es-AR')}
+                              {r.confirmado_por_nombre && ` · por ${r.confirmado_por_nombre}`}
                             </span>
                           )}
                           <ConfirmarManualButton
