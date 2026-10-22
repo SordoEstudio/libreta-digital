@@ -297,6 +297,7 @@ export type Database = {
         Row: {
           alumno_id: string
           confirmed_at: string
+          confirmado_por: string | null
           created_at: string
           id: string
           periodo_id: string
@@ -305,6 +306,7 @@ export type Database = {
         Insert: {
           alumno_id: string
           confirmed_at?: string
+          confirmado_por?: string | null
           created_at?: string
           id?: string
           periodo_id: string
@@ -313,6 +315,7 @@ export type Database = {
         Update: {
           alumno_id?: string
           confirmed_at?: string
+          confirmado_por?: string | null
           created_at?: string
           id?: string
           periodo_id?: string
@@ -324,6 +327,13 @@ export type Database = {
             columns: ["alumno_id"]
             isOneToOne: false
             referencedRelation: "alumnos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "boletin_acuses_confirmado_por_fkey"
+            columns: ["confirmado_por"]
+            isOneToOne: false
+            referencedRelation: "personas"
             referencedColumns: ["id"]
           },
           {
