@@ -37,7 +37,7 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
   // Fetch materias accessible by this user
   let materiasQuery = supabase
     .from('materias')
-    .select('id, materias_catalogo(nombre), cursos(id, nombre)')
+    .select('id, materias_catalogo(nombre), cursos(id, nombre, deleted_at)')
     .eq('institucion_id', inst.id)
     .is('deleted_at', null)
     .order('id')
@@ -65,16 +65,18 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
   type MateriaRaw = {
     id: string
     materias_catalogo: { nombre: string } | null
-    cursos: { id: string; nombre: string } | null
+    cursos: { id: string; nombre: string; deleted_at: string | null } | null
   }
 
-  const materias = (materiasRaw ?? []).map((m: MateriaRaw) => ({
-    id: m.id,
-    nombre: (m.materias_catalogo as { nombre: string } | null)?.nombre ?? '(sin nombre)',
-    cursoNombre: m.cursos?.nombre ?? '',
-    cursoId: m.cursos?.id ?? '',
-    añoLectivoId: null as string | null,
-  }))
+  const materias = (materiasRaw ?? [])
+    .filter((m: MateriaRaw) => !m.cursos?.deleted_at)
+    .map((m: MateriaRaw) => ({
+      id: m.id,
+      nombre: (m.materias_catalogo as { nombre: string } | null)?.nombre ?? '(sin nombre)',
+      cursoNombre: m.cursos?.nombre ?? '',
+      cursoId: m.cursos?.id ?? '',
+      añoLectivoId: null as string | null,
+    }))
 
   // Resolve selected materia — default to first materia when no param
   const selectedMateria = materia_id
