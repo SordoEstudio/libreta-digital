@@ -24,7 +24,11 @@ export default function CuadernoSelectores({
 
   function onPeriodoChange(periodoId: string) {
     if (!selectedMateriaId) return
-    router.push(`/dashboard/${slug}/cuaderno?materia_id=${selectedMateriaId}&periodo_id=${periodoId}`)
+    if (periodoId === '__todos__') {
+      router.push(`/dashboard/${slug}/cuaderno?materia_id=${selectedMateriaId}`)
+    } else {
+      router.push(`/dashboard/${slug}/cuaderno?materia_id=${selectedMateriaId}&periodo_id=${periodoId}`)
+    }
   }
 
   return (
@@ -47,11 +51,11 @@ export default function CuadernoSelectores({
         <div className="flex flex-col gap-1 min-w-0 sm:min-w-40">
           <label className="text-xs text-muted-foreground font-medium">Período</label>
           <select
-            value={selectedPeriodoId ?? ''}
+            value={selectedPeriodoId ?? '__todos__'}
             onChange={e => onPeriodoChange(e.target.value)}
             className="rounded-md border bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           >
-            <option value="" disabled>Seleccionar período…</option>
+            <option value="__todos__">Todos</option>
             {periodos.map(p => (
               <option key={p.id} value={p.id}>{p.nombre}</option>
             ))}

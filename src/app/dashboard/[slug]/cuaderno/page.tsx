@@ -103,14 +103,11 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
   }
 
   const isAnual = periodo_id === '__anual__'
+  const isTodos = !periodo_id  // no param = "Todos"
 
-  // Default to active period when no param
-  const defaultPeriodo = periodos.find(p => p.activo) ?? periodos[0] ?? null
-  const selectedPeriodo = isAnual
+  const selectedPeriodo = (isAnual || isTodos)
     ? null
-    : periodo_id
-      ? periodos.find(p => p.id === periodo_id)
-      : defaultPeriodo
+    : periodos.find(p => p.id === periodo_id) ?? null
 
   const periodoCerrado = selectedPeriodo
     ? selectedPeriodo.cerrado_at != null
@@ -163,7 +160,7 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
     notaAprobacion: number | null
   } | null = null
 
-  if (selectedMateria && (selectedPeriodo || isAnual)) {
+  if (selectedMateria && (selectedPeriodo || isAnual || isTodos)) {
     // Alumnos inscriptos en el curso
     const { data: inscripciones } = await supabase
       .from('alumno_inscripciones')
@@ -202,9 +199,11 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
       .eq('materia_id', selectedMateria.id)
       .is('deleted_at', null)
       .order('created_at', { ascending: true })
-    const { data: evalRefsRaw } = isAnual
-      ? await evalRefsQueryBase.is('periodo_id', null)
-      : await evalRefsQueryBase.eq('periodo_id', selectedPeriodo!.id)
+    const { data: evalRefsRaw } = isTodos
+      ? await evalRefsQueryBase
+      : isAnual
+        ? await evalRefsQueryBase.is('periodo_id', null)
+        : await evalRefsQueryBase.eq('periodo_id', selectedPeriodo!.id)
 
     type EvalRefRaw = {
       id: string
@@ -260,9 +259,11 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
       .eq('materia_id', selectedMateria.id)
       .is('deleted_at', null)
       .order('orden')
-    const { data: evalsRaw } = isAnual
-      ? await evalsQueryBase.is('periodo_id', null)
-      : await evalsQueryBase.eq('periodo_id', selectedPeriodo!.id)
+    const { data: evalsRaw } = isTodos
+      ? await evalsQueryBase
+      : isAnual
+        ? await evalsQueryBase.is('periodo_id', null)
+        : await evalsQueryBase.eq('periodo_id', selectedPeriodo!.id)
 
     type EvalRaw = NonNullable<typeof evalsRaw>[number]
     const allEvalsFiltered = evalsRaw ?? []
@@ -344,9 +345,9 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
           materias={materias.map(m => ({ id: m.id, nombre: m.nombre, cursoNombre: m.cursoNombre }))}
           periodos={periodos.map(p => ({ id: p.id, nombre: p.nombre }))}
           selectedMateriaId={selectedMateria?.id ?? null}
-          selectedPeriodoId={selectedPeriodo?.id ?? null}
+          selectedPeriodoId={isAnual ? '__anual__' : selectedPeriodo?.id ?? null}
         />
-        {tableData && (selectedPeriodo || isAnual) && (
+        {tableData && (selectedPeriodo || isAnual || isTodos) && (
           <div className="flex gap-2 shrink-0">
             <CuadernoUnidadesSheet
               materiaId={selectedMateria!.id}
@@ -381,24 +382,15 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
         </div>
       )}
 
-      {selectedMateria && !selectedPeriodo && !isAnual && (
-        <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-          <NotebookPen className="size-12 text-muted-foreground/40" />
-          <p className="text-muted-foreground">
-            Seleccioná un período para ver el cuaderno.
-          </p>
-        </div>
-      )}
-
-      {tableData && (selectedPeriodo || isAnual) && (
+      {tableData && (selectedPeriodo || isAnual || isTodos) && (
         <MobileOrientationGuard>
         <CuadernoTabla
-            key={`${selectedMateria!.id}:${isAnual ? '__anual__' : selectedPeriodo!.id}`}
+            key={`${selectedMateria!.id}:${isAnual ? '__anual__' : isTodos ? '__todos__' : selectedPeriodo!.id}`}
             alumnos={tableData.alumnos}
             evalRefs={tableData.evalRefs}
             materiaId={selectedMateria!.id}
-            periodoId={isAnual ? '__anual__' : selectedPeriodo!.id}
-            periodoNombre={isAnual ? 'Anual' : selectedPeriodo!.nombre}
+            periodoId={isAnual ? '__anual__' : isTodos ? '__todos__' : selectedPeriodo!.id}
+            periodoNombre={isAnual ? 'Anual' : isTodos ? 'Todos' : selectedPeriodo!.nombre}
             periodos={periodos}
             todasDimensiones={tableData.allMaterialDims}
             todasUnidades={unidades.map(u => ({ id: u.id, nombre: u.nombre }))}
