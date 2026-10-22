@@ -27,7 +27,7 @@ export default async function AlumnosPage({ params }: Params) {
 
   const { data: alumnos } = await supabase
     .from('alumnos')
-    .select('id, nombre, apellido, activo, alumno_inscripciones(curso_id, activo, deleted_at, cursos(nombre))')
+    .select('id, nombre, apellido, activo, persona_id, alumno_inscripciones(curso_id, activo, deleted_at, cursos(nombre))')
     .eq('institucion_id', inst.id)
     .is('deleted_at', null)
     .order('apellido', { nullsFirst: false })
@@ -94,6 +94,7 @@ export default async function AlumnosPage({ params }: Params) {
       nombre: alumno.nombre,
       apellido: alumno.apellido ?? null,
       activo: alumno.activo,
+      persona_id: alumno.persona_id ?? null,
       cursoId: inscripcion?.curso_id ?? null,
       cursoNombre: inscripcion?.cursos?.nombre ?? null,
       responsables: responsablesMap.get(alumno.id) ?? [],

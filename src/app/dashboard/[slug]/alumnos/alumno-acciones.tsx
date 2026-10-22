@@ -7,7 +7,10 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { MoreHorizontal, BookOpen, Users, ArrowRightLeft, UserCheck, UserX, Pencil, UserCog } from 'lucide-react'
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle,
+} from '@/components/ui/dialog'
+import { MoreHorizontal, BookOpen, Users, ArrowRightLeft, UserCheck, UserX, Pencil, UserCog, Check, Copy, Link2 } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
 import ResponsablesSheet from './responsables-sheet'
@@ -21,15 +24,18 @@ interface Props {
   instId: string
   slug: string
   cursos: Array<{ id: string; nombre: string }>
+  esAutoResponsable?: boolean
 }
 
-export default function AlumnoAcciones({ alumnoId, alumnoNombre, activo, instId, slug, cursos }: Props) {
+export default function AlumnoAcciones({ alumnoId, alumnoNombre, activo, instId, slug, cursos, esAutoResponsable }: Props) {
   const router = useRouter()
   const [editOpen, setEditOpen] = useState(false)
   const [respOpen, setRespOpen] = useState(false)
   const [cursoOpen, setCursoOpen] = useState(false)
   const [toggling, setToggling] = useState(false)
   const [asignando, setAsignando] = useState(false)
+  const [inviteResult, setInviteResult] = useState<{ email: string; setup_url: string } | null>(null)
+  const [copied, setCopied] = useState(false)
 
   async function handleAutoResponsable() {
     setAsignando(true)
@@ -47,21 +53,15 @@ export default function AlumnoAcciones({ alumnoId, alumnoNombre, activo, instId,
       return
     }
 
+    router.refresh()
+
     if (json.data?.setup_url) {
-      toast.success('Responsable creado', {
-        description: 'Copiá el link de activación y enviáselo al alumno.',
-        action: {
-          label: 'Copiar link',
-          onClick: () => navigator.clipboard.writeText(json.data.setup_url),
-        },
-        duration: 12000,
-      })
+      setInviteResult({ email: json.data.email, setup_url: json.data.setup_url })
     } else {
       toast.success('Alumno asignado como responsable', {
         description: `Se envió invitación a ${json.data?.email ?? ''}`,
       })
     }
-    router.refresh()
   }
 
   async function handleToggleActivo() {
@@ -109,9 +109,10 @@ export default function AlumnoAcciones({ alumnoId, alumnoNombre, activo, instId,
             <ArrowRightLeft className="size-4" />
             Cambiar curso
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={handleAutoResponsable} disabled={asignando}>
+          <DropdownMenuItem onClick={handleAutoResponsable} disabled={asignando || esAutoResponsable}>
             <UserCog className="size-4" />
             Responsable de sí mismo
+            {esAutoResponsable && <Check className="size-3.5 ml-auto text-emerald-500" />}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleToggleActivo}>
@@ -123,6 +124,40 @@ export default function AlumnoAcciones({ alumnoId, alumnoNombre, activo, instId,
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <Dialog open={!!inviteResult} onOpenChange={v => { if (!v) { setInviteResult(null); setCopied(false) } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Responsable creado</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-4 pt-2">
+            <p className="text-sm text-muted-foreground">
+              Se envió un email a <strong>{inviteResult?.email}</strong>. Si no llega, compartí este link:
+            </p>
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-2 text-xs font-mono break-all">
+                <Link2 className="size-3 shrink-0 text-muted-foreground" />
+                <span className="flex-1 text-muted-foreground">{inviteResult?.setup_url}</span>
+              </div>
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  if (!inviteResult) return
+                  await navigator.clipboard.writeText(inviteResult.setup_url)
+                  setCopied(true)
+                  setTimeout(() => setCopied(false), 2000)
+                }}
+              >
+                {copied
+                  ? <><Check data-icon="inline-start" className="text-green-500" />Copiado</>
+                  : <><Copy data-icon="inline-start" />Copiar link</>
+                }
+              </Button>
+            </div>
+            <Button onClick={() => { setInviteResult(null); setCopied(false) }}>Listo</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <EditarAlumnoSheet
         alumnoId={alumnoId}

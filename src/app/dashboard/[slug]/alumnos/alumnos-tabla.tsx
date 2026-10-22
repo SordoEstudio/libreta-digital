@@ -25,6 +25,7 @@ interface AlumnoRow {
   nombre: string
   apellido: string | null
   activo: boolean
+  persona_id: string | null
   cursoId: string | null
   cursoNombre: string | null
   responsables: RespRow[]
@@ -219,6 +220,10 @@ export default function AlumnosTabla({ alumnos, instId, slug, cursos }: Props) {
                       instId={instId}
                       slug={slug}
                       cursos={cursos}
+                      esAutoResponsable={
+                        !!alumno.persona_id &&
+                        alumno.responsables.some(r => r.persona_id === alumno.persona_id)
+                      }
                     />
                   </TableCell>
                 </TableRow>
