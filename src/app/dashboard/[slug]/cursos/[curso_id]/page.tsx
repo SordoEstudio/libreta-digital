@@ -43,13 +43,13 @@ export default async function CursoDetallePage({ params }: Params) {
 
   const { data: materias } = await supabase
     .from('materias')
-    .select('id, materias_catalogo(nombre), materia_docentes(persona_id), materia_horarios(id, dia_semana, hora_inicio, hora_fin, aula, deleted_at), materias_dimensiones(id, nombre, peso, orden)')
+    .select('id, materias_catalogo(nombre), materia_docentes(persona_id), materia_horarios(id, dia_semana, hora_inicio, hora_fin, aula, deleted_at), materias_dimensiones(id, nombre, peso, orden, tipo)')
     .eq('curso_id', curso_id)
     .is('deleted_at', null)
     .order('materias_catalogo(nombre)')
 
   // Collect all persona_ids from materia_docentes, then query names in one shot
-  type RawMateria = { id: string; materias_catalogo: unknown; materia_docentes: Array<{ persona_id: string }>; materia_horarios: unknown[]; materias_dimensiones: Array<{ id: string; nombre: string; peso: number; orden: number }> }
+  type RawMateria = { id: string; materias_catalogo: unknown; materia_docentes: Array<{ persona_id: string }>; materia_horarios: unknown[]; materias_dimensiones: Array<{ id: string; nombre: string; peso: number; orden: number; tipo: string }> }
   const rawMaterias = (materias ?? []) as unknown as RawMateria[]
   const allPersonaIds = [...new Set(rawMaterias.flatMap(m => m.materia_docentes.map(d => d.persona_id)))]
 
@@ -76,7 +76,7 @@ export default async function CursoDetallePage({ params }: Params) {
     materias_catalogo: { nombre: string } | null
     materia_docentes: Array<{ persona_id: string }>
     materia_horarios: Array<{ id: string; dia_semana: number; hora_inicio: string; hora_fin: string; aula: string | null; deleted_at: string | null }>
-    materias_dimensiones: Array<{ id: string; nombre: string; peso: number; orden: number }>
+    materias_dimensiones: Array<{ id: string; nombre: string; peso: number; orden: number; tipo: string }>
   }
 
   type AlumnoInscripto = { id: string; nombre: string; apellido: string | null; activo: boolean }

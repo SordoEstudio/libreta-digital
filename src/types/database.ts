@@ -1380,6 +1380,7 @@ export type Database = {
           nombre: string
           orden: number
           peso: number | null
+          tipo: string
         }
         Insert: {
           created_at?: string
@@ -1388,6 +1389,7 @@ export type Database = {
           nombre: string
           orden?: number
           peso?: number | null
+          tipo?: string
         }
         Update: {
           created_at?: string
@@ -1396,6 +1398,7 @@ export type Database = {
           nombre?: string
           orden?: number
           peso?: number | null
+          tipo?: string
         }
         Relationships: [
           {

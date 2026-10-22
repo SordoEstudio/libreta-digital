@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
 import PrintButton from './print-button'
+import { labelConceptual } from '@/lib/conceptual'
 
 type Params = { params: Promise<{ slug: string; alumno_id: string }> }
 
@@ -59,7 +60,7 @@ export default async function BoletinPage({ params }: Params) {
     .from('notas')
     .select(`
       id, valor_numerico, valor_literal, observacion, dimension_id,
-      materias_dimensiones(id, nombre, peso, orden),
+      materias_dimensiones(id, nombre, peso, orden, tipo),
       evaluaciones(id, nombre, tipo, peso, periodo_id, template_id,
         periodos(nombre, orden, cerrado_at),
         materias(id, materias_catalogo(nombre)),
@@ -97,7 +98,7 @@ export default async function BoletinPage({ params }: Params) {
   }
 
   // ── Types ────────────────────────────────────────────────────────────────
-  type Dimension = { id: string; nombre: string; peso: number | null; orden: number }
+  type Dimension = { id: string; nombre: string; peso: number | null; orden: number; tipo: string }
   type EvalTemplate = { id: string; nombre: string; tipo: string; orden: number }
   type Evaluacion = {
     id: string; nombre: string; tipo: string; peso: number; periodo_id: string | null
@@ -207,7 +208,10 @@ export default async function BoletinPage({ params }: Params) {
   function formatNota(nota: NotaWithEv | undefined): string {
     if (!nota) return '—'
     if (nota.valor_literal === 'A') return 'Ausente'
-    return nota.valor_numerico?.toString() ?? nota.valor_literal ?? '—'
+    if (nota.valor_numerico !== null) return nota.valor_numerico.toString()
+    const dim = nota.materias_dimensiones as Dimension | null
+    if (dim?.tipo === 'conceptual' && nota.valor_literal) return labelConceptual(nota.valor_literal)
+    return nota.valor_literal ?? '—'
   }
 
   // Curso / año lectivo

@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
@@ -11,6 +12,7 @@ import { Save, Loader2, Download, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import * as XLSX from 'xlsx'
+import { VALORES_CONCEPTUALES } from '@/lib/conceptual'
 
 interface Alumno {
   id: string
@@ -30,6 +32,7 @@ interface NotaExistente {
 interface Dimension {
   id: string
   nombre: string
+  tipo: string
 }
 
 interface NotasEditorProps {
@@ -177,6 +180,15 @@ export function NotasEditor({
           if (raw.toUpperCase() === 'A') {
             return { alumno_id: a.id, dimension_id: dim.id, valor_numerico: null as number | null, valor_literal: 'A' as string | null }
           }
+          if (dim.tipo === 'conceptual') {
+            return {
+              alumno_id: a.id,
+              dimension_id: dim.id,
+              valor_numerico: null as number | null,
+              valor_literal: (raw || null) as string | null,
+              ...(obs ? { observacion: obs } : {}),
+            }
+          }
           const num = raw !== '' ? parseFloat(raw) : null
           return {
             alumno_id: a.id,
@@ -308,6 +320,22 @@ export function NotasEditor({
                       <TableCell key={dim.id}>
                         {!dimEligible ? (
                           <span className="text-xs text-muted-foreground/50">—</span>
+                        ) : dim.tipo === 'conceptual' ? (
+                          <Select
+                            value={dimVal}
+                            onValueChange={v => handleChangeDim(alumno.id, dim.id, v ?? '')}
+                            disabled={!!isCerrado}
+                          >
+                            <SelectTrigger className="w-28 h-8 text-xs">
+                              <SelectValue placeholder="—" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="A">Ausente</SelectItem>
+                              {VALORES_CONCEPTUALES.map(v => (
+                                <SelectItem key={v.codigo} value={v.codigo}>{v.label}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         ) : (
                           <Input
                             type="text"

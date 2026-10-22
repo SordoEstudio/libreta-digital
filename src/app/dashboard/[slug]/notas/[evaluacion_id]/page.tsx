@@ -36,7 +36,7 @@ export default async function NotasPage({ params, searchParams }: Params) {
 
   const { data: evaluacion } = await supabase
     .from('evaluaciones')
-    .select('id, nombre, tipo, peso, periodo_id, fecha, template_id, permite_recuperatorio, recuperatorio_de_evaluacion_id, materias(id, materias_catalogo(nombre), cursos(id, nombre)), evaluacion_dimensiones(dimension_id, materias_dimensiones(id, nombre))')
+    .select('id, nombre, tipo, peso, periodo_id, fecha, template_id, permite_recuperatorio, recuperatorio_de_evaluacion_id, materias(id, materias_catalogo(nombre), cursos(id, nombre)), evaluacion_dimensiones(dimension_id, materias_dimensiones(id, nombre, tipo))')
     .eq('id', evaluacion_id)
     .single()
 
@@ -72,7 +72,7 @@ export default async function NotasPage({ params, searchParams }: Params) {
 
   const { data: todasDimensiones } = await supabase
     .from('materias_dimensiones')
-    .select('id, nombre')
+    .select('id, nombre, tipo')
     .eq('materia_id', mat.id)
     .order('orden')
 
@@ -121,11 +121,11 @@ export default async function NotasPage({ params, searchParams }: Params) {
     .eq('evaluacion_id', evaluacion_id)
     .is('deleted_at', null)
 
-  type DimEntry = { id: string; nombre: string }
-  const rawDims = (evaluacion.evaluacion_dimensiones ?? []) as Array<{ dimension_id: string; materias_dimensiones: { id: string; nombre: string } | null }>
+  type DimEntry = { id: string; nombre: string; tipo: string }
+  const rawDims = (evaluacion.evaluacion_dimensiones ?? []) as Array<{ dimension_id: string; materias_dimensiones: { id: string; nombre: string; tipo: string } | null }>
   const dimensiones: DimEntry[] = rawDims
     .filter(d => d.materias_dimensiones)
-    .map(d => ({ id: d.materias_dimensiones!.id, nombre: d.materias_dimensiones!.nombre }))
+    .map(d => ({ id: d.materias_dimensiones!.id, nombre: d.materias_dimensiones!.nombre, tipo: d.materias_dimensiones!.tipo }))
 
   const notaAprobacion = instData?.nota_aprobacion ?? null
   const evalPeriodo = (periodos ?? []).find(p => p.id === (evaluacion.periodo_id ?? ''))

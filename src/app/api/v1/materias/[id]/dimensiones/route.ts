@@ -8,6 +8,7 @@ const CreateSchema = z.object({
   nombre: z.string().min(1).max(100),
   peso:   z.number().nonnegative().nullable().optional(),
   orden:  z.number().int().positive().optional(),
+  tipo:   z.enum(['numerico', 'conceptual']).default('numerico'),
 }).strict()
 
 type Params = { params: Promise<{ id: string }> }
@@ -35,7 +36,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
   const { data, error } = await supabase
     .from('materias_dimensiones')
-    .select('id, nombre, peso, orden')
+    .select('id, nombre, peso, orden, tipo')
     .eq('materia_id', materia_id)
     .order('orden', { ascending: true })
 
@@ -73,8 +74,8 @@ export async function POST(request: NextRequest, { params }: Params) {
 
   const { data, error } = await supabase
     .from('materias_dimensiones')
-    .insert({ materia_id, nombre: parsed.data.nombre, peso: pesoValue, orden })
-    .select('id, nombre, peso, orden')
+    .insert({ materia_id, nombre: parsed.data.nombre, peso: pesoValue, orden, tipo: parsed.data.tipo })
+    .select('id, nombre, peso, orden, tipo')
     .single()
 
   if (error) return Err.server(error.message)

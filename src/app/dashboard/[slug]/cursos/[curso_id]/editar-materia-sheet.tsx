@@ -27,6 +27,7 @@ interface Dimension {
   nombre: string
   peso: number | null
   orden: number
+  tipo: string
 }
 
 interface Plantilla {
@@ -75,6 +76,7 @@ export default function EditarMateriaSheet({
   // Dimensiones
   const [dimensiones, setDimensiones] = useState<Dimension[]>(initialDimensiones)
   const [dimNombre, setDimNombre] = useState('')
+  const [dimTipo, setDimTipo] = useState<'numerico' | 'conceptual'>('numerico')
   const [dimAdding, setDimAdding] = useState(false)
   const [dimDeletingId, setDimDeletingId] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; notasCount: number } | null>(null)
@@ -141,7 +143,7 @@ export default function EditarMateriaSheet({
     const res = await fetch(`/api/v1/materias/${materiaId}/dimensiones`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre: dimNombre.trim() }),
+      body: JSON.stringify({ nombre: dimNombre.trim(), tipo: dimTipo }),
     })
     const json = await res.json()
     setDimAdding(false)
@@ -310,7 +312,12 @@ export default function EditarMateriaSheet({
                     <div className="flex flex-col gap-1">
                       {dimensiones.map(d => (
                         <div key={d.id} className="flex items-center justify-between rounded-md border px-3 py-2">
-                          <p className="text-sm font-medium">{d.nombre}</p>
+                          <div className="flex items-center gap-2 min-w-0">
+                            <p className="text-sm font-medium truncate">{d.nombre}</p>
+                            {d.tipo === 'conceptual' && (
+                              <span className="shrink-0 text-xs bg-violet-100 text-violet-700 rounded px-1.5 py-0.5">Conceptual</span>
+                            )}
+                          </div>
                           <Button
                             variant="ghost"
                             size="icon"
@@ -327,23 +334,34 @@ export default function EditarMateriaSheet({
                     </div>
                   )}
 
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Nueva dimensión"
-                      value={dimNombre}
-                      onChange={e => setDimNombre(e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddDim() } }}
-                      className="h-8 text-sm"
-                    />
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={handleAddDim}
-                      disabled={dimAdding || !dimNombre.trim()}
-                      className="shrink-0"
-                    >
-                      {dimAdding ? <Loader2 className="size-3.5 animate-spin" /> : <Plus className="size-3.5" />}
-                    </Button>
+                  <div className="flex flex-col gap-2">
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Nueva dimensión"
+                        value={dimNombre}
+                        onChange={e => setDimNombre(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddDim() } }}
+                        className="h-8 text-sm"
+                      />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleAddDim}
+                        disabled={dimAdding || !dimNombre.trim()}
+                        className="shrink-0"
+                      >
+                        {dimAdding ? <Loader2 className="size-3.5 animate-spin" /> : <Plus className="size-3.5" />}
+                      </Button>
+                    </div>
+                    <Select value={dimTipo} onValueChange={v => setDimTipo(v as 'numerico' | 'conceptual')}>
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="numerico">Numérico</SelectItem>
+                        <SelectItem value="conceptual">Conceptual (E / MB / B / R / I)</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   {plantillas.length > 0 && (
