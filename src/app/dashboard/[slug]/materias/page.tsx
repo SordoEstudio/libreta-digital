@@ -31,18 +31,19 @@ export default async function MateriasCatalogoPage({ params }: Params) {
     .is('deleted_at', null)
     .order('nombre')
 
-  // Count active instances per catalog entry, with course names for tooltip
+  // Count active instances per catalog entry — only non-deleted courses
   const { data: instancias } = await supabase
     .from('materias')
-    .select('catalogo_id, cursos(nombre)')
+    .select('catalogo_id, cursos(nombre, deleted_at)')
     .eq('institucion_id', inst.id)
     .is('deleted_at', null)
 
   const instanciasPorCatalogo = new Map<string, string[]>()
   for (const m of instancias ?? []) {
-    const cursoNombre = (m.cursos as { nombre: string } | null)?.nombre ?? 'Curso sin nombre'
+    const curso = m.cursos as { nombre: string; deleted_at: string | null } | null
+    if (!curso || curso.deleted_at) continue
     const existing = instanciasPorCatalogo.get(m.catalogo_id) ?? []
-    existing.push(cursoNombre)
+    existing.push(curso.nombre)
     instanciasPorCatalogo.set(m.catalogo_id, existing)
   }
 
