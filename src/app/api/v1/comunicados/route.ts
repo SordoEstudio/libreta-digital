@@ -52,10 +52,11 @@ export async function POST(request: NextRequest) {
       curso_id,
       ...(materia_id ? { materia_id } : {}),
     })
-    .select('id, titulo, contenido, curso_id, created_at')
+    .select('id, titulo, contenido, curso_id, created_at, enviado_at')
     .single()
 
   if (insertError || !comunicado) return Err.server(insertError?.message ?? 'Error al crear comunicado')
+  if (comunicado.enviado_at) return Err.conflict('Este comunicado ya fue enviado')
 
   // Fetch responsables en 3 queries — usa admin client porque personas_select solo expone la fila propia
   const adminSupabase = createAdminClient()
@@ -70,7 +71,7 @@ export async function POST(request: NextRequest) {
   const alumnoIds = (insc ?? []).map(i => i.alumno_id)
 
   if (alumnoIds.length === 0) {
-    return created({ ...comunicado, emails_enviados: 0 })
+    return created({ ...comunicado, emails_enviados: 0, warning: 'El curso no tiene alumnos inscriptos' })
   }
 
   const { data: respRaw } = await adminSupabase
@@ -82,7 +83,7 @@ export async function POST(request: NextRequest) {
   const personaIds = [...new Set((respRaw ?? []).map(r => r.persona_id))]
 
   if (personaIds.length === 0) {
-    return created({ ...comunicado, emails_enviados: 0 })
+    return created({ ...comunicado, emails_enviados: 0, warning: 'Los alumnos no tienen responsables asignados' })
   }
 
   const { data: personas } = await adminSupabase
@@ -96,7 +97,7 @@ export async function POST(request: NextRequest) {
   )
 
   if (responsables.length === 0) {
-    return created({ ...comunicado, emails_enviados: 0 })
+    return created({ ...comunicado, emails_enviados: 0, warning: 'Ningún responsable tiene email registrado' })
   }
 
   // INSERT confirmaciones
@@ -124,6 +125,12 @@ export async function POST(request: NextRequest) {
   const institucion_nombre = inst?.nombre ?? 'Libreta Digital'
   const logo_url = inst?.logo_rectangular_url ?? undefined
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
+
+  // Mark as sent before fire-and-forget to prevent double-send
+  await supabase
+    .from('comunicados')
+    .update({ enviado_at: new Date().toISOString() })
+    .eq('id', comunicado.id)
 
   // Fire-and-forget
   const confByPersona = new Map(confirmaciones.map(c => [c.persona_id, c.id]))

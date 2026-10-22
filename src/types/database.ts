@@ -452,6 +452,7 @@ export type Database = {
           created_at: string
           curso_id: string
           deleted_at: string | null
+          enviado_at: string | null
           id: string
           institucion_id: string
           materia_id: string | null
@@ -463,6 +464,7 @@ export type Database = {
           created_at?: string
           curso_id: string
           deleted_at?: string | null
+          enviado_at?: string | null
           id?: string
           institucion_id: string
           materia_id?: string | null
@@ -474,6 +476,7 @@ export type Database = {
           created_at?: string
           curso_id?: string
           deleted_at?: string | null
+          enviado_at?: string | null
           id?: string
           institucion_id?: string
           materia_id?: string | null
