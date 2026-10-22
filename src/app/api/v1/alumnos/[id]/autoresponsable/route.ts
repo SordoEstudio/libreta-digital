@@ -17,7 +17,7 @@ export async function POST(_req: NextRequest, { params }: Params) {
 
   const { data: alumno } = await admin
     .from('alumnos')
-    .select('id, nombre, apellido, email, institucion_id')
+    .select('id, nombre, apellido, email, persona_id, institucion_id')
     .eq('id', id)
     .is('deleted_at', null)
     .single()
@@ -96,6 +96,11 @@ export async function POST(_req: NextRequest, { params }: Params) {
       .from('alumno_responsables')
       .insert({ alumno_id: id, persona_id, institucion_id })
     if (linkError) return Err.server(linkError.message)
+  }
+
+  // Link alumno to their own persona if not already set
+  if (!alumno.persona_id) {
+    await admin.from('alumnos').update({ persona_id }).eq('id', id)
   }
 
   const { data: inst } = await supabase

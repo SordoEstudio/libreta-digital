@@ -93,17 +93,6 @@ export default function NuevoAlumnoSheet({ instId, cursos }: Props) {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="al-email">Email</Label>
-              <Input
-                id="al-email"
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="alumno@ejemplo.com"
-              />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
               <Label htmlFor="al-nombre">Nombre(s) *</Label>
               <Input
                 id="al-nombre"
@@ -111,6 +100,17 @@ export default function NuevoAlumnoSheet({ instId, cursos }: Props) {
                 onChange={e => setNombre(e.target.value)}
                 placeholder="Ej: Juan"
                 required
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="al-email">Email</Label>
+              <Input
+                id="al-email"
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="alumno@ejemplo.com"
               />
             </div>
 

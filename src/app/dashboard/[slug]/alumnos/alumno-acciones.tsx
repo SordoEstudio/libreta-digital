@@ -10,12 +10,11 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog'
-import { MoreHorizontal, BookOpen, Users, ArrowRightLeft, UserCheck, UserX, Pencil, UserCog, Check, Copy, Link2 } from 'lucide-react'
+import { MoreHorizontal, BookOpen, ArrowRightLeft, UserCheck, UserX, Settings2, UserCog, Check, Copy, Link2 } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
-import ResponsablesSheet from './responsables-sheet'
+import AlumnoConfigSheet from './alumno-config-sheet'
 import CambiarCursoSheet from './cambiar-curso-sheet'
-import EditarAlumnoSheet from './editar-alumno-sheet'
 
 interface Props {
   alumnoId: string
@@ -29,8 +28,7 @@ interface Props {
 
 export default function AlumnoAcciones({ alumnoId, alumnoNombre, activo, instId, slug, cursos, esAutoResponsable }: Props) {
   const router = useRouter()
-  const [editOpen, setEditOpen] = useState(false)
-  const [respOpen, setRespOpen] = useState(false)
+  const [configOpen, setConfigOpen] = useState(false)
   const [cursoOpen, setCursoOpen] = useState(false)
   const [toggling, setToggling] = useState(false)
   const [asignando, setAsignando] = useState(false)
@@ -97,13 +95,9 @@ export default function AlumnoAcciones({ alumnoId, alumnoNombre, activo, instId,
             <BookOpen className="size-4" />
             Ver libreta
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setEditOpen(true)}>
-            <Pencil className="size-4" />
-            Editar datos
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setRespOpen(true)}>
-            <Users className="size-4" />
-            Responsables
+          <DropdownMenuItem onClick={() => setConfigOpen(true)}>
+            <Settings2 className="size-4" />
+            Configurar
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setCursoOpen(true)}>
             <ArrowRightLeft className="size-4" />
@@ -159,18 +153,12 @@ export default function AlumnoAcciones({ alumnoId, alumnoNombre, activo, instId,
         </DialogContent>
       </Dialog>
 
-      <EditarAlumnoSheet
-        alumnoId={alumnoId}
-        alumnoNombre={alumnoNombre}
-        open={editOpen}
-        onOpenChange={setEditOpen}
-      />
-      <ResponsablesSheet
+      <AlumnoConfigSheet
         alumnoId={alumnoId}
         alumnoNombre={alumnoNombre}
         instId={instId}
-        open={respOpen}
-        onOpenChange={setRespOpen}
+        open={configOpen}
+        onOpenChange={setConfigOpen}
       />
       <CambiarCursoSheet
         alumnoId={alumnoId}
