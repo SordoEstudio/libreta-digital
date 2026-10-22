@@ -12,7 +12,10 @@ import {
   AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { Pencil, Save, Plus, Trash2, Loader2, ChevronDown } from 'lucide-react'
+import { Pencil, Save, Plus, Trash2, Loader2, ChevronDown, ChevronsUpDown, Check } from 'lucide-react'
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
 
@@ -264,25 +267,36 @@ export default function EditarMateriaSheet({
             {/* Docentes */}
             <div className="flex flex-col gap-3">
               <p className="text-sm font-semibold">Docentes</p>
-              {loadingDocentes ? (
-                <p className="text-sm text-muted-foreground">Cargando...</p>
-              ) : docentes.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Sin docentes registrados</p>
-              ) : (
-                <div className="flex flex-col gap-1.5">
-                  {docentes.map(d => (
-                    <label key={d.persona_id} className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        className="size-4 accent-primary"
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  disabled={loadingDocentes}
+                  className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm disabled:opacity-50"
+                >
+                  <span className="truncate text-left">
+                    {loadingDocentes
+                      ? 'Cargando...'
+                      : docenteIds.length === 0
+                        ? 'Sin docente asignado'
+                        : docentes.filter(d => docenteIds.includes(d.persona_id)).map(displayNombre).join(', ')}
+                  </span>
+                  <ChevronsUpDown className="size-4 shrink-0 opacity-50 ml-2" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-64">
+                  {docentes.length === 0 ? (
+                    <div className="px-2 py-1.5 text-sm text-muted-foreground">Sin docentes registrados</div>
+                  ) : (
+                    docentes.map(d => (
+                      <DropdownMenuCheckboxItem
+                        key={d.persona_id}
                         checked={docenteIds.includes(d.persona_id)}
-                        onChange={() => toggleDocente(d.persona_id)}
-                      />
-                      <span className="text-sm">{displayNombre(d)}</span>
-                    </label>
-                  ))}
-                </div>
-              )}
+                        onCheckedChange={() => toggleDocente(d.persona_id)}
+                      >
+                        {displayNombre(d)}
+                      </DropdownMenuCheckboxItem>
+                    ))
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
               {docenteChanged && (
                 <Button size="sm" onClick={handleSaveDocente} disabled={savingDocente}>
                   {savingDocente
