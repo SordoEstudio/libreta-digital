@@ -16,6 +16,8 @@ export default function LoginForm() {
   const searchParams = useSearchParams()
   const redirectTo = searchParams.get('redirect') ?? '/dashboard'
 
+  const sessionExpired = searchParams.get('session') === 'expired'
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -66,6 +68,13 @@ export default function LoginForm() {
             <p className="text-xs text-muted-foreground mt-0.5">by Harvi</p>
           </div>
         </div>
+
+        {sessionExpired && !error && (
+          <Alert>
+            <AlertCircle className="size-4" />
+            <AlertDescription>Tu sesión expiró. Ingresá nuevamente.</AlertDescription>
+          </Alert>
+        )}
 
         {error && (
           <Alert variant="destructive">

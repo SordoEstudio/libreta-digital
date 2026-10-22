@@ -2,6 +2,7 @@ import { requireSession } from '@/lib/auth'
 import { AppSidebar } from '@/components/app-sidebar'
 import { MobileHeader } from '@/components/mobile-header'
 import { BottomTabBar } from '@/components/bottom-tab-bar'
+import { SessionGuard } from '@/components/session-guard'
 import {
   SidebarInset,
   SidebarProvider,
@@ -12,6 +13,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <SidebarProvider>
+      <SessionGuard />
       <AppSidebar session={session} />
       <SidebarInset className="h-svh md:h-auto overflow-hidden md:overflow-auto">
         <MobileHeader session={session} />
