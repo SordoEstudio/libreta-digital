@@ -21,18 +21,24 @@ interface Alumno {
   nombre: string
 }
 
+interface RolOption { value: string; label: string }
+
 interface Props {
   instId: string
+  roles?: RolOption[]
+  buttonLabel?: string
+  sheetTitle?: string
 }
 
-export default function NuevoUsuarioSheet({ instId }: Props) {
+export default function NuevoUsuarioSheet({ instId, roles, buttonLabel, sheetTitle }: Props) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [nombre, setNombre] = useState('')
   const [apellido, setApellido] = useState('')
   const [email, setEmail] = useState('')
-  const [rol, setRol] = useState('')
+  const rolesDisponibles = roles ?? ROLES
+  const [rol, setRol] = useState(() => rolesDisponibles.length === 1 ? rolesDisponibles[0].value : '')
   const [telefono, setTelefono] = useState('')
   const [dni, setDni] = useState('')
   const [direccion, setDireccion] = useState('')
@@ -71,7 +77,7 @@ export default function NuevoUsuarioSheet({ instId }: Props) {
       setNombre('')
       setApellido('')
       setEmail('')
-      setRol('')
+      setRol(rolesDisponibles.length === 1 ? rolesDisponibles[0].value : '')
       setTelefono('')
       setDni('')
       setDireccion('')
@@ -171,13 +177,13 @@ export default function NuevoUsuarioSheet({ instId }: Props) {
     <>
       <Button onClick={() => setOpen(true)}>
         <Plus data-icon="inline-start" />
-        Nuevo usuario
+        {buttonLabel ?? 'Nuevo usuario'}
       </Button>
 
       <Sheet open={open} onOpenChange={handleClose}>
         <SheetContent>
           <SheetHeader>
-            <SheetTitle>Nuevo usuario</SheetTitle>
+            <SheetTitle>{sheetTitle ?? 'Nuevo usuario'}</SheetTitle>
           </SheetHeader>
 
           {inviteLink ? (
@@ -316,21 +322,23 @@ export default function NuevoUsuarioSheet({ instId }: Props) {
                 </label>
               )}
 
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="us-rol">Rol *</Label>
-                <Select value={rol} onValueChange={v => setRol(v ?? '')}>
-                  <SelectTrigger id="us-rol">
-                    <SelectValue placeholder="Seleccionar rol...">
-                      {rol ? ROLES.find(r => r.value === rol)?.label : undefined}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {ROLES.map(r => (
-                      <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {rolesDisponibles.length > 1 && (
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="us-rol">Rol *</Label>
+                  <Select value={rol} onValueChange={v => setRol(v ?? '')}>
+                    <SelectTrigger id="us-rol">
+                      <SelectValue placeholder="Seleccionar rol...">
+                        {rol ? rolesDisponibles.find(r => r.value === rol)?.label : undefined}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {rolesDisponibles.map(r => (
+                        <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="us-tel">Teléfono</Label>
@@ -370,7 +378,7 @@ export default function NuevoUsuarioSheet({ instId }: Props) {
 
               <Button type="submit" disabled={loading || !nombre || !apellido || !email || !rol} className="mt-2">
                 {loading && <Loader2 data-icon="inline-start" className="animate-spin" />}
-                {loading ? 'Creando...' : 'Crear usuario'}
+                {loading ? 'Creando...' : (buttonLabel ?? 'Crear usuario')}
               </Button>
             </form>
           )}

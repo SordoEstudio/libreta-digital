@@ -79,9 +79,13 @@ function AssignmentChips({ items, label }: { items: ChipItem[]; label: string })
   )
 }
 
+interface RolOption { value: string; label: string }
+
 interface Props {
   usuarios: UsuarioRow[]
   instId: string
+  availableRoles?: string[]
+  rolesEdicion?: RolOption[]
 }
 
 const ROLES_FILTRO = ['admin', 'docente', 'responsable']
@@ -137,12 +141,16 @@ function displayNombre(u: UsuarioRow) {
   return u.nombre
 }
 
-export default function UsuariosTabla({ usuarios, instId }: Props) {
+export default function UsuariosTabla({ usuarios, instId, availableRoles, rolesEdicion }: Props) {
   const [query, setQuery] = useState('')
   const [rolFiltro, setRolFiltro] = useState('todos')
   const [estadoFiltro, setEstadoFiltro] = useState('todos')
   const [sortCol, setSortCol] = useState<SortCol>('apellido')
   const [sortDir, setSortDir] = useState<SortDir>('asc')
+
+  const rolesDisponibles = availableRoles
+    ? ROLES_FILTRO.filter(r => availableRoles.includes(r))
+    : ROLES_FILTRO
 
   function toggleSort(col: SortCol) {
     if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
@@ -195,22 +203,24 @@ export default function UsuariosTabla({ usuarios, instId }: Props) {
           onChange={e => setQuery(e.target.value)}
           className="h-8 w-64 text-sm"
         />
-        <div className="flex items-center gap-1.5">
-          <span className="text-xs font-medium text-muted-foreground">Rol</span>
-          <Select value={rolFiltro} onValueChange={v => setRolFiltro(v ?? 'todos')}>
-            <SelectTrigger className="h-8 w-40 text-sm" aria-label="Filtrar por rol">
-              <SelectValue placeholder="Todos los roles">
-                {rolFiltro === 'todos' ? 'Todos los roles' : ROL_LABELS[rolFiltro] ?? rolFiltro}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Todos los roles</SelectItem>
-              {ROLES_FILTRO.map(r => (
-                <SelectItem key={r} value={r}>{ROL_LABELS[r]}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        {rolesDisponibles.length > 1 && (
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-medium text-muted-foreground">Rol</span>
+            <Select value={rolFiltro} onValueChange={v => setRolFiltro(v ?? 'todos')}>
+              <SelectTrigger className="h-8 w-40 text-sm" aria-label="Filtrar por rol">
+                <SelectValue placeholder="Todos los roles">
+                  {rolFiltro === 'todos' ? 'Todos los roles' : ROL_LABELS[rolFiltro] ?? rolFiltro}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos los roles</SelectItem>
+                {rolesDisponibles.map(r => (
+                  <SelectItem key={r} value={r}>{ROL_LABELS[r]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
         <div className="flex items-center gap-1.5">
           <span className="text-xs font-medium text-muted-foreground">Estado</span>
           <Select value={estadoFiltro} onValueChange={v => setEstadoFiltro(v ?? 'todos')}>
@@ -318,6 +328,7 @@ export default function UsuariosTabla({ usuarios, instId }: Props) {
                           telefono={u.telefono}
                           dni={u.dni}
                           direccion={u.direccion}
+                          roles={rolesEdicion}
                         />
                       )}
                     </div>

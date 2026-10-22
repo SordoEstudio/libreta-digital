@@ -17,6 +17,8 @@ const ROLES = [
   { value: 'responsable', label: 'Responsable' },
 ]
 
+interface RolOption { value: string; label: string }
+
 interface Props {
   instId: string
   personaId: string
@@ -28,14 +30,17 @@ interface Props {
   telefono: string | null
   dni: string | null
   direccion: string | null
+  roles?: RolOption[]
 }
 
 export default function EditarUsuarioSheet({
   instId, personaId,
   nombre: propNombre, apellido: propApellido, email, rol: propRol, activo: propActivo,
   telefono: propTelefono, dni: propDni, direccion: propDireccion,
+  roles,
 }: Props) {
   const router = useRouter()
+  const rolesDisponibles = roles ?? ROLES
   const [open, setOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [toggling, setToggling] = useState(false)
@@ -151,21 +156,23 @@ export default function EditarUsuarioSheet({
               <p className="text-sm text-muted-foreground py-1">{email ?? '—'}</p>
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="eu-rol">Rol *</Label>
-              <Select value={rol} onValueChange={v => setRol(v ?? rol)}>
-                <SelectTrigger id="eu-rol">
-                  <SelectValue>
-                    {ROLES.find(r => r.value === rol)?.label ?? rol}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {ROLES.map(r => (
-                    <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {rolesDisponibles.length > 1 && (
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="eu-rol">Rol *</Label>
+                <Select value={rol} onValueChange={v => setRol(v ?? rol)}>
+                  <SelectTrigger id="eu-rol">
+                    <SelectValue>
+                      {rolesDisponibles.find(r => r.value === rol)?.label ?? rol}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {rolesDisponibles.map(r => (
+                      <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="eu-tel">Teléfono</Label>
