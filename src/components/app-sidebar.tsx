@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react'
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup,
   SidebarGroupContent, SidebarGroupLabel, SidebarHeader,
-  SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarTrigger,
+  SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarSeparator, SidebarTrigger,
 } from '@/components/ui/sidebar'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import type { SessionUser } from '@/lib/auth'
@@ -111,8 +111,8 @@ export function AppSidebar({ session }: AppSidebarProps) {
 
         {/* Institución — operativo */}
         {activeSlug && (isAdminLevel || isDocente || isResponsable) && (
-          <SidebarGroup>
-            <SidebarGroupLabel>Institución</SidebarGroupLabel>
+          <SidebarGroup className="pt-0">
+            {isSuperadmin && <SidebarSeparator className="mb-2 group-data-[collapsible=icon]:hidden" />}
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
@@ -212,8 +212,8 @@ export function AppSidebar({ session }: AppSidebarProps) {
 
         {/* Configuración — admin only */}
         {activeSlug && isAdminLevel && (
-          <SidebarGroup>
-            <SidebarGroupLabel>Configuración</SidebarGroupLabel>
+          <SidebarGroup className="pt-0">
+            <SidebarSeparator className="mb-2 group-data-[collapsible=icon]:hidden" />
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
@@ -314,6 +314,13 @@ export function AppSidebar({ session }: AppSidebarProps) {
                 <span className="text-xs font-medium text-white truncate">{session.nombre ?? session.email}</span>
                 <span className="text-xs text-white/60 truncate">{session.email}</span>
               </div>
+              <button
+                onClick={handleLogout}
+                className="shrink-0 text-white/40 hover:text-white/80 transition-colors group-data-[collapsible=icon]:hidden"
+                title="Cerrar sesión"
+              >
+                <LogOut className="size-3.5" />
+              </button>
             </div>
           </SidebarMenuItem>
           {activeSlug && (
@@ -332,10 +339,9 @@ export function AppSidebar({ session }: AppSidebarProps) {
               </SidebarMenuButton>
             </SidebarMenuItem>
           )}
-          <SidebarMenuItem>
+          <SidebarMenuItem className="group-data-[collapsible=icon]:block hidden">
             <SidebarMenuButton onClick={handleLogout}>
               <LogOut />
-              Cerrar sesión
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
