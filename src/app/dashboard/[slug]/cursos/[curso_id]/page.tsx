@@ -126,12 +126,12 @@ export default async function CursoDetallePage({ params }: Params) {
                 return p ? (p.apellido ? `${p.apellido}, ${p.nombre}` : p.nombre) : null
               })
               .filter(Boolean) as string[]
-            const docenteActual = (() => {
-              const d = materia.materia_docentes[0]
-              if (!d) return null
-              const p = personaMap.get(d.persona_id)
-              return { persona_id: d.persona_id, nombre: p?.nombre ?? '', apellido: p?.apellido ?? null }
-            })()
+            const docentesActuales = materia.materia_docentes
+              .map(d => {
+                const p = personaMap.get(d.persona_id)
+                return p ? { persona_id: d.persona_id, nombre: p.nombre, apellido: p.apellido ?? null } : null
+              })
+              .filter(Boolean) as { persona_id: string; nombre: string; apellido: string | null }[]
             return (
               <Card key={materia.id} className="flex flex-col">
                 <CardHeader className="pb-2">
@@ -141,7 +141,7 @@ export default async function CursoDetallePage({ params }: Params) {
                       <EditarMateriaSheet
                         materiaId={materia.id}
                         materiaNombre={nombre}
-                        docenteActual={docenteActual}
+                        docentesActuales={docentesActuales}
                         initialDimensiones={[...materia.materias_dimensiones].sort((a, b) => a.orden - b.orden)}
                         instId={inst.id}
                       />

@@ -215,13 +215,14 @@ export default async function ConfiguracionPage({ params, searchParams }: Props)
                       <TableBody>
                         {materias.map(m => {
                           type MateriaDocente = { personas: { id: string; nombre: string; apellido: string | null } | null }
-                          const docente = ((m.materia_docentes ?? []) as MateriaDocente[])[0]?.personas
+                          const docentesPersonas = ((m.materia_docentes ?? []) as MateriaDocente[])
+                            .map(d => d.personas).filter(Boolean) as { id: string; nombre: string; apellido: string | null }[]
                           const catalogo = m.materias_catalogo as { id: string; nombre: string } | null
                           const materiaNombre = catalogo?.nombre ?? ''
-                          const docenteNombreDisplay = docente
-                            ? (docente.apellido ? `${docente.apellido}, ${docente.nombre}` : docente.nombre)
+                          const docenteNombreDisplay = docentesPersonas.length > 0
+                            ? docentesPersonas.map(d => d.apellido ? `${d.apellido}, ${d.nombre}` : d.nombre).join(' / ')
                             : null
-                          const docenteActual = docente ? { persona_id: docente.id, nombre: docente.nombre, apellido: docente.apellido ?? null } : null
+                          const docentesActuales = docentesPersonas.map(d => ({ persona_id: d.id, nombre: d.nombre, apellido: d.apellido ?? null }))
                           return (
                             <TableRow key={m.id}>
                               <TableCell className="font-medium">{materiaNombre}</TableCell>
@@ -235,7 +236,7 @@ export default async function ConfiguracionPage({ params, searchParams }: Props)
                                   <EditarMateriaSheet
                                     materiaId={m.id}
                                     materiaNombre={materiaNombre}
-                                    docenteActual={docenteActual}
+                                    docentesActuales={docentesActuales}
                                     initialDimensiones={([...(m.materias_dimensiones ?? [])] as Array<{ id: string; nombre: string; peso: number | null; orden: number; tipo: string }>).sort((a, b) => a.orden - b.orden)}
                                     instId={inst.id}
                                   />
