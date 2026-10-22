@@ -14,8 +14,8 @@ import type { SessionUser } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/client'
 import {
   Building2, BarChart3, LayoutDashboard, GraduationCap,
-  Users, BookOpen, LogOut, Settings, Library, BookMarked, MessageSquare, Layers, NotebookPen,
-  FolderOpen, FileText, HelpCircle, ClipboardCheck,
+  BookOpen, LogOut, Settings, Library, BookMarked, MessageSquare, Layers, NotebookPen,
+  FolderOpen, FileText, HelpCircle, ClipboardCheck, UserCog, UsersRound,
 } from 'lucide-react'
 import { NotificationBell } from '@/components/notification-bell'
 
@@ -263,11 +263,20 @@ export function AppSidebar({ session }: AppSidebarProps) {
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton
-                    render={<Link href={`/dashboard/${activeSlug}/usuarios`} />}
-                    isActive={pathname.startsWith(`/dashboard/${activeSlug}/usuarios`)}
+                    render={<Link href={`/dashboard/${activeSlug}/personal`} />}
+                    isActive={pathname.startsWith(`/dashboard/${activeSlug}/personal`)}
                   >
-                    <Users />
-                    Usuarios
+                    <UserCog />
+                    Personal
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    render={<Link href={`/dashboard/${activeSlug}/responsables`} />}
+                    isActive={pathname.startsWith(`/dashboard/${activeSlug}/responsables`)}
+                  >
+                    <UsersRound />
+                    Responsables
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
