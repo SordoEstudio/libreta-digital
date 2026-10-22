@@ -157,8 +157,6 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
       dimensiones: Array<{ id: string; nombre: string; orden: number }>
       notasMap: Record<string, string>
     }>
-    notaDefinitivaEvalId: string | null
-    notaDefinitivaMap: Record<string, string>
     allMaterialDims: Array<{ id: string; nombre: string; orden: number }>
     periodoCerrado: boolean
     evalsLibreta: EvalLibretaCol[]
@@ -255,25 +253,6 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
       }
     })
 
-    // Nota definitiva del período (no aplica para anual)
-    const { data: definitivas } = isAnual ? { data: null } : await supabase
-      .from('evaluaciones')
-      .select('id, notas(alumno_id, valor_numerico, valor_literal)')
-      .eq('materia_id', selectedMateria.id)
-      .eq('periodo_id', selectedPeriodo!.id)
-      .eq('es_definitiva_periodo', true)
-      .is('deleted_at', null)
-      .limit(1)
-
-    type NotaRow = { alumno_id: string; valor_numerico: number | null; valor_literal: string | null }
-    type DefinitivaRow = { id: string; notas: NotaRow[] }
-
-    const definitiva = (definitivas as DefinitivaRow[] | null)?.[0] ?? null
-    const notaDefinitivaMap: Record<string, string> = {}
-    for (const n of (definitiva?.notas ?? [])) {
-      notaDefinitivaMap[n.alumno_id] = n.valor_numerico?.toString() ?? n.valor_literal ?? ''
-    }
-
     // Fetch all evaluaciones for this materia+período (including recuperatorios)
     const evalsQueryBase = supabase
       .from('evaluaciones')
@@ -286,9 +265,7 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
       : await evalsQueryBase.eq('periodo_id', selectedPeriodo!.id)
 
     type EvalRaw = NonNullable<typeof evalsRaw>[number]
-    const allEvalsFiltered = (evalsRaw ?? []).filter(
-      (ev: EvalRaw) => !(ev as { es_definitiva_periodo?: boolean }).es_definitiva_periodo
-    )
+    const allEvalsFiltered = evalsRaw ?? []
     const primaryEvals = allEvalsFiltered.filter((ev: EvalRaw) => !ev.recuperatorio_de_evaluacion_id)
     const recuperatorioEvals = allEvalsFiltered.filter((ev: EvalRaw) => !!ev.recuperatorio_de_evaluacion_id)
     const recuperatorioByParent = new Map(
@@ -351,8 +328,6 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
     tableData = {
       alumnos,
       evalRefs,
-      notaDefinitivaEvalId: definitiva?.id ?? null,
-      notaDefinitivaMap,
       allMaterialDims,
       periodoCerrado,
       evalsLibreta,
@@ -421,8 +396,6 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
             key={`${selectedMateria!.id}:${isAnual ? '__anual__' : selectedPeriodo!.id}`}
             alumnos={tableData.alumnos}
             evalRefs={tableData.evalRefs}
-            notaDefinitivaEvalId={tableData.notaDefinitivaEvalId}
-            notaDefinitivaMap={tableData.notaDefinitivaMap}
             materiaId={selectedMateria!.id}
             periodoId={isAnual ? '__anual__' : selectedPeriodo!.id}
             periodoNombre={isAnual ? 'Anual' : selectedPeriodo!.nombre}

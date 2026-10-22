@@ -45,8 +45,6 @@ interface EvalLibretaColTabla {
 interface Props {
   alumnos: Alumno[]
   evalRefs: EvalRefCol[]
-  notaDefinitivaEvalId: string | null
-  notaDefinitivaMap: Record<string, string>
   materiaId: string
   periodoId: string
   periodoNombre: string
@@ -94,8 +92,6 @@ function calcPromedio(alumnoId: string, evalRefs: EvalRefCol[]): number | null {
 export default function CuadernoTabla({
   alumnos,
   evalRefs,
-  notaDefinitivaEvalId: initialDefinitivaId,
-  notaDefinitivaMap: initialDefinitivaMap,
   materiaId,
   periodoId,
   periodoNombre,
@@ -121,7 +117,6 @@ export default function CuadernoTabla({
   }
 
   const [showProceso, setShowProceso] = useState(true)
-  const [showDefinitiva, setShowDefinitiva] = useState(true)
   const [showLibreta, setShowLibreta] = useState(true)
   const [showRecuperatorios, setShowRecuperatorios] = useState(true)
   const [selectedUnidad, setSelectedUnidad] = useState<string>('todas')
@@ -162,10 +157,6 @@ export default function CuadernoTabla({
     evalRefsFiltradas.reduce((sum, ev) => sum + (ev.dimensiones.length || 1), 0)
   , [evalRefsFiltradas])
 
-  // Definitiva state
-  const [definitivaEvalId, setDefinitivaEvalId] = useState<string | null>(initialDefinitivaId)
-  const [definitivaValores, setDefinitivaValores] = useState<Record<string, string>>(initialDefinitivaMap)
-
   const sorted = useMemo(() =>
     [...alumnos].sort((a, b) => {
       const ak = `${a.apellido ?? ''}\x00${a.nombre}`.toLowerCase()
@@ -205,48 +196,6 @@ export default function CuadernoTabla({
   function shouldShowRCol(ev: EvalLibretaColTabla, dim: { id: string } | null): boolean {
     if (!showRecuperatorios || !ev.recuperatorio) return false
     return !allApprovedDims.has(`${ev.id}::${dim?.id ?? '__'}`)
-  }
-
-  async function saveDefinitiva(): Promise<{ error: boolean }> {
-    let evalId = definitivaEvalId
-
-    if (!evalId) {
-      const res = await fetch(`/api/v1/materias/${materiaId}/evaluaciones`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nombre: `Nota del período — ${periodoNombre}`,
-          tipo: 'concepto',
-          periodo_id: periodoId,
-          es_definitiva_periodo: true,
-          peso: 1,
-          orden: 999,
-        }),
-      })
-      if (!res.ok) return { error: true }
-      const json = await res.json()
-      evalId = json.data.id
-      setDefinitivaEvalId(evalId)
-    }
-
-    const notas = alumnos.map(a => {
-      const val = definitivaValores[a.id]?.trim() ?? ''
-      const num = parseFloat(val)
-      return {
-        alumno_id: a.id,
-        valor_numerico: Number.isFinite(num) ? num : null,
-        valor_literal: !Number.isFinite(parseFloat(val)) && val ? val : null,
-      }
-    }).filter(n => n.valor_numerico !== null || n.valor_literal !== null)
-
-    if (notas.length === 0) return { error: false }
-
-    const res = await fetch('/api/v1/notas/bulk', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ evaluacion_id: evalId, notas }),
-    })
-    return { error: !res.ok }
   }
 
   async function handleSaveProceso(): Promise<{ errors: number }> {
@@ -321,14 +270,13 @@ export default function CuadernoTabla({
 
   async function handleSaveAll() {
     setSaving(true)
-    const [libreraResult, procesoResult, definitivaResult] = await Promise.all([
+    const [libreraResult, procesoResult] = await Promise.all([
       handleSaveLibreta(),
       handleSaveProceso(),
-      showDefinitiva ? saveDefinitiva() : Promise.resolve({ error: false }),
     ])
     setSaving(false)
 
-    const total = libreraResult.errors + procesoResult.errors + (definitivaResult.error ? 1 : 0)
+    const total = libreraResult.errors + procesoResult.errors
     if (total > 0) {
       toast.error(`${total} error(es) al guardar`)
     } else {
@@ -408,14 +356,6 @@ export default function CuadernoTabla({
             Referencia ({evalRefsFiltradas.length})
           </button>
         )}
-        <button
-          onClick={() => setShowDefinitiva(v => !v)}
-          className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
-            showDefinitiva ? 'bg-primary text-primary-foreground border-primary' : 'text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          Nota definitiva
-        </button>
       </div>
 
       <div className="overflow-x-auto rounded-md border">
@@ -494,11 +434,6 @@ export default function CuadernoTabla({
               {showProceso && evalRefsFiltradas.some(ev => ev.tipo === 'numerica') && (
                 <th rowSpan={2} className="text-center px-2 py-2 font-medium text-xs text-muted-foreground min-w-20 border-l align-middle">
                   Prom.
-                </th>
-              )}
-              {showDefinitiva && (
-                <th rowSpan={2} className="text-center px-3 py-2 font-medium text-xs min-w-32 border-l bg-amber-50/50 dark:bg-amber-950/20 align-middle">
-                  Nota definitiva
                 </th>
               )}
             </tr>
@@ -639,18 +574,6 @@ export default function CuadernoTabla({
                     </td>
                   )}
 
-                  {/* Definitiva cell */}
-                  {showDefinitiva && (
-                    <td className="px-2 py-1 text-center border-l bg-amber-50/30 dark:bg-amber-950/10">
-                      <Input
-                        value={definitivaValores[alumno.id] ?? ''}
-                        onChange={e => setDefinitivaValores(prev => ({ ...prev, [alumno.id]: e.target.value }))}
-                        readOnly={!!periodoCerrado}
-                        className="h-7 w-20 text-sm text-center mx-auto"
-                        placeholder="—"
-                      />
-                    </td>
-                  )}
                 </tr>
               )
             })}
@@ -658,7 +581,7 @@ export default function CuadernoTabla({
         </table>
       </div>
 
-      {(showProceso || showDefinitiva || (evalsLibreta ?? []).length > 0) && (
+      {(showProceso || (evalsLibreta ?? []).length > 0) && (
         <div className="flex justify-end">
           <Button onClick={handleSaveAll} disabled={saving || !!periodoCerrado} size="sm">
             {saving
