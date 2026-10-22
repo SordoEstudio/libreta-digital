@@ -4,6 +4,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect, notFound } from 'next/navigation'
 import NuevoUsuarioSheet from '../usuarios/nuevo-usuario-sheet'
 import UsuariosTabla from '../usuarios/usuarios-tabla'
+import { EmptyState } from '@/components/ui/empty-state'
+import { UsersRound } from 'lucide-react'
 
 type Params = { params: Promise<{ slug: string }> }
 
@@ -94,29 +96,46 @@ export default async function ResponsablesPage({ params }: Params) {
         />
       </div>
 
-      <UsuariosTabla
-        instId={inst.id}
-        availableRoles={['responsable']}
-        rolesEdicion={RESPONSABLE_ROLES}
-        usuarios={(memberships ?? []).map(m => {
-          const persona = m.personas as PersonaCol
-          const id = persona?.id ?? ''
-          return {
-            personaId: id,
-            nombre: persona?.nombre ?? '—',
-            apellido: persona?.apellido ?? null,
-            email: persona?.email ?? null,
-            rol: m.rol,
-            activo: m.activo,
-            pendiente: pendienteSet.has(id),
-            telefono: persona?.telefono ?? null,
-            dni: persona?.dni ?? null,
-            direccion: persona?.direccion ?? null,
-            alumnos: alumnosByResponsable[id] ?? [],
-            materias: [],
+      {(memberships ?? []).filter(m => m.activo).length === 0 ? (
+        <EmptyState
+          icon={UsersRound}
+          title="Sin responsables activos"
+          description="Agregá el primer responsable para vincular alumnos a sus familias."
+          action={
+            <NuevoUsuarioSheet
+              instId={inst.id}
+              roles={RESPONSABLE_ROLES}
+              buttonLabel="Nuevo responsable"
+              sheetTitle="Nuevo responsable"
+              submitLabel="Crear responsable"
+            />
           }
-        })}
-      />
+        />
+      ) : (
+        <UsuariosTabla
+          instId={inst.id}
+          availableRoles={['responsable']}
+          rolesEdicion={RESPONSABLE_ROLES}
+          usuarios={(memberships ?? []).map(m => {
+            const persona = m.personas as PersonaCol
+            const id = persona?.id ?? ''
+            return {
+              personaId: id,
+              nombre: persona?.nombre ?? '—',
+              apellido: persona?.apellido ?? null,
+              email: persona?.email ?? null,
+              rol: m.rol,
+              activo: m.activo,
+              pendiente: pendienteSet.has(id),
+              telefono: persona?.telefono ?? null,
+              dni: persona?.dni ?? null,
+              direccion: persona?.direccion ?? null,
+              alumnos: alumnosByResponsable[id] ?? [],
+              materias: [],
+            }
+          })}
+        />
+      )}
     </div>
   )
 }

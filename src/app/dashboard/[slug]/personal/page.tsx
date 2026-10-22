@@ -4,6 +4,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect, notFound } from 'next/navigation'
 import NuevoUsuarioSheet from '../usuarios/nuevo-usuario-sheet'
 import UsuariosTabla from '../usuarios/usuarios-tabla'
+import { EmptyState } from '@/components/ui/empty-state'
+import { UserCog } from 'lucide-react'
 
 type Params = { params: Promise<{ slug: string }> }
 
@@ -80,29 +82,38 @@ export default async function PersonalPage({ params }: Params) {
         <NuevoUsuarioSheet instId={inst.id} roles={PERSONAL_ROLES} />
       </div>
 
-      <UsuariosTabla
-        instId={inst.id}
-        availableRoles={['admin', 'docente']}
-        rolesEdicion={PERSONAL_ROLES}
-        usuarios={(memberships ?? []).map(m => {
-          const persona = m.personas as PersonaCol
-          const id = persona?.id ?? ''
-          return {
-            personaId: id,
-            nombre: persona?.nombre ?? '—',
-            apellido: persona?.apellido ?? null,
-            email: persona?.email ?? null,
-            rol: m.rol,
-            activo: m.activo,
-            pendiente: pendienteSet.has(id),
-            telefono: persona?.telefono ?? null,
-            dni: persona?.dni ?? null,
-            direccion: persona?.direccion ?? null,
-            alumnos: [],
-            materias: materiasByDocente[id] ?? [],
-          }
-        })}
-      />
+      {(memberships ?? []).filter(m => m.activo).length === 0 ? (
+        <EmptyState
+          icon={UserCog}
+          title="Sin personal activo"
+          description="Agregá el primer miembro del equipo para gestionar la institución."
+          action={<NuevoUsuarioSheet instId={inst.id} roles={PERSONAL_ROLES} />}
+        />
+      ) : (
+        <UsuariosTabla
+          instId={inst.id}
+          availableRoles={['admin', 'docente']}
+          rolesEdicion={PERSONAL_ROLES}
+          usuarios={(memberships ?? []).map(m => {
+            const persona = m.personas as PersonaCol
+            const id = persona?.id ?? ''
+            return {
+              personaId: id,
+              nombre: persona?.nombre ?? '—',
+              apellido: persona?.apellido ?? null,
+              email: persona?.email ?? null,
+              rol: m.rol,
+              activo: m.activo,
+              pendiente: pendienteSet.has(id),
+              telefono: persona?.telefono ?? null,
+              dni: persona?.dni ?? null,
+              direccion: persona?.direccion ?? null,
+              alumnos: [],
+              materias: materiasByDocente[id] ?? [],
+            }
+          })}
+        />
+      )}
     </div>
   )
 }
