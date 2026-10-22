@@ -309,7 +309,7 @@ export function AppSidebar({ session }: AppSidebarProps) {
         <SidebarMenu>
           <SidebarMenuItem>
             <div className="flex items-center gap-2 px-2 py-1 overflow-hidden">
-              <Avatar className="size-7 shrink-0">
+              <Avatar className="size-7 shrink-0 overflow-hidden">
                 <AvatarFallback className="text-xs bg-harvi-green-lime text-harvi-dark font-semibold">{initials}</AvatarFallback>
               </Avatar>
               <div className="flex flex-col flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
