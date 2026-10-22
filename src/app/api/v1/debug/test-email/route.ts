@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 
 export async function POST() {
-  if (process.env.NODE_ENV === 'production') return Err.notFound('Not found')
+  if (process.env.VERCEL_ENV === 'production') return Err.notFound('Not found')
   const session = await getSession()
   if (!session || !isSuperadmin(session)) return Err.forbidden()
 

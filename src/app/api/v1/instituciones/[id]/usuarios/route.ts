@@ -76,6 +76,15 @@ export async function POST(request: NextRequest, { params }: Params) {
   if (!session) return Err.unauthorized()
   if (!isSuperadmin(session) && !hasRole(session, institucion_id, 'admin')) return Err.forbidden()
 
+  const adminCheck = createAdminClient()
+  const { data: instCheck } = await adminCheck
+    .from('instituciones')
+    .select('id')
+    .eq('id', institucion_id)
+    .is('deleted_at', null)
+    .single()
+  if (!instCheck) return Err.notFound('Institución no encontrada')
+
   const body = await request.json().catch(() => null)
   const parsed = CreateSchema.safeParse(body)
   if (!parsed.success) return Err.validation(parsed.error.issues[0].message)
