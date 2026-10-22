@@ -33,14 +33,13 @@ export default async function ResponsablesPage({ params }: Params) {
     .select('rol, activo, personas(id, nombre, apellido, email, telefono, dni, direccion)')
     .eq('institucion_id', inst.id)
     .in('rol', ['responsable'])
-    .order('rol')
 
   type PersonaCol = { id: string; nombre: string; apellido: string | null; email: string | null; telefono: string | null; dni: string | null; direccion: string | null } | null
   type ChipItem = { id: string; nombre: string }
 
   const personaIds = (memberships ?? []).map(m => (m.personas as PersonaCol)?.id).filter(Boolean) as string[]
 
-  let pendienteSet = new Set<string>()
+  const pendienteSet = new Set<string>()
   if (personaIds.length > 0) {
     const { data: loginStatus } = await admin.rpc('get_personas_login_status', { p_ids: personaIds })
     for (const row of loginStatus ?? []) {
@@ -77,6 +76,7 @@ export default async function ResponsablesPage({ params }: Params) {
           roles={RESPONSABLE_ROLES}
           buttonLabel="Nuevo responsable"
           sheetTitle="Nuevo responsable"
+          submitLabel="Crear responsable"
         />
       </div>
 

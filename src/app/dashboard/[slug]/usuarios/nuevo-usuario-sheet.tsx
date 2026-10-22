@@ -28,9 +28,10 @@ interface Props {
   roles?: RolOption[]
   buttonLabel?: string
   sheetTitle?: string
+  submitLabel?: string
 }
 
-export default function NuevoUsuarioSheet({ instId, roles, buttonLabel, sheetTitle }: Props) {
+export default function NuevoUsuarioSheet({ instId, roles, buttonLabel, sheetTitle, submitLabel }: Props) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -378,7 +379,7 @@ export default function NuevoUsuarioSheet({ instId, roles, buttonLabel, sheetTit
 
               <Button type="submit" disabled={loading || !nombre || !apellido || !email || !rol} className="mt-2">
                 {loading && <Loader2 data-icon="inline-start" className="animate-spin" />}
-                {loading ? 'Creando...' : (buttonLabel ?? 'Crear usuario')}
+                {loading ? 'Creando...' : (submitLabel ?? 'Crear usuario')}
               </Button>
             </form>
           )}

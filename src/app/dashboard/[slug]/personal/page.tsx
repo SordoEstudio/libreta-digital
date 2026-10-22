@@ -43,7 +43,7 @@ export default async function PersonalPage({ params }: Params) {
 
   const personaIds = (memberships ?? []).map(m => (m.personas as PersonaCol)?.id).filter(Boolean) as string[]
 
-  let pendienteSet = new Set<string>()
+  const pendienteSet = new Set<string>()
   if (personaIds.length > 0) {
     const { data: loginStatus } = await admin.rpc('get_personas_login_status', { p_ids: personaIds })
     for (const row of loginStatus ?? []) {
