@@ -130,12 +130,11 @@ export default async function BoletinPage({ params }: Params) {
     dimensions: Map<string, Dimension>
   }
 
-  // Responsables only see notes from published periods; annual only if year is published
+  // Responsables only see notes from published periods (including the annual period)
   const notasVisible = isResponsableOnly
     ? (notas ?? []).filter(n => {
         const ev = n.evaluaciones as Evaluacion | null
-        if (!ev?.periodo_id) return añoPublicadoAt != null // annual: gated by year publication
-        return ev.periodos?.publicado_at != null
+        return ev?.periodos?.publicado_at != null
       })
     : (notas ?? [])
 
@@ -219,14 +218,12 @@ export default async function BoletinPage({ params }: Params) {
   const inscripcion = ((alumno.alumno_inscripciones ?? []) as Inscripcion[]).find(i => i.activo && !i.deleted_at)
   let cursoNombre: string | undefined
   let añoNombre: string | undefined
-  let añoPublicadoAt: string | null = null
   if (inscripcion?.curso_id) {
     const { data: cursoRow } = await supabase.from('cursos').select('*').eq('id', inscripcion.curso_id).single()
     cursoNombre = cursoRow?.nombre
     if (cursoRow?.año_lectivo_id) {
       const { data: añoRow } = await supabase.from('años_lectivos').select('*').eq('id', cursoRow.año_lectivo_id).single()
       añoNombre = añoRow?.nombre
-      añoPublicadoAt = (añoRow as { publicado_at?: string | null } | null)?.publicado_at ?? null
     }
   }
 
