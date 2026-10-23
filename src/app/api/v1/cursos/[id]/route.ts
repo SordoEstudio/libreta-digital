@@ -6,8 +6,8 @@ import { ok, noContent, Err } from '@/lib/api'
 
 const PatchSchema = z.object({
   nombre: z.string().min(1).optional(),
-  nivel: z.string().optional(),
-  turno: z.enum(['mañana', 'tarde', 'noche']).optional(),
+  nivel: z.string().nullable().optional(),
+  turno: z.enum(['mañana', 'tarde', 'noche']).nullable().optional(),
   escala_id: z.string().uuid().nullable().optional(),
 }).strict()
 
