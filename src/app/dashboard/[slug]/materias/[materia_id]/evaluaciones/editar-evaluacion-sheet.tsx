@@ -172,12 +172,12 @@ export default function EditarEvaluacionSheet({ evaluacion, periodos, dimensione
                 <SelectTrigger id="ev-periodo">
                   <SelectValue>
                     {periodoId === '__anual__'
-                      ? 'Sin período — evaluación anual'
+                      ? 'Período Anual'
                       : periodos.find(p => p.id === periodoId)?.nombre}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="__anual__">Sin período — evaluación anual</SelectItem>
+                  <SelectItem value="__anual__">Período Anual</SelectItem>
                   {periodos.map(p => (
                     <SelectItem key={p.id} value={p.id} disabled={!!p.cerrado_at}>
                       {p.nombre}{p.cerrado_at ? ' (cerrado)' : ''}

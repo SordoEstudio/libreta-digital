@@ -113,12 +113,12 @@ export default function NuevaEvaluacionSheet({ materiaId, periodos, dimensiones,
                 <SelectTrigger id="ev-periodo">
                   <SelectValue placeholder="Seleccionar período...">
                     {periodoId === '__anual__'
-                      ? 'Sin período — evaluación anual'
+                      ? 'Período Anual'
                       : periodoId ? periodos.find(p => p.id === periodoId)?.nombre : undefined}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="__anual__">Sin período — evaluación anual</SelectItem>
+                  <SelectItem value="__anual__">Período Anual</SelectItem>
                   {periodos.map(p => (
                     <SelectItem key={p.id} value={p.id} disabled={!!p.cerrado_at}>
                       {p.nombre}{p.cerrado_at ? ' (cerrado)' : ''}
