@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -16,34 +16,34 @@ export type Database = {
     Tables: {
       actividad_log: {
         Row: {
-          id: string
-          institucion_id: string
-          persona_id: string | null
           accion: string
+          created_at: string
           entidad: string | null
           entidad_id: string | null
-          metadata: Record<string, unknown> | null
-          created_at: string
+          id: string
+          institucion_id: string
+          metadata: Json | null
+          persona_id: string | null
         }
         Insert: {
+          accion: string
+          created_at?: string
+          entidad?: string | null
+          entidad_id?: string | null
           id?: string
           institucion_id: string
+          metadata?: Json | null
           persona_id?: string | null
-          accion: string
-          entidad?: string | null
-          entidad_id?: string | null
-          metadata?: Record<string, unknown> | null
-          created_at?: string
         }
         Update: {
-          id?: string
-          institucion_id?: string
-          persona_id?: string | null
           accion?: string
+          created_at?: string
           entidad?: string | null
           entidad_id?: string | null
-          metadata?: Record<string, unknown> | null
-          created_at?: string
+          id?: string
+          institucion_id?: string
+          metadata?: Json | null
+          persona_id?: string | null
         }
         Relationships: [
           {
@@ -350,8 +350,8 @@ export type Database = {
       boletin_acuses: {
         Row: {
           alumno_id: string
-          confirmed_at: string
           confirmado_por: string | null
+          confirmed_at: string
           created_at: string
           id: string
           periodo_id: string
@@ -359,8 +359,8 @@ export type Database = {
         }
         Insert: {
           alumno_id: string
-          confirmed_at?: string
           confirmado_por?: string | null
+          confirmed_at?: string
           created_at?: string
           id?: string
           periodo_id: string
@@ -368,8 +368,8 @@ export type Database = {
         }
         Update: {
           alumno_id?: string
-          confirmed_at?: string
           confirmado_por?: string | null
+          confirmed_at?: string
           created_at?: string
           id?: string
           periodo_id?: string
@@ -929,7 +929,7 @@ export type Database = {
           materia_id: string
           nombre: string
           orden: number
-          periodo_id: string | null
+          periodo_id: string
           permite_recuperatorio: boolean
           peso: number
           recuperatorio_de_evaluacion_id: string | null
@@ -946,7 +946,7 @@ export type Database = {
           materia_id: string
           nombre: string
           orden?: number
-          periodo_id?: string | null
+          periodo_id: string
           permite_recuperatorio?: boolean
           peso?: number
           recuperatorio_de_evaluacion_id?: string | null
@@ -963,7 +963,7 @@ export type Database = {
           materia_id?: string
           nombre?: string
           orden?: number
-          periodo_id?: string | null
+          periodo_id?: string
           permite_recuperatorio?: boolean
           peso?: number
           recuperatorio_de_evaluacion_id?: string | null
@@ -1727,6 +1727,7 @@ export type Database = {
           nombre: string
           orden: number
           publicado_at: string | null
+          tipo: string
           updated_at: string
         }
         Insert: {
@@ -1743,6 +1744,7 @@ export type Database = {
           nombre: string
           orden?: number
           publicado_at?: string | null
+          tipo?: string
           updated_at?: string
         }
         Update: {
@@ -1759,6 +1761,7 @@ export type Database = {
           nombre?: string
           orden?: number
           publicado_at?: string | null
+          tipo?: string
           updated_at?: string
         }
         Relationships: [
