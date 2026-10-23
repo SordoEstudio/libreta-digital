@@ -10,7 +10,11 @@ import ActivarAñoButton from './activar-año-button'
 import EliminarAñoButton from './eliminar-año-button'
 import CerrarPeriodoSheet from './cerrar-periodo-sheet'
 import ReabrirPeriodoButton from './reabrir-periodo-button'
+import PublicarPeriodoButton from './publicar-periodo-button'
+import DespublicarPeriodoButton from './despublicar-periodo-button'
 import NotificarPeriodoDialog from './notificar-periodo-dialog'
+import CerrarAñoButton from './cerrar-ano-button'
+import PublicarAñoButton from './publicar-ano-button'
 
 type Params = { params: Promise<{ slug: string }> }
 
@@ -34,13 +38,13 @@ export default async function AñosLectivosPage({ params }: Params) {
 
   const { data: años } = await supabase
     .from('años_lectivos')
-    .select('id, nombre, activo, fecha_inicio, fecha_fin, periodos(id, nombre, orden, activo, cerrado_at)')
+    .select('id, nombre, activo, fecha_inicio, fecha_fin, cerrado_at, publicado_at, periodos(id, nombre, orden, activo, cerrado_at, publicado_at)')
     .eq('institucion_id', inst.id)
     .is('deleted_at', null)
     .order('nombre', { ascending: false })
 
-  type Periodo = { id: string; nombre: string; orden: number; activo: boolean; cerrado_at: string | null }
-  type Año = NonNullable<typeof años>[number]
+  type Periodo = { id: string; nombre: string; orden: number; activo: boolean; cerrado_at: string | null; publicado_at: string | null }
+  type Año = NonNullable<typeof años>[number] & { cerrado_at: string | null; publicado_at: string | null }
   const isAdmin = isSuperadmin(session) || hasRole(session, inst.id, 'admin')
 
   return (
@@ -71,14 +75,22 @@ export default async function AñosLectivosPage({ params }: Params) {
             return (
               <Card key={año.id}>
                 <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <CardTitle className="text-base flex items-center gap-2">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <CardTitle className="text-base flex items-center gap-2 flex-wrap">
                       {año.nombre}
                       {año.activo && <Badge>Activo</Badge>}
+                      {año.cerrado_at && <Badge variant="secondary">Año cerrado</Badge>}
+                      {año.publicado_at && <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200">Boletín anual publicado</Badge>}
                     </CardTitle>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 flex-wrap">
                       {!año.activo && <ActivarAñoButton añoId={año.id} />}
                       {!año.activo && <EliminarAñoButton añoId={año.id} añoNombre={año.nombre} />}
+                      {isAdmin && !año.cerrado_at && (
+                        <CerrarAñoButton instId={inst.id} añoId={año.id} añoNombre={año.nombre} />
+                      )}
+                      {isAdmin && año.cerrado_at && !año.publicado_at && (
+                        <PublicarAñoButton instId={inst.id} añoId={año.id} añoNombre={año.nombre} />
+                      )}
                     </div>
                   </div>
                 </CardHeader>
@@ -86,20 +98,28 @@ export default async function AñosLectivosPage({ params }: Params) {
                   {periodos.length > 0 ? (
                     <div className="flex flex-col gap-3">
                       {periodos.map(p => (
-                        <div key={p.id} className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-2">
+                        <div key={p.id} className="flex items-center justify-between gap-2 flex-wrap">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <span className="text-sm font-medium">{p.nombre}</span>
                             {p.activo && <Badge>Activo</Badge>}
                             {p.cerrado_at && <Badge variant="secondary">Cerrado</Badge>}
+                            {p.publicado_at && <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200">Publicado</Badge>}
                           </div>
                           {isAdmin && (
                             <div className="flex items-center gap-1">
                               {!p.cerrado_at && (
                                 <CerrarPeriodoSheet instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
                               )}
-                              {p.cerrado_at && (
+                              {p.cerrado_at && !p.publicado_at && (
                                 <>
                                   <ReabrirPeriodoButton instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
+                                  <PublicarPeriodoButton instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
+                                </>
+                              )}
+                              {p.cerrado_at && p.publicado_at && (
+                                <>
+                                  <ReabrirPeriodoButton instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
+                                  <DespublicarPeriodoButton instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
                                   <NotificarPeriodoDialog instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
                                 </>
                               )}

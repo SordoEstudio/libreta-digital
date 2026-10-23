@@ -62,7 +62,7 @@ export default async function BoletinPage({ params }: Params) {
       id, valor_numerico, valor_literal, observacion, dimension_id,
       materias_dimensiones(id, nombre, peso, orden, tipo),
       evaluaciones(id, nombre, tipo, peso, periodo_id, template_id,
-        periodos(nombre, orden, cerrado_at),
+        periodos(nombre, orden, cerrado_at, publicado_at),
         materias(id, materias_catalogo(nombre)),
         evaluaciones_template(id, nombre, tipo, orden)
       )
@@ -103,7 +103,7 @@ export default async function BoletinPage({ params }: Params) {
   type Evaluacion = {
     id: string; nombre: string; tipo: string; peso: number; periodo_id: string | null
     template_id: string | null
-    periodos: { nombre: string; orden: number; cerrado_at: string | null } | null
+    periodos: { nombre: string; orden: number; cerrado_at: string | null; publicado_at: string | null } | null
     materias: { id: string; materias_catalogo: { nombre: string } | null } | null
     evaluaciones_template: EvalTemplate | null
   }
@@ -130,12 +130,12 @@ export default async function BoletinPage({ params }: Params) {
     dimensions: Map<string, Dimension>
   }
 
-  // Responsables only see notes from closed periods
+  // Responsables only see notes from published periods; annual only if year is published
   const notasVisible = isResponsableOnly
     ? (notas ?? []).filter(n => {
         const ev = n.evaluaciones as Evaluacion | null
-        if (!ev?.periodo_id) return true // definitiva_anual always visible
-        return ev.periodos?.cerrado_at != null
+        if (!ev?.periodo_id) return añoPublicadoAt != null // annual: gated by year publication
+        return ev.periodos?.publicado_at != null
       })
     : (notas ?? [])
 
@@ -219,12 +219,14 @@ export default async function BoletinPage({ params }: Params) {
   const inscripcion = ((alumno.alumno_inscripciones ?? []) as Inscripcion[]).find(i => i.activo && !i.deleted_at)
   let cursoNombre: string | undefined
   let añoNombre: string | undefined
+  let añoPublicadoAt: string | null = null
   if (inscripcion?.curso_id) {
     const { data: cursoRow } = await supabase.from('cursos').select('*').eq('id', inscripcion.curso_id).single()
     cursoNombre = cursoRow?.nombre
     if (cursoRow?.año_lectivo_id) {
       const { data: añoRow } = await supabase.from('años_lectivos').select('*').eq('id', cursoRow.año_lectivo_id).single()
       añoNombre = añoRow?.nombre
+      añoPublicadoAt = (añoRow as { publicado_at?: string | null } | null)?.publicado_at ?? null
     }
   }
 

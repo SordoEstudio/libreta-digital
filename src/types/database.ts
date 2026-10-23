@@ -229,6 +229,7 @@ export type Database = {
       años_lectivos: {
         Row: {
           activo: boolean
+          cerrado_at: string | null
           created_at: string
           deleted_at: string | null
           fecha_fin: string | null
@@ -236,10 +237,12 @@ export type Database = {
           id: string
           institucion_id: string
           nombre: string
+          publicado_at: string | null
           updated_at: string
         }
         Insert: {
           activo?: boolean
+          cerrado_at?: string | null
           created_at?: string
           deleted_at?: string | null
           fecha_fin?: string | null
@@ -247,10 +250,12 @@ export type Database = {
           id?: string
           institucion_id: string
           nombre: string
+          publicado_at?: string | null
           updated_at?: string
         }
         Update: {
           activo?: boolean
+          cerrado_at?: string | null
           created_at?: string
           deleted_at?: string | null
           fecha_fin?: string | null
@@ -258,6 +263,7 @@ export type Database = {
           id?: string
           institucion_id?: string
           nombre?: string
+          publicado_at?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1720,6 +1726,7 @@ export type Database = {
           institucion_id: string
           nombre: string
           orden: number
+          publicado_at: string | null
           updated_at: string
         }
         Insert: {
@@ -1735,6 +1742,7 @@ export type Database = {
           institucion_id: string
           nombre: string
           orden?: number
+          publicado_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -1750,6 +1758,7 @@ export type Database = {
           institucion_id?: string
           nombre?: string
           orden?: number
+          publicado_at?: string | null
           updated_at?: string
         }
         Relationships: [
