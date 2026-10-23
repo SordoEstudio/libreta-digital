@@ -61,9 +61,15 @@ export default function NuevoAñoSheet({ instId }: Props) {
       await fetch(`/api/v1/instituciones/${instId}/periodos`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ año_lectivo_id: añoId, nombre: periodos[i], orden: i + 1 }),
+        body: JSON.stringify({ año_lectivo_id: añoId, nombre: periodos[i], orden: i + 1, tipo: 'regular' }),
       })
     }
+
+    await fetch(`/api/v1/instituciones/${instId}/periodos`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ año_lectivo_id: añoId, nombre: 'Período Anual', orden: 9999, tipo: 'anual' }),
+    })
 
     toast.success(`Año lectivo "${nombre}" creado`)
     setOpen(false)
