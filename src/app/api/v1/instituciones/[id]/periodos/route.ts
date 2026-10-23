@@ -8,6 +8,7 @@ const CreateSchema = z.object({
   año_lectivo_id: z.string().uuid(),
   nombre: z.string().min(1),
   orden: z.number().int().positive().default(1),
+  tipo: z.enum(['regular', 'anual']).default('regular'),
   fecha_inicio: z.string().date().optional(),
   fecha_fin: z.string().date().optional(),
 })
