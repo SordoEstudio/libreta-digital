@@ -10,7 +10,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Loader2, Pencil } from 'lucide-react'
 import { toast } from 'sonner'
 
-const NIVELES = ['Primario', 'Secundario', 'Terciario', 'Universitario']
+const NIVELES = ['I', 'II', 'III', 'IV', 'V', 'VI']
 const TURNOS = [
   { value: 'mañana', label: 'Mañana' },
   { value: 'tarde', label: 'Tarde' },
