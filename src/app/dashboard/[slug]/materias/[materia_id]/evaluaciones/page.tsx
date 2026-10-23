@@ -92,28 +92,28 @@ export default async function EvaluacionesPage({ params }: Params) {
 
   const { data: periodos } = await supabase
     .from('periodos')
-    .select('id, nombre, activo, cerrado_at')
+    .select('id, nombre, activo, cerrado_at, tipo')
     .eq('año_lectivo_id', cursoData?.año_lectivo_id ?? '')
     .is('deleted_at', null)
     .order('orden')
 
   const activePeriodo = (periodos ?? []).find(p => p.activo)
   const cerradoIds = new Set((periodos ?? []).filter(p => p.cerrado_at).map(p => p.id))
+  const periodoAnualId = (periodos ?? []).find(p => p.tipo === 'anual')?.id
 
-  // Group evaluaciones by period, maintaining period orden
+  // Group evaluaciones by period (periodo_id is always set after migration)
   type Evaluacion = NonNullable<typeof evaluaciones>[number]
   const periodoGroups = new Map<string, { nombre: string; cerrado: boolean; evs: Evaluacion[] }>()
   for (const p of periodos ?? []) periodoGroups.set(p.id, { nombre: p.nombre, cerrado: !!p.cerrado_at, evs: [] })
-  periodoGroups.set('__anual__', { nombre: 'Anual', cerrado: false, evs: [] })
   for (const ev of evaluaciones ?? []) {
-    const key = ev.periodo_id ?? '__anual__'
+    const key = ev.periodo_id ?? periodoAnualId ?? '__unknown__'
     if (!periodoGroups.has(key)) {
       periodoGroups.set(key, { nombre: (ev.periodos as { nombre: string } | null)?.nombre ?? 'Período eliminado', cerrado: false, evs: [] })
     }
     periodoGroups.get(key)!.evs.push(ev)
   }
-  // Always show Anual group at the end, even when empty
-  const grupos = Array.from(periodoGroups.entries()).filter(([key, g]) => g.evs.length > 0 || key === '__anual__')
+  // Always show the annual period group, even when empty
+  const grupos = Array.from(periodoGroups.entries()).filter(([key, g]) => g.evs.length > 0 || key === periodoAnualId)
 
   const { data: dimensiones } = await supabase
     .from('materias_dimensiones')
@@ -142,7 +142,7 @@ export default async function EvaluacionesPage({ params }: Params) {
           </Button>
           <NuevaEvaluacionSheet
             materiaId={materia_id}
-            periodos={periodos ?? []}
+            periodos={(periodos ?? []).filter(p => p.tipo !== 'anual')}
             dimensiones={dimensiones ?? []}
             disabled={!!(activePeriodo?.cerrado_at)}
           />
