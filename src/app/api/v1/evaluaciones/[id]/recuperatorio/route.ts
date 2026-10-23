@@ -72,7 +72,7 @@ export async function POST(_req: NextRequest, { params }: Params) {
       tipo: 'recuperatorio' as const,
       peso: ev.peso,
       orden: ev.orden + 1,
-      ...(ev.periodo_id ? { periodo_id: ev.periodo_id } : {}),
+      periodo_id: ev.periodo_id,
       recuperatorio_de_evaluacion_id: id,
       permite_recuperatorio: false,
     })

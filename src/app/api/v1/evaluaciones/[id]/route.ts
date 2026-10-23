@@ -63,15 +63,16 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   if (updateData.periodo_id === null) {
     const { data: curso } = await supabase
       .from('cursos')
-      .select('año_lectivo_id')
+      .select('*')
       .eq('id', mat.curso_id)
       .is('deleted_at', null)
       .single()
-    if (curso) {
+    const cursoTyped = curso as { año_lectivo_id: string } | null
+    if (cursoTyped) {
       const { data: periodoAnual } = await supabase
         .from('periodos')
         .select('id')
-        .eq('año_lectivo_id', curso.año_lectivo_id)
+        .eq('año_lectivo_id', cursoTyped.año_lectivo_id)
         .eq('tipo', 'anual')
         .is('deleted_at', null)
         .single()

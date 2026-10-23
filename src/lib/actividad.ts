@@ -6,7 +6,7 @@ export type ActividadParams = {
   accion: string
   entidad?: string
   entidad_id?: string
-  metadata?: Record<string, unknown>
+  metadata?: Record<string, unknown> | null
 }
 
 export function logActividad(params: ActividadParams): void {
@@ -17,6 +17,7 @@ export function logActividad(params: ActividadParams): void {
     accion: params.accion,
     entidad: params.entidad ?? null,
     entidad_id: params.entidad_id ?? null,
-    metadata: params.metadata ?? null,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    metadata: (params.metadata ?? null) as any,
   })
 }

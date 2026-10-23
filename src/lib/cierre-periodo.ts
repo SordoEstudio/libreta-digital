@@ -1,15 +1,24 @@
 export type CierrePreview = {
   total_alumnos: number
   total_materias: number
-  alumnos_sin_notas: Array<{ alumno_id: string; alumno_nombre: string; materias_sin_notas: string[] }>
-  materias_sin_asistencia: Array<{ materia_id: string; materia_nombre: string }>
+  // Grouped by materia: if all alumnos of that materia are missing → show_alumnos=false
+  materias_sin_notas: Array<{
+    materia_id: string
+    materia_nombre: string
+    curso_nombre: string
+    total_alumnos: number
+    alumnos_faltantes: number
+    show_alumnos: boolean
+    alumnos: Array<{ alumno_id: string; alumno_nombre: string }>
+  }>
+  materias_sin_asistencia: Array<{ materia_id: string; materia_nombre: string; curso_nombre: string }>
   completo: boolean
 }
 
 type BuildCierrePreviewOpts = {
-  alumnos: Array<{ id: string; nombre: string }>
-  materias: Array<{ id: string; nombre: string }>
-  inscripciones: Array<{ alumno_id: string; materia_id: string }>
+  alumnos: Array<{ id: string; nombre: string; apellido: string | null }>
+  materias: Array<{ id: string; nombre: string; curso_id: string; curso_nombre: string }>
+  inscripciones: Array<{ alumno_id: string; materia_id: string; curso_id: string }>
   evaluacionesPorMateria: Map<string, true>
   notasExistentes: Set<string>
   asistenciaExistente: Set<string>
@@ -18,39 +27,56 @@ type BuildCierrePreviewOpts = {
 export function buildCierrePreview(opts: BuildCierrePreviewOpts): CierrePreview {
   const { alumnos, materias, inscripciones, evaluacionesPorMateria, notasExistentes, asistenciaExistente } = opts
 
-  const materiasMap = new Map(materias.map(m => [m.id, m.nombre]))
+  const alumnosMap = new Map(alumnos.map(a => [a.id, a]))
 
-  const alumnosFaltantes: CierrePreview['alumnos_sin_notas'] = []
+  // Count total alumnos per materia (via inscripciones)
+  const totalAlumnosPorMateria = new Map<string, number>()
+  for (const insc of inscripciones) {
+    totalAlumnosPorMateria.set(insc.materia_id, (totalAlumnosPorMateria.get(insc.materia_id) ?? 0) + 1)
+  }
 
-  for (const alumno of alumnos) {
-    const materiasFaltantes: string[] = []
-    for (const insc of inscripciones) {
-      if (insc.alumno_id !== alumno.id) continue
-      if (!evaluacionesPorMateria.has(insc.materia_id)) continue
-      if (!notasExistentes.has(`${alumno.id}:${insc.materia_id}`)) {
-        const nombre = materiasMap.get(insc.materia_id) ?? insc.materia_id
-        materiasFaltantes.push(nombre)
+  // Build faltantes per materia
+  const faltantesPorMateria = new Map<string, Array<{ alumno_id: string; alumno_nombre: string }>>()
+  for (const insc of inscripciones) {
+    if (!evaluacionesPorMateria.has(insc.materia_id)) continue
+    if (!notasExistentes.has(`${insc.alumno_id}:${insc.materia_id}`)) {
+      const alumno = alumnosMap.get(insc.alumno_id)
+      const nombre = alumno
+        ? [alumno.apellido, alumno.nombre].filter(Boolean).join(' ')
+        : insc.alumno_id
+      const arr = faltantesPorMateria.get(insc.materia_id) ?? []
+      arr.push({ alumno_id: insc.alumno_id, alumno_nombre: nombre })
+      faltantesPorMateria.set(insc.materia_id, arr)
+    }
+  }
+
+  const materiasConFaltantes = materias
+    .filter(m => faltantesPorMateria.has(m.id))
+    .map(m => {
+      const faltantes = faltantesPorMateria.get(m.id)!
+      const total = totalAlumnosPorMateria.get(m.id) ?? faltantes.length
+      const showAlumnos = faltantes.length < total
+      return {
+        materia_id: m.id,
+        materia_nombre: m.nombre,
+        curso_nombre: m.curso_nombre,
+        total_alumnos: total,
+        alumnos_faltantes: faltantes.length,
+        show_alumnos: showAlumnos,
+        alumnos: showAlumnos ? faltantes : [],
       }
-    }
-    if (materiasFaltantes.length > 0) {
-      alumnosFaltantes.push({ alumno_id: alumno.id, alumno_nombre: alumno.nombre, materias_sin_notas: materiasFaltantes })
-    }
-  }
+    })
 
-  const materiasSinAsistencia: CierrePreview['materias_sin_asistencia'] = []
-  for (const materia of materias) {
-    if (!evaluacionesPorMateria.has(materia.id)) continue
-    if (!asistenciaExistente.has(materia.id)) {
-      materiasSinAsistencia.push({ materia_id: materia.id, materia_nombre: materia.nombre })
-    }
-  }
+  const materiasSinAsistencia = materias
+    .filter(m => evaluacionesPorMateria.has(m.id) && !asistenciaExistente.has(m.id))
+    .map(m => ({ materia_id: m.id, materia_nombre: m.nombre, curso_nombre: m.curso_nombre }))
 
   return {
     total_alumnos: alumnos.length,
     total_materias: materias.length,
-    alumnos_sin_notas: alumnosFaltantes,
+    materias_sin_notas: materiasConFaltantes,
     materias_sin_asistencia: materiasSinAsistencia,
-    completo: alumnosFaltantes.length === 0 && materiasSinAsistencia.length === 0,
+    completo: materiasConFaltantes.length === 0 && materiasSinAsistencia.length === 0,
   }
 }
 

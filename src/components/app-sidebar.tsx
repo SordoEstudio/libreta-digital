@@ -67,7 +67,7 @@ export function AppSidebar({ session }: AppSidebarProps) {
         <div className="flex items-center gap-2 px-2 py-2">
           {logoCuadrado ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={logoCuadrado} alt="" className="size-7 rounded-md object-contain shrink-0 group-data-[collapsible=icon]:hidden bg-white" />
+            <img src={logoCuadrado} alt="" className="size-7 rounded-full object-contain shrink-0 group-data-[collapsible=icon]:hidden bg-white" />
           ) : (
             <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-harvi-green-lime group-data-[collapsible=icon]:hidden">
               <span className="text-[11px] font-black text-harvi-dark leading-none">LD</span>

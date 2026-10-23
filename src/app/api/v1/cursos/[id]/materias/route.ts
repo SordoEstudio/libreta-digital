@@ -134,7 +134,7 @@ export async function POST(request: NextRequest, { params }: Params) {
           templates.map(t => ({
             materia_id: materia.id,
             institucion_id: curso.institucion_id,
-            periodo_id: t.periodo_id,
+            periodo_id: t.periodo_id as string,
             nombre: t.nombre,
             tipo: t.tipo,
             peso: t.peso,

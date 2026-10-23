@@ -36,25 +36,25 @@ WHERE al.deleted_at IS NULL
 
 -- 6. Migrate evaluaciones: NULL periodo_id → annual period of their año_lectivo
 --    Uses: evaluaciones → materias → cursos → años_lectivos → periodos (tipo='anual')
+--    Intentionally joins deleted materias/cursos/evaluaciones: soft-delete doesn't erase año_lectivo chain.
+--    Must update ALL rows (incl. soft-deleted) because NOT NULL applies to the whole table.
 UPDATE evaluaciones e
 SET periodo_id = p.id
 FROM materias m
-JOIN cursos c ON c.id = m.curso_id AND c.deleted_at IS NULL
+JOIN cursos c ON c.id = m.curso_id
 JOIN periodos p ON p.año_lectivo_id = c.año_lectivo_id
   AND p.tipo = 'anual'
   AND p.deleted_at IS NULL
 WHERE e.materia_id = m.id
-  AND e.periodo_id IS NULL
-  AND e.deleted_at IS NULL;
+  AND e.periodo_id IS NULL;
 
--- 7. Assert 0 nulls remain before enforcing NOT NULL
---    If this raises, investigate before applying step 8.
+-- 7. Assert 0 nulls remain before enforcing NOT NULL (ALL rows, including soft-deleted)
 DO $$
 DECLARE remaining INT;
 BEGIN
   SELECT COUNT(*) INTO remaining
   FROM evaluaciones
-  WHERE periodo_id IS NULL AND deleted_at IS NULL;
+  WHERE periodo_id IS NULL;
 
   IF remaining > 0 THEN
     RAISE EXCEPTION 'Migration halted: % evaluaciones still have NULL periodo_id. Investigate before enforcing NOT NULL.', remaining;

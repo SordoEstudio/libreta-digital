@@ -26,10 +26,12 @@ export async function GET(_request: NextRequest, { params }: Params) {
 
   const { data: cursos } = await supabase
     .from('cursos')
-    .select('id')
+    .select('id, nombre')
     .eq('año_lectivo_id', periodo.año_lectivo_id)
     .is('deleted_at', null)
-  const cursoIds = (cursos ?? []).map(c => c.id)
+
+  const cursosMap = new Map((cursos ?? []).map(c => [c.id, c.nombre]))
+  const cursoIds = Array.from(cursosMap.keys())
 
   if (cursoIds.length === 0) {
     return ok(buildCierrePreview({ alumnos: [], materias: [], inscripciones: [], evaluacionesPorMateria: new Map(), notasExistentes: new Set(), asistenciaExistente: new Set() }))
@@ -44,6 +46,7 @@ export async function GET(_request: NextRequest, { params }: Params) {
   const materias = (materiasRaw ?? []).map(m => ({
     id: m.id,
     curso_id: m.curso_id,
+    curso_nombre: cursosMap.get(m.curso_id) ?? '',
     nombre: (m.materias_catalogo as { nombre: string } | null)?.nombre ?? '',
   }))
 
@@ -56,25 +59,25 @@ export async function GET(_request: NextRequest, { params }: Params) {
 
   const { data: inscRaw } = await supabase
     .from('alumno_inscripciones')
-    .select('alumno_id, curso_id, alumnos(id, nombre)')
+    .select('alumno_id, curso_id, alumnos(id, nombre, apellido)')
     .in('curso_id', cursoIds)
     .eq('activo', true)
     .is('deleted_at', null)
 
-  const alumnosMap = new Map<string, string>()
-  const inscripciones: Array<{ alumno_id: string; materia_id: string }> = []
+  const alumnosMap = new Map<string, { id: string; nombre: string; apellido: string | null }>()
+  const inscripciones: Array<{ alumno_id: string; materia_id: string; curso_id: string }> = []
 
   for (const insc of inscRaw ?? []) {
-    const alumno = insc.alumnos as { id: string; nombre: string } | null
+    const alumno = insc.alumnos as { id: string; nombre: string; apellido: string | null } | null
     if (!alumno) continue
-    alumnosMap.set(alumno.id, alumno.nombre)
+    alumnosMap.set(alumno.id, alumno)
     const materiasDelCurso = materiasByCurso.get(insc.curso_id) ?? []
     for (const matId of materiasDelCurso) {
-      inscripciones.push({ alumno_id: alumno.id, materia_id: matId })
+      inscripciones.push({ alumno_id: alumno.id, materia_id: matId, curso_id: insc.curso_id })
     }
   }
 
-  const alumnos = Array.from(alumnosMap.entries()).map(([id, nombre]) => ({ id, nombre }))
+  const alumnos = Array.from(alumnosMap.values())
 
   const { data: evals } = await supabase
     .from('evaluaciones')
@@ -113,7 +116,7 @@ export async function GET(_request: NextRequest, { params }: Params) {
 
   const preview = buildCierrePreview({
     alumnos,
-    materias: materias.map(m => ({ id: m.id, nombre: m.nombre })),
+    materias,
     inscripciones,
     evaluacionesPorMateria,
     notasExistentes,

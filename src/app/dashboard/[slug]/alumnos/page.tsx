@@ -4,6 +4,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect, notFound } from 'next/navigation'
 import NuevoAlumnoSheet from './nuevo-alumno-sheet'
 import AlumnosTabla from './alumnos-tabla'
+import { EmptyState } from '@/components/ui/empty-state'
+import { GraduationCap } from 'lucide-react'
 
 type Params = { params: Promise<{ slug: string }> }
 
@@ -111,12 +113,21 @@ export default async function AlumnosPage({ params }: Params) {
         <NuevoAlumnoSheet instId={inst.id} cursos={cursosDisponibles ?? []} />
       </div>
 
-      <AlumnosTabla
-        alumnos={alumnosData}
-        instId={inst.id}
-        slug={slug}
-        cursos={cursosDisponibles ?? []}
-      />
+      {alumnosData.length === 0 ? (
+        <EmptyState
+          icon={GraduationCap}
+          title="Sin alumnos registrados"
+          description="Agregá el primer alumno para empezar a gestionar la institución."
+          action={<NuevoAlumnoSheet instId={inst.id} cursos={cursosDisponibles ?? []} />}
+        />
+      ) : (
+        <AlumnosTabla
+          alumnos={alumnosData}
+          instId={inst.id}
+          slug={slug}
+          cursos={cursosDisponibles ?? []}
+        />
+      )}
     </div>
   )
 }

@@ -105,8 +105,21 @@ export async function POST(request: NextRequest, { params }: Params) {
     añoLectivoId = (añoActivo as { id: string } | null)?.id ?? null
   }
 
+  // Resolve propagate periodo_id: use given period or annual period for the año_lectivo
+  let propagatePeriodoId: string | null = parsed.data.periodo_id ?? null
+  if (!propagatePeriodoId && añoLectivoId) {
+    const { data: periodoAnual } = await supabase
+      .from('periodos')
+      .select('id')
+      .eq('año_lectivo_id', añoLectivoId)
+      .eq('tipo', 'anual')
+      .is('deleted_at', null)
+      .single()
+    propagatePeriodoId = periodoAnual?.id ?? null
+  }
+
   let propagated = 0
-  if (añoLectivoId) {
+  if (añoLectivoId && propagatePeriodoId) {
     const { data: cursos } = await supabase
       .from('cursos')
       .select('id')
@@ -127,7 +140,7 @@ export async function POST(request: NextRequest, { params }: Params) {
       const instances = materias.map(m => ({
         materia_id: m.id,
         institucion_id: inst_id,
-        ...(parsed.data.periodo_id ? { periodo_id: parsed.data.periodo_id } : {}),
+        periodo_id: propagatePeriodoId as string,
         nombre: parsed.data.nombre,
         tipo: parsed.data.tipo,
         peso: parsed.data.peso ?? 1,
