@@ -22,7 +22,7 @@ async function resolveEvaluacion(id: string) {
   const supabase = await createClient()
   const { data } = await supabase
     .from('evaluaciones')
-    .select('id, materia_id, periodo_id, materias(institucion_id)')
+    .select('id, materia_id, periodo_id, materias(institucion_id, curso_id)')
     .eq('id', id)
     .is('deleted_at', null)
     .single()
@@ -37,7 +37,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   const { supabase, evaluacion } = await resolveEvaluacion(id)
   if (!evaluacion) return Err.notFound()
 
-  const mat = evaluacion.materias as { institucion_id: string } | null
+  const mat = evaluacion.materias as { institucion_id: string; curso_id: string } | null
   if (!mat) return Err.notFound()
   if (!isSuperadmin(session) && !hasAnyRole(session, mat.institucion_id, ['admin', 'docente']))
     return Err.forbidden()
@@ -58,6 +58,29 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 
   const { fecha, dimension_ids, ...rest } = parsed.data
   const updateData: Record<string, unknown> = { ...rest }
+
+  // Resolve null periodo_id → annual period (periodo_id NOT NULL after migration)
+  if (updateData.periodo_id === null) {
+    const { data: curso } = await supabase
+      .from('cursos')
+      .select('año_lectivo_id')
+      .eq('id', mat.curso_id)
+      .is('deleted_at', null)
+      .single()
+    if (curso) {
+      const { data: periodoAnual } = await supabase
+        .from('periodos')
+        .select('id')
+        .eq('año_lectivo_id', curso.año_lectivo_id)
+        .eq('tipo', 'anual')
+        .is('deleted_at', null)
+        .single()
+      if (periodoAnual) updateData.periodo_id = periodoAnual.id
+      else delete updateData.periodo_id
+    } else {
+      delete updateData.periodo_id
+    }
+  }
   if (fecha !== undefined) updateData.fecha = fecha
 
   if (Object.keys(updateData).length > 0) {

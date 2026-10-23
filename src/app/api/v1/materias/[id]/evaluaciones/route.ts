@@ -54,7 +54,7 @@ export async function POST(request: NextRequest, { params }: Params) {
   const supabase = await createClient()
   const { data: materia } = await supabase
     .from('materias')
-    .select('institucion_id')
+    .select('institucion_id, curso_id')
     .eq('id', materia_id)
     .is('deleted_at', null)
     .single()
@@ -67,11 +67,33 @@ export async function POST(request: NextRequest, { params }: Params) {
   const parsed = CreateSchema.safeParse(body)
   if (!parsed.success) return Err.validation(parsed.error.issues[0].message)
 
-  if (parsed.data.periodo_id) {
+  // Resolve null periodo_id → annual period for this materia's año_lectivo
+  let resolvedPeriodoId: string | null = parsed.data.periodo_id ?? null
+  if (!resolvedPeriodoId) {
+    const { data: curso } = await supabase
+      .from('cursos')
+      .select('año_lectivo_id')
+      .eq('id', materia.curso_id)
+      .is('deleted_at', null)
+      .single()
+    if (curso) {
+      const { data: periodoAnual } = await supabase
+        .from('periodos')
+        .select('id, cerrado_at')
+        .eq('año_lectivo_id', curso.año_lectivo_id)
+        .eq('tipo', 'anual')
+        .is('deleted_at', null)
+        .single()
+      if (periodoAnual) resolvedPeriodoId = periodoAnual.id
+    }
+  }
+  if (!resolvedPeriodoId) return Err.server('No se encontró período anual para esta materia')
+
+  if (resolvedPeriodoId) {
     const { data: periodo } = await supabase
       .from('periodos')
       .select('cerrado_at')
-      .eq('id', parsed.data.periodo_id)
+      .eq('id', resolvedPeriodoId)
       .is('deleted_at', null)
       .single()
     if (isPeriodoCerrado(periodo?.cerrado_at)) return Err.conflict('Período cerrado')
@@ -87,7 +109,7 @@ export async function POST(request: NextRequest, { params }: Params) {
       peso: parsed.data.peso,
       orden: parsed.data.orden,
       permite_recuperatorio: parsed.data.permite_recuperatorio,
-      ...(parsed.data.periodo_id ? { periodo_id: parsed.data.periodo_id } : {}),
+      periodo_id: resolvedPeriodoId,
       ...(parsed.data.fecha ? { fecha: parsed.data.fecha } : {}),
     })
     .select('id, nombre, tipo, peso, orden, periodo_id, fecha, created_at')
