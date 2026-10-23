@@ -15,6 +15,7 @@ import DespublicarPeriodoButton from './despublicar-periodo-button'
 import NotificarPeriodoDialog from './notificar-periodo-dialog'
 import CerrarAñoButton from './cerrar-ano-button'
 import PublicarAñoButton from './publicar-ano-button'
+import RenombrarPeriodoButton from './renombrar-periodo-button'
 
 type Params = { params: Promise<{ slug: string }> }
 
@@ -38,12 +39,12 @@ export default async function AñosLectivosPage({ params }: Params) {
 
   const { data: años } = await supabase
     .from('años_lectivos')
-    .select('id, nombre, activo, fecha_inicio, fecha_fin, cerrado_at, publicado_at, periodos(id, nombre, orden, activo, cerrado_at, publicado_at)')
+    .select('id, nombre, activo, fecha_inicio, fecha_fin, cerrado_at, publicado_at, periodos(id, nombre, orden, activo, cerrado_at, publicado_at, tipo)')
     .eq('institucion_id', inst.id)
     .is('deleted_at', null)
     .order('nombre', { ascending: false })
 
-  type Periodo = { id: string; nombre: string; orden: number; activo: boolean; cerrado_at: string | null; publicado_at: string | null }
+  type Periodo = { id: string; nombre: string; orden: number; activo: boolean; cerrado_at: string | null; publicado_at: string | null; tipo: string }
   type Año = NonNullable<typeof años>[number] & { cerrado_at: string | null; publicado_at: string | null }
   const isAdmin = isSuperadmin(session) || hasRole(session, inst.id, 'admin')
 
@@ -71,7 +72,44 @@ export default async function AñosLectivosPage({ params }: Params) {
       ) : (
         <div className="flex flex-col gap-4">
           {años.map((año: Año) => {
-            const periodos = ((año.periodos ?? []) as Periodo[]).sort((a, b) => a.orden - b.orden)
+            const todosLosPeriodos = (año.periodos ?? []) as Periodo[]
+            const periodosRegulares = todosLosPeriodos.filter(p => p.tipo !== 'anual').sort((a, b) => a.orden - b.orden)
+            const periodoAnual = todosLosPeriodos.find(p => p.tipo === 'anual') ?? null
+
+            const renderPeriodoActions = (p: Periodo, showRename: boolean) => (
+              <div key={p.id} className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-sm font-medium">{p.nombre}</span>
+                  {p.activo && <Badge>Activo</Badge>}
+                  {p.cerrado_at && <Badge variant="secondary">Cerrado</Badge>}
+                  {p.publicado_at && <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200">Publicado</Badge>}
+                </div>
+                {isAdmin && (
+                  <div className="flex items-center gap-1">
+                    {!p.cerrado_at && (
+                      <CerrarPeriodoSheet instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
+                    )}
+                    {p.cerrado_at && !p.publicado_at && (
+                      <>
+                        <ReabrirPeriodoButton instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
+                        <PublicarPeriodoButton instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
+                      </>
+                    )}
+                    {p.cerrado_at && p.publicado_at && (
+                      <>
+                        <ReabrirPeriodoButton instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
+                        <DespublicarPeriodoButton instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
+                        <NotificarPeriodoDialog instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
+                      </>
+                    )}
+                    {showRename && (
+                      <RenombrarPeriodoButton instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
+                    )}
+                  </div>
+                )}
+              </div>
+            )
+
             return (
               <Card key={año.id}>
                 <CardHeader className="pb-3">
@@ -95,42 +133,21 @@ export default async function AñosLectivosPage({ params }: Params) {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  {periodos.length > 0 ? (
-                    <div className="flex flex-col gap-3">
-                      {periodos.map(p => (
-                        <div key={p.id} className="flex items-center justify-between gap-2 flex-wrap">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-sm font-medium">{p.nombre}</span>
-                            {p.activo && <Badge>Activo</Badge>}
-                            {p.cerrado_at && <Badge variant="secondary">Cerrado</Badge>}
-                            {p.publicado_at && <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200">Publicado</Badge>}
-                          </div>
-                          {isAdmin && (
-                            <div className="flex items-center gap-1">
-                              {!p.cerrado_at && (
-                                <CerrarPeriodoSheet instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
-                              )}
-                              {p.cerrado_at && !p.publicado_at && (
-                                <>
-                                  <ReabrirPeriodoButton instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
-                                  <PublicarPeriodoButton instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
-                                </>
-                              )}
-                              {p.cerrado_at && p.publicado_at && (
-                                <>
-                                  <ReabrirPeriodoButton instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
-                                  <DespublicarPeriodoButton instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
-                                  <NotificarPeriodoDialog instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
-                                </>
-                              )}
-                            </div>
-                          )}
+                  <div className="flex flex-col gap-3">
+                    {periodosRegulares.length > 0 ? (
+                      periodosRegulares.map(p => renderPeriodoActions(p, true))
+                    ) : (
+                      <p className="text-sm text-muted-foreground">Sin períodos definidos.</p>
+                    )}
+                    {periodoAnual && (
+                      <>
+                        <div className="border-t pt-3 mt-1">
+                          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Período anual</p>
+                          {renderPeriodoActions(periodoAnual, false)}
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">Sin períodos definidos.</p>
-                  )}
+                      </>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             )
