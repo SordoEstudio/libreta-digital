@@ -84,7 +84,7 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
     : (materias[0] ?? null)
 
   // Fetch año_lectivo_id for the selected materia's curso (separate query to avoid ñ parser issue)
-  type Periodo = { id: string; nombre: string; orden: number; activo: boolean | null; cerrado_at: string | null }
+  type Periodo = { id: string; nombre: string; orden: number; activo: boolean | null; cerrado_at: string | null; tipo: string | null }
   let periodos: Periodo[] = []
   if (selectedMateria?.cursoId) {
     const { data: cursoData } = await supabase
@@ -95,7 +95,7 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
     if (cursoData?.año_lectivo_id) {
       const { data: periodoRows } = await supabase
         .from('periodos')
-        .select('id, nombre, orden, activo, cerrado_at')
+        .select('id, nombre, orden, activo, cerrado_at, tipo')
         .eq('año_lectivo_id', cursoData.año_lectivo_id)
         .order('orden')
       periodos = (periodoRows ?? []) as Periodo[]
@@ -223,6 +223,7 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
         .from('notas_referencia')
         .select('evaluacion_ref_id, alumno_id, dimension_id, valor_numerico, valor_literal')
         .in('evaluacion_ref_id', evalRefIds)
+        .is('deleted_at', null)
       notasRefRaw = (nr ?? [])
     }
 
@@ -255,19 +256,27 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
     // Fetch all evaluaciones for this materia+período (including recuperatorios)
     const evalsQueryBase = supabase
       .from('evaluaciones')
-      .select('id, nombre, tipo, permite_recuperatorio, recuperatorio_de_evaluacion_id, orden, evaluacion_dimensiones(dimension_id)')
+      .select('id, nombre, tipo, permite_recuperatorio, recuperatorio_de_evaluacion_id, orden, periodo_id, evaluacion_dimensiones(dimension_id)')
       .eq('materia_id', selectedMateria.id)
       .is('deleted_at', null)
       .order('orden')
     const { data: evalsRaw } = isTodos
       ? await evalsQueryBase
       : isAnual
-        ? await evalsQueryBase.is('periodo_id', null)
+        ? await evalsQueryBase.eq('periodo_id', periodos.find(p => p.tipo === 'anual')?.id ?? '')
         : await evalsQueryBase.eq('periodo_id', selectedPeriodo!.id)
 
     type EvalRaw = NonNullable<typeof evalsRaw>[number]
     const allEvalsFiltered = evalsRaw ?? []
-    const primaryEvals = allEvalsFiltered.filter((ev: EvalRaw) => !ev.recuperatorio_de_evaluacion_id)
+    const periodoOrdenMap = new Map(periodos.map(p => [p.id, p.orden]))
+    const primaryEvals = allEvalsFiltered
+      .filter((ev: EvalRaw) => !ev.recuperatorio_de_evaluacion_id)
+      .sort((a: EvalRaw, b: EvalRaw) => {
+        const pA = periodoOrdenMap.get(a.periodo_id ?? '') ?? 0
+        const pB = periodoOrdenMap.get(b.periodo_id ?? '') ?? 0
+        if (pA !== pB) return pA - pB
+        return (a.orden ?? 0) - (b.orden ?? 0)
+      })
     const recuperatorioEvals = allEvalsFiltered.filter((ev: EvalRaw) => !!ev.recuperatorio_de_evaluacion_id)
     const recuperatorioByParent = new Map(
       recuperatorioEvals.map((ev: EvalRaw) => [ev.recuperatorio_de_evaluacion_id!, ev])
@@ -282,6 +291,7 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
         .select('evaluacion_id, alumno_id, dimension_id, valor_numerico, valor_literal')
         .in('evaluacion_id', libretaEvalIds)
         .in('alumno_id', alumnoIds)
+        .is('deleted_at', null)
       notasLibretaRaw = nl ?? []
     }
 

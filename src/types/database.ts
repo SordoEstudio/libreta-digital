@@ -1146,6 +1146,7 @@ export type Database = {
           nota_aprobacion: number | null
           slug: string
           telefono: string | null
+          termino_recuperatorio: string
           tipo: string | null
           updated_at: string
         }
@@ -1164,6 +1165,7 @@ export type Database = {
           nota_aprobacion?: number | null
           slug: string
           telefono?: string | null
+          termino_recuperatorio?: string
           tipo?: string | null
           updated_at?: string
         }
@@ -1182,6 +1184,7 @@ export type Database = {
           nota_aprobacion?: number | null
           slug?: string
           telefono?: string | null
+          termino_recuperatorio?: string
           tipo?: string | null
           updated_at?: string
         }

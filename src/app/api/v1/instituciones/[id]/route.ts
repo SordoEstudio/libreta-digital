@@ -11,6 +11,7 @@ const PatchSchema = z.object({
   telefono: z.string().optional(),
   email: z.string().email().optional(),
   logo_url: z.string().url().optional(),
+  termino_recuperatorio: z.string().min(1).optional(),
 }).strict()
 
 type Params = { params: Promise<{ id: string }> }

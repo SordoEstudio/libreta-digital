@@ -13,6 +13,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import * as XLSX from 'xlsx'
 import { VALORES_CONCEPTUALES } from '@/lib/conceptual'
+import { useInstitucionConfig } from '@/lib/institucion-config'
 
 interface Alumno {
   id: string
@@ -72,6 +73,7 @@ export function NotasEditor({
   notaAprobacion, permiteRecuperatorio, recuperatorioId, esRecuperatorio, eligibles,
   escalaMin, escalaMax, isCerrado,
 }: NotasEditorProps) {
+  const { terminoRecuperatorio } = useInstitucionConfig()
   const hasDims = dimensiones.length > 0
 
   // Multi-dim state: valoresDim[alumnoId][dimId] = value string
@@ -415,13 +417,13 @@ export function NotasEditor({
         <div className="flex items-center justify-between rounded-md border p-3 bg-muted/30">
           <p className="text-sm text-muted-foreground">
             {recuperatorioId
-              ? 'Recuperatorio generado.'
+              ? `${terminoRecuperatorio} generado.`
               : `${countBelowThreshold} alumno${countBelowThreshold !== 1 ? 's' : ''} por debajo del umbral de aprobación.`}
           </p>
           {recuperatorioId
             ? (
               <Button variant="outline" size="sm" render={<Link href={`/dashboard/${slug}/notas/${recuperatorioId}`} />}>
-                Ver recuperatorio
+                Ver {terminoRecuperatorio.toLowerCase()}
               </Button>
             )
             : (
@@ -432,7 +434,7 @@ export function NotasEditor({
                 disabled={generando || countBelowThreshold === 0}
                 title={countBelowThreshold === 0 ? 'Sin alumnos desaprobados' : undefined}
               >
-                {generando ? 'Generando...' : 'Generar recuperatorio'}
+                {generando ? 'Generando...' : `Generar ${terminoRecuperatorio.toLowerCase()}`}
               </Button>
             )
           }
@@ -440,7 +442,7 @@ export function NotasEditor({
       )}
 
       {esRecuperatorio && (
-        <p className="text-sm text-muted-foreground">Esta es la instancia de recuperatorio.</p>
+        <p className="text-sm text-muted-foreground">Esta es la instancia de {terminoRecuperatorio.toLowerCase()}.</p>
       )}
     </div>
   )

@@ -4,17 +4,10 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { EvaluacionEvento } from './page'
+import { useInstitucionConfig } from '@/lib/institucion-config'
 
 const DIAS_SEMANA = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
-
-const TIPO_LABELS: Record<string, string> = {
-  parcial: 'Parcial',
-  final: 'Final',
-  recuperatorio: 'Recuperatorio',
-  tp: 'TP',
-  concepto: 'Concepto',
-}
 
 const DOT_COLORS = [
   'bg-blue-400',
@@ -32,6 +25,14 @@ interface Props {
 }
 
 export default function CalendarioEvaluaciones({ evaluaciones }: Props) {
+  const { terminoRecuperatorio } = useInstitucionConfig()
+  const TIPO_LABELS: Record<string, string> = {
+    parcial: 'Parcial',
+    final: 'Final',
+    recuperatorio: terminoRecuperatorio,
+    tp: 'TP',
+    concepto: 'Concepto',
+  }
   const today = new Date()
   const [mes, setMes] = useState(today.getMonth())
   const [año, setAño] = useState(today.getFullYear())

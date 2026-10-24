@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { BookOpen, Settings } from 'lucide-react'
 import { BrandingSheet } from './branding-sheet'
+import TerminoRecuperatorioForm from './termino-recuperatorio-form'
 import AñoSelector from './año-selector'
 import NuevoAñoSheet from './periodos/nuevo-año-sheet'
 import NuevoCursoSheet from '../cursos/nuevo-curso-sheet'
@@ -31,7 +32,7 @@ export default async function ConfiguracionPage({ params, searchParams }: Props)
 
   const { data: inst } = await supabase
     .from('instituciones')
-    .select('id, nombre, logo_cuadrado_url, logo_rectangular_url')
+    .select('id, nombre, logo_cuadrado_url, logo_rectangular_url, termino_recuperatorio')
     .eq('slug', slug)
     .is('deleted_at', null)
     .single()
@@ -258,6 +259,18 @@ export default async function ConfiguracionPage({ params, searchParams }: Props)
           </div>
         </div>
       )}
+
+      {/* Terminología */}
+      <div className="flex items-center justify-between rounded-lg border px-4 py-3 gap-4">
+        <div>
+          <p className="text-sm font-medium">Término para recuperatorio</p>
+          <p className="text-xs text-muted-foreground">Nombre usado en evaluaciones, cuaderno y boletín</p>
+        </div>
+        <TerminoRecuperatorioForm
+          instId={inst.id}
+          value={inst.termino_recuperatorio ?? 'Recuperatorio'}
+        />
+      </div>
 
       {/* Branding */}
       <div className="flex items-center justify-between rounded-lg border px-4 py-3">

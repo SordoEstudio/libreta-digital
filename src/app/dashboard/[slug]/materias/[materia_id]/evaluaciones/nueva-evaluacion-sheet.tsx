@@ -9,14 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Loader2, Plus } from 'lucide-react'
 import { toast } from 'sonner'
-
-const TIPOS = [
-  { value: 'parcial', label: 'Parcial' },
-  { value: 'final', label: 'Final' },
-  { value: 'recuperatorio', label: 'Recuperatorio' },
-  { value: 'tp', label: 'Trabajo práctico' },
-  { value: 'concepto', label: 'Concepto' },
-]
+import { useInstitucionConfig } from '@/lib/institucion-config'
 
 interface Props {
   materiaId: string
@@ -26,6 +19,14 @@ interface Props {
 }
 
 export default function NuevaEvaluacionSheet({ materiaId, periodos, dimensiones, disabled }: Props) {
+  const { terminoRecuperatorio } = useInstitucionConfig()
+  const TIPOS = [
+    { value: 'parcial', label: 'Parcial' },
+    { value: 'final', label: 'Final' },
+    { value: 'recuperatorio', label: terminoRecuperatorio },
+    { value: 'tp', label: 'Trabajo práctico' },
+    { value: 'concepto', label: 'Concepto' },
+  ]
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
