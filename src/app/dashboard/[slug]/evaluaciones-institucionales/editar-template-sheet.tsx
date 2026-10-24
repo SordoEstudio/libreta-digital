@@ -10,14 +10,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Loader2, Pencil, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
-
-const TIPOS = [
-  { value: 'parcial', label: 'Parcial' },
-  { value: 'final', label: 'Final' },
-  { value: 'recuperatorio', label: 'Recuperatorio' },
-  { value: 'tp', label: 'Trabajo práctico' },
-  { value: 'concepto', label: 'Concepto' },
-]
+import { useInstitucionConfig } from '@/lib/institucion-config'
 
 interface Template {
   id: string
@@ -37,6 +30,14 @@ interface Props {
 }
 
 export default function EditarTemplateSheet({ template, instancias, periodos }: Props) {
+  const { terminoRecuperatorio } = useInstitucionConfig()
+  const TIPOS = [
+    { value: 'parcial', label: 'Parcial' },
+    { value: 'final', label: 'Final' },
+    { value: 'recuperatorio', label: terminoRecuperatorio },
+    { value: 'tp', label: 'Trabajo práctico' },
+    { value: 'concepto', label: 'Concepto' },
+  ]
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [saving, setSaving] = useState(false)

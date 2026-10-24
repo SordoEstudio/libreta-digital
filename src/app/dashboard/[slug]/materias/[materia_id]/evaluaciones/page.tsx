@@ -15,14 +15,6 @@ import { MobileOrientationGuard } from '@/components/mobile-orientation-guard'
 
 type Params = { params: Promise<{ slug: string; materia_id: string }> }
 
-const TIPO_LABELS: Record<string, string> = {
-  parcial: 'Parcial',
-  final: 'Final',
-  recuperatorio: 'Recuperatorio',
-  tp: 'Trabajo práctico',
-  concepto: 'Concepto',
-}
-
 export default async function EvaluacionesPage({ params }: Params) {
   const { slug, materia_id } = await params
   const session = await requireSession()
@@ -30,10 +22,19 @@ export default async function EvaluacionesPage({ params }: Params) {
   const supabase = await createClient()
   const { data: inst } = await supabase
     .from('instituciones')
-    .select('id')
+    .select('id, termino_recuperatorio')
     .eq('slug', slug)
     .is('deleted_at', null)
     .single()
+
+  const terminoRecuperatorio = inst?.termino_recuperatorio ?? 'Recuperatorio'
+  const TIPO_LABELS: Record<string, string> = {
+    parcial: 'Parcial',
+    final: 'Final',
+    recuperatorio: terminoRecuperatorio,
+    tp: 'Trabajo práctico',
+    concepto: 'Concepto',
+  }
 
   if (!inst) {
     if (isSuperadmin(session)) redirect('/dashboard/instituciones')
@@ -191,7 +192,7 @@ export default async function EvaluacionesPage({ params }: Params) {
                                 <Badge variant="secondary" className="text-xs">Institucional</Badge>
                               )}
                               {recuperatorioDeId && (
-                                <Badge variant="outline" className="text-xs">Recuperatorio</Badge>
+                                <Badge variant="outline" className="text-xs">{terminoRecuperatorio}</Badge>
                               )}
                             </div>
                           </TableCell>

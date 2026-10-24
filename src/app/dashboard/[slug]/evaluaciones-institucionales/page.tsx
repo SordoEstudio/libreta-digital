@@ -11,14 +11,6 @@ import EditarTemplateSheet from './editar-template-sheet'
 
 type Params = { params: Promise<{ slug: string }> }
 
-const TIPO_LABELS: Record<string, string> = {
-  parcial: 'Parcial',
-  final: 'Final',
-  recuperatorio: 'Recuperatorio',
-  tp: 'Trabajo práctico',
-  concepto: 'Concepto',
-}
-
 export default async function EvaluacionesInstitucionalesPage({ params }: Params) {
   const { slug } = await params
   const session = await requireSession()
@@ -26,10 +18,19 @@ export default async function EvaluacionesInstitucionalesPage({ params }: Params
   const supabase = await createClient()
   const { data: inst } = await supabase
     .from('instituciones')
-    .select('id')
+    .select('id, termino_recuperatorio')
     .eq('slug', slug)
     .is('deleted_at', null)
     .single()
+
+  const terminoRecuperatorio = inst?.termino_recuperatorio ?? 'Recuperatorio'
+  const TIPO_LABELS: Record<string, string> = {
+    parcial: 'Parcial',
+    final: 'Final',
+    recuperatorio: terminoRecuperatorio,
+    tp: 'Trabajo práctico',
+    concepto: 'Concepto',
+  }
 
   if (!inst) {
     if (isSuperadmin(session)) redirect('/dashboard/instituciones')
