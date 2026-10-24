@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getSession, isSuperadmin, hasRole } from '@/lib/auth'
 import { ok, Err } from '@/lib/api'
+import { isCerradoParaCurso } from '@/lib/cierre-periodo'
 
 type Params = { params: Promise<{ id: string; periodo_id: string; curso_id: string }> }
 
@@ -51,7 +52,7 @@ export async function POST(_request: NextRequest, { params }: Params) {
     .maybeSingle()
 
   // Guard: curso must be cerrado (either via override or period-level)
-  if (override?.cerrado_at == null && periodo.cerrado_at == null) {
+  if (!isCerradoParaCurso(periodo.cerrado_at, override ?? null)) {
     return Err.validation('El curso no está cerrado')
   }
 

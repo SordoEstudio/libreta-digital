@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { getSession, isSuperadmin, hasAnyRole } from '@/lib/auth'
 import { ok, Err } from '@/lib/api'
-import { isPeriodoCerrado, isCerradoParaCurso, PeriodoCierreOverride } from '@/lib/cierre-periodo'
+import { isPeriodoCerrado, isCerradoParaCurso } from '@/lib/cierre-periodo'
 
 const PatchSchema = z.object({
   nombre: z.string().min(1).optional(),
