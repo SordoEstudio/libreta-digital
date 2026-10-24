@@ -165,7 +165,6 @@ export default async function AñosLectivosPage({ params }: Params) {
                     }))}
                     periodoCerradoAt={p.cerrado_at}
                     periodoPublicadoAt={p.publicado_at}
-                    slug={slug}
                   />
                 )}
               </div>

@@ -30,7 +30,6 @@ interface Props {
   }>
   periodoCerradoAt: string | null
   periodoPublicadoAt: string | null
-  slug: string
 }
 
 type Action = 'cerrar' | 'publicar' | 'reabrir' | 'despublicar'
