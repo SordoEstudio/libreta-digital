@@ -4,7 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect, notFound } from 'next/navigation'
 import { CheckCircle2 } from 'lucide-react'
 import ConfirmarButton from './confirmar-button'
-import { isCerradoParaCurso, PeriodoCierreOverride } from '@/lib/cierre-periodo'
+import { isPublicadoParaCurso, PeriodoCierreOverride } from '@/lib/cierre-periodo'
 
 type Params = { params: Promise<{ slug: string; alumno_id: string }> }
 
@@ -79,7 +79,7 @@ export default async function ConfirmarPage({ params }: Params) {
 
   const { data: allPeriods } = await supabase
     .from('periodos')
-    .select('id, nombre, orden, cerrado_at')
+    .select('id, nombre, orden, publicado_at')
     .eq('año_lectivo_id', añoLectivoId)
     .is('deleted_at', null)
     .order('orden')
@@ -96,12 +96,12 @@ export default async function ConfirmarPage({ params }: Params) {
     )
   }
 
-  const closedPeriods = (allPeriods ?? []).filter(p =>
-    isCerradoParaCurso(p.cerrado_at, overrideByPeriodo.get(p.id) ?? null)
+  const publishedPeriods = (allPeriods ?? []).filter(p =>
+    isPublicadoParaCurso(p.publicado_at, overrideByPeriodo.get(p.id) ?? null)
   )
-  const closedIds = closedPeriods.map(p => p.id)
+  const publishedIds = publishedPeriods.map(p => p.id)
 
-  if (closedIds.length === 0) {
+  if (publishedIds.length === 0) {
     redirect(`/dashboard/${slug}/libreta/${alumno_id}/boletin`)
   }
 
@@ -111,10 +111,10 @@ export default async function ConfirmarPage({ params }: Params) {
     .select('periodo_id')
     .eq('alumno_id', alumno_id)
     .eq('persona_id', session.persona_id)
-    .in('periodo_id', closedIds)
+    .in('periodo_id', publishedIds)
 
   const confirmedIds = new Set((existingAcuses ?? []).map(a => a.periodo_id))
-  const pendingPeriods = (closedPeriods ?? []).filter(p => !confirmedIds.has(p.id))
+  const pendingPeriods = (publishedPeriods ?? []).filter(p => !confirmedIds.has(p.id))
 
   // Nothing pending → go directly to boletín
   if (pendingPeriods.length === 0) {
