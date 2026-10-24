@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getSession, isSuperadmin, hasAnyRole } from '@/lib/auth'
 import { ok, Err } from '@/lib/api'
 import { notificarNotaCargada } from '@/lib/notificaciones'
-import { isPeriodoCerrado } from '@/lib/cierre-periodo'
+import { isCerradoParaCurso, PeriodoCierreOverride } from '@/lib/cierre-periodo'
 
 const BulkSchema = z.object({
   evaluacion_id: z.string().uuid(),
@@ -31,13 +31,15 @@ export async function POST(request: NextRequest) {
 
   const { data: evaluacion } = await supabase
     .from('evaluaciones')
-    .select('id, nombre, tipo, periodo_id, institucion_id, materias(materias_catalogo(nombre), cursos(nombre))')
+    .select('id, nombre, tipo, periodo_id, institucion_id, materias(materias_catalogo(nombre), cursos(id, nombre))')
     .eq('id', evaluacion_id)
     .is('deleted_at', null)
     .single()
 
   if (!evaluacion) return Err.notFound('Evaluación no encontrada')
   if (!isSuperadmin(session) && !hasAnyRole(session, evaluacion.institucion_id, ['admin', 'docente'])) return Err.forbidden()
+
+  const mat = evaluacion.materias as { materias_catalogo: { nombre: string } | null; cursos: { id: string; nombre: string } | null } | null
 
   if (evaluacion.periodo_id) {
     const { data: periodo } = await supabase
@@ -46,10 +48,17 @@ export async function POST(request: NextRequest) {
       .eq('id', evaluacion.periodo_id)
       .is('deleted_at', null)
       .single()
-    if (isPeriodoCerrado(periodo?.cerrado_at)) return Err.conflict('Período cerrado')
+    const curso_id = (mat?.cursos as { id: string } | null)?.id ?? null
+    const { data: cierreOverride } = curso_id
+      ? await supabase
+          .from('periodo_cierre_cursos')
+          .select('cerrado_at, publicado_at, abierto_at')
+          .eq('periodo_id', evaluacion.periodo_id)
+          .eq('curso_id', curso_id)
+          .maybeSingle()
+      : { data: null as PeriodoCierreOverride }
+    if (isCerradoParaCurso(periodo?.cerrado_at ?? null, cierreOverride)) return Err.conflict('Período cerrado')
   }
-
-  const mat = evaluacion.materias as { materias_catalogo: { nombre: string } | null; cursos: { nombre: string } | null } | null
 
   const toUpsert = notas
     .filter(n => n.valor_numerico != null || n.valor_literal != null)

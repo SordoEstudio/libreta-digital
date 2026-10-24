@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { getSession, isSuperadmin, hasAnyRole } from '@/lib/auth'
 import { ok, Err } from '@/lib/api'
-import { isPeriodoCerrado } from '@/lib/cierre-periodo'
+import { isCerradoParaCurso, PeriodoCierreOverride } from '@/lib/cierre-periodo'
 
 const PatchSchema = z.object({
   valor_numerico: z.number().optional(),
@@ -35,7 +35,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 
   const { data: evalForLock } = await supabase
     .from('evaluaciones')
-    .select('periodo_id')
+    .select('periodo_id, materias(curso_id)')
     .eq('id', nota.evaluacion_id)
     .is('deleted_at', null)
     .single()
@@ -46,7 +46,16 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       .eq('id', evalForLock.periodo_id)
       .is('deleted_at', null)
       .single()
-    if (isPeriodoCerrado(periodo?.cerrado_at)) return Err.conflict('Período cerrado')
+    const curso_id = (evalForLock.materias as { curso_id: string } | null)?.curso_id ?? null
+    const { data: cierreOverride } = curso_id
+      ? await supabase
+          .from('periodo_cierre_cursos')
+          .select('cerrado_at, publicado_at, abierto_at')
+          .eq('periodo_id', evalForLock.periodo_id)
+          .eq('curso_id', curso_id)
+          .maybeSingle()
+      : { data: null as PeriodoCierreOverride }
+    if (isCerradoParaCurso(periodo?.cerrado_at ?? null, cierreOverride)) return Err.conflict('Período cerrado')
   }
 
   const body = await request.json().catch(() => null)

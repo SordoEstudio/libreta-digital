@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { getSession, isSuperadmin, hasAnyRole, hasRole } from '@/lib/auth'
 import { ok, Err } from '@/lib/api'
-import { isPeriodoCerrado } from '@/lib/cierre-periodo'
+import { isCerradoParaCurso } from '@/lib/cierre-periodo'
 
 const RegistroSchema = z.object({
   alumno_id:     z.string().uuid(),
@@ -22,7 +22,7 @@ async function resolveMateria(materia_id: string) {
   const supabase = await createClient()
   const { data } = await supabase
     .from('materias')
-    .select('id, institucion_id')
+    .select('id, institucion_id, curso_id')
     .eq('id', materia_id)
     .is('deleted_at', null)
     .single()
@@ -84,7 +84,13 @@ export async function POST(request: NextRequest, { params }: Params) {
     .eq('id', parsed.data.periodo_id)
     .is('deleted_at', null)
     .single()
-  if (isPeriodoCerrado(periodo?.cerrado_at)) return Err.conflict('Período cerrado')
+  const { data: cierreOverride } = await supabase
+    .from('periodo_cierre_cursos')
+    .select('cerrado_at, publicado_at, abierto_at')
+    .eq('periodo_id', parsed.data.periodo_id)
+    .eq('curso_id', materia.curso_id)
+    .maybeSingle()
+  if (isCerradoParaCurso(periodo?.cerrado_at ?? null, cierreOverride)) return Err.conflict('Período cerrado')
 
   const rows = parsed.data.registros.map(r => ({
     institucion_id:               materia.institucion_id,
