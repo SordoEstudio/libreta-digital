@@ -7,6 +7,7 @@ import CuadernoTabla from './cuaderno-tabla'
 import CuadernoNuevaInstanciaBtn from './cuaderno-nueva-instancia-btn'
 import CuadernoUnidadesSheet from './cuaderno-unidades-sheet'
 import { MobileOrientationGuard } from '@/components/mobile-orientation-guard'
+import { isCerradoParaCurso, PeriodoCierreOverride } from '@/lib/cierre-periodo'
 
 type Params = { params: Promise<{ slug: string }>; searchParams: Promise<{ materia_id?: string; periodo_id?: string }> }
 
@@ -109,8 +110,18 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
     ? null
     : periodos.find(p => p.id === periodo_id) ?? null
 
+  let cierreOverride: PeriodoCierreOverride = null
+  if (selectedPeriodo && selectedMateria?.cursoId) {
+    const { data: ov } = await supabase
+      .from('periodo_cierre_cursos')
+      .select('cerrado_at, publicado_at, abierto_at')
+      .eq('periodo_id', selectedPeriodo.id)
+      .eq('curso_id', selectedMateria.cursoId)
+      .maybeSingle()
+    cierreOverride = ov ?? null
+  }
   const periodoCerrado = selectedPeriodo
-    ? selectedPeriodo.cerrado_at != null
+    ? isCerradoParaCurso(selectedPeriodo.cerrado_at, cierreOverride)
     : false
 
   // Fetch unidades for the selected materia

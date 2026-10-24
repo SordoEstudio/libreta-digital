@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
 import { NotasEditor } from './notas-editor'
 import EditarEvaluacionSheet from '@/app/dashboard/[slug]/materias/[materia_id]/evaluaciones/editar-evaluacion-sheet'
+import { isCerradoParaCurso, PeriodoCierreOverride } from '@/lib/cierre-periodo'
 
 type Params = {
   params: Promise<{ slug: string; evaluacion_id: string }>
@@ -129,7 +130,15 @@ export default async function NotasPage({ params, searchParams }: Params) {
 
   const notaAprobacion = instData?.nota_aprobacion ?? null
   const evalPeriodo = (periodos ?? []).find(p => p.id === (evaluacion.periodo_id ?? ''))
-  const isCerrado = !!(evalPeriodo?.cerrado_at)
+  const { data: cierreOv } = evalPeriodo && cursoId
+    ? await supabase
+        .from('periodo_cierre_cursos')
+        .select('cerrado_at, publicado_at, abierto_at')
+        .eq('periodo_id', evalPeriodo.id)
+        .eq('curso_id', cursoId)
+        .maybeSingle()
+    : { data: null }
+  const isCerrado = isCerradoParaCurso(evalPeriodo?.cerrado_at ?? null, (cierreOv ?? null) as PeriodoCierreOverride)
 
   const { data: escala } = await supabase
     .from('escalas')

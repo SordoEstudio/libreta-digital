@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect, notFound } from 'next/navigation'
 import { CheckCircle2 } from 'lucide-react'
 import ConfirmarButton from './confirmar-button'
+import { isCerradoParaCurso, PeriodoCierreOverride } from '@/lib/cierre-periodo'
 
 type Params = { params: Promise<{ slug: string; alumno_id: string }> }
 
@@ -76,15 +77,29 @@ export default async function ConfirmarPage({ params }: Params) {
     redirect(`/dashboard/${slug}/libreta/${alumno_id}/boletin`)
   }
 
-  const { data: closedPeriods } = await supabase
+  const { data: allPeriods } = await supabase
     .from('periodos')
-    .select('id, nombre, orden')
+    .select('id, nombre, orden, cerrado_at')
     .eq('año_lectivo_id', añoLectivoId)
-    .not('cerrado_at', 'is', null)
     .is('deleted_at', null)
     .order('orden')
 
-  const closedIds = (closedPeriods ?? []).map(p => p.id)
+  // Fetch per-curso overrides so we respect granular close state
+  let overrideByPeriodo = new Map<string, PeriodoCierreOverride>()
+  if (cursoId) {
+    const { data: overrides } = await supabase
+      .from('periodo_cierre_cursos')
+      .select('periodo_id, cerrado_at, publicado_at, abierto_at')
+      .eq('curso_id', cursoId)
+    overrideByPeriodo = new Map(
+      (overrides ?? []).map(ov => [ov.periodo_id, ov])
+    )
+  }
+
+  const closedPeriods = (allPeriods ?? []).filter(p =>
+    isCerradoParaCurso(p.cerrado_at, overrideByPeriodo.get(p.id) ?? null)
+  )
+  const closedIds = closedPeriods.map(p => p.id)
 
   if (closedIds.length === 0) {
     redirect(`/dashboard/${slug}/libreta/${alumno_id}/boletin`)
