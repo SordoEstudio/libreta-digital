@@ -33,18 +33,18 @@ export async function POST(request: NextRequest) {
 
   if (!vinculacion) return Err.forbidden()
 
-  // Verify all periods are actually closed (prevent confirming open periods)
+  // Verify all periods are actually published (prevent confirming unpublished periods)
   const admin = createAdminClient()
   const { data: periodos } = await admin
     .from('periodos')
     .select('id')
     .in('id', periodo_ids)
-    .not('cerrado_at', 'is', null)
+    .not('publicado_at', 'is', null)
     .is('deleted_at', null)
 
   const validIds = new Set((periodos ?? []).map(p => p.id))
   if (periodo_ids.some(id => !validIds.has(id)))
-    return Err.validation('Uno o más períodos no están cerrados')
+    return Err.validation('Uno o más períodos no están publicados')
 
   // Batch upsert — ON CONFLICT DO NOTHING (idempotent)
   const rows = periodo_ids.map(periodo_id => ({

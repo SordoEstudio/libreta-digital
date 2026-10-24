@@ -1,6 +1,7 @@
 import { requireSession, isSuperadmin, hasAnyRole, hasRole } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
+import { isPublicadoParaCurso, PeriodoCierreOverride } from '@/lib/cierre-periodo'
 
 type Params = { params: Promise<{ slug: string; alumno_id: string }> }
 
@@ -69,16 +70,30 @@ export default async function LibretaPage({ params }: Params) {
   }
 
   // Periodos RLS allows responsables to read — user client is fine
-  const { data: closedPeriods } = await supabase
+  // Fetch all periods for the active year (including publicado_at)
+  const { data: allPeriods } = await supabase
     .from('periodos')
-    .select('id')
+    .select('id, publicado_at')
     .eq('año_lectivo_id', añoLectivoId)
-    .not('cerrado_at', 'is', null)
     .is('deleted_at', null)
 
-  const closedIds = (closedPeriods ?? []).map(p => p.id)
+  // Fetch per-curso overrides so granular publish state is respected
+  let overrideByPeriodo = new Map<string, PeriodoCierreOverride>()
+  if (cursoId) {
+    const { data: overrides } = await supabase
+      .from('periodo_cierre_cursos')
+      .select('periodo_id, cerrado_at, publicado_at, abierto_at')
+      .eq('curso_id', cursoId)
+    overrideByPeriodo = new Map(
+      (overrides ?? []).map(ov => [ov.periodo_id, ov])
+    )
+  }
 
-  if (closedIds.length === 0) {
+  const publishedIds = (allPeriods ?? [])
+    .filter(p => isPublicadoParaCurso(p.publicado_at, overrideByPeriodo.get(p.id) ?? null))
+    .map(p => p.id)
+
+  if (publishedIds.length === 0) {
     redirect(`/dashboard/${slug}/libreta/${alumno_id}/boletin`)
   }
 
@@ -87,10 +102,10 @@ export default async function LibretaPage({ params }: Params) {
     .select('periodo_id')
     .eq('alumno_id', alumno_id)
     .eq('persona_id', session.persona_id)
-    .in('periodo_id', closedIds)
+    .in('periodo_id', publishedIds)
 
   const confirmedIds = new Set((existingAcuses ?? []).map(a => a.periodo_id))
-  const hasPending = closedIds.some(id => !confirmedIds.has(id))
+  const hasPending = publishedIds.some(id => !confirmedIds.has(id))
 
   if (hasPending) {
     redirect(`/dashboard/${slug}/libreta/${alumno_id}/confirmar`)
