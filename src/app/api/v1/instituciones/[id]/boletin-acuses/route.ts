@@ -101,6 +101,7 @@ export async function GET(request: NextRequest, { params }: Params) {
   if (respErr) return Err.server(respErr.message)
 
   const personaIds = [...new Set((responsables ?? []).map(r => r.persona_id))]
+  if (personaIds.length === 0) return ok([])
 
   const { data: personas, error: personasErr } = await admin
     .from('personas')
