@@ -42,6 +42,27 @@ export async function POST(request: NextRequest, { params }: Params) {
   if (updateErr) return Err.server(updateErr.message)
   if (!closed || closed.length === 0) return Err.conflict('Período ya cerrado')
 
+  // Sync periodo_cierre_cursos for all cursos in this año_lectivo
+  const { data: cursos } = await supabase
+    .from('cursos')
+    .select('id')
+    .eq('año_lectivo_id', periodo.año_lectivo_id)
+    .is('deleted_at', null)
+
+  if (cursos && cursos.length > 0) {
+    await supabase
+      .from('periodo_cierre_cursos')
+      .upsert(
+        cursos.map(c => ({
+          periodo_id,
+          curso_id: c.id,
+          cerrado_at: new Date().toISOString(),
+          abierto_at: null,
+        })),
+        { onConflict: 'periodo_id,curso_id', ignoreDuplicates: false }
+      )
+  }
+
   let siguiente_activado = false
 
   if (parsed.data.activar_siguiente) {
