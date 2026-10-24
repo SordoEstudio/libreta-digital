@@ -1715,6 +1715,48 @@ export type Database = {
           },
         ]
       }
+      periodo_cierre_cursos: {
+        Row: {
+          abierto_at: string | null
+          cerrado_at: string | null
+          curso_id: string
+          id: string
+          periodo_id: string
+          publicado_at: string | null
+        }
+        Insert: {
+          abierto_at?: string | null
+          cerrado_at?: string | null
+          curso_id: string
+          id?: string
+          periodo_id: string
+          publicado_at?: string | null
+        }
+        Update: {
+          abierto_at?: string | null
+          cerrado_at?: string | null
+          curso_id?: string
+          id?: string
+          periodo_id?: string
+          publicado_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "periodo_cierre_cursos_curso_id_fkey"
+            columns: ["curso_id"]
+            isOneToOne: false
+            referencedRelation: "cursos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "periodo_cierre_cursos_periodo_id_fkey"
+            columns: ["periodo_id"]
+            isOneToOne: false
+            referencedRelation: "periodos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       periodos: {
         Row: {
           activo: boolean
