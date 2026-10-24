@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
 import PrintButton from './print-button'
 import { labelConceptual } from '@/lib/conceptual'
+import { isPublicadoParaCurso, PeriodoCierreOverride } from '@/lib/cierre-periodo'
 
 type Params = { params: Promise<{ slug: string; alumno_id: string }> }
 
@@ -130,11 +131,33 @@ export default async function BoletinPage({ params }: Params) {
     dimensions: Map<string, Dimension>
   }
 
+  // Fetch per-curso overrides for the alumno's active course (used by responsables)
+  type InscripcionItem = { curso_id: string; activo: boolean; deleted_at: string | null }
+  const activaInsc = ((alumno.alumno_inscripciones ?? []) as InscripcionItem[])
+    .find(i => i.activo && !i.deleted_at)
+  const cursoBoletin = activaInsc?.curso_id ?? null
+
+  let overrideByPeriodo = new Map<string, PeriodoCierreOverride>()
+  if (cursoBoletin) {
+    const { data: overrides } = await supabase
+      .from('periodo_cierre_cursos')
+      .select('periodo_id, cerrado_at, publicado_at, abierto_at')
+      .eq('curso_id', cursoBoletin)
+    overrideByPeriodo = new Map(
+      (overrides ?? []).map(ov => [ov.periodo_id, ov])
+    )
+  }
+
   // Responsables only see notes from published periods (including the annual period)
   const notasVisible = isResponsableOnly
     ? (notas ?? []).filter(n => {
         const ev = n.evaluaciones as Evaluacion | null
-        return ev?.periodos?.publicado_at != null
+        if (!ev?.periodo_id || !ev?.periodos) return false
+        const ov = overrideByPeriodo.get(ev.periodo_id) ?? null
+        return isPublicadoParaCurso(
+          (ev.periodos as { publicado_at: string | null }).publicado_at,
+          ov
+        )
       })
     : (notas ?? [])
 
