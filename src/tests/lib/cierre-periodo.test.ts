@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildCierrePreview, isPeriodoCerrado } from '@/lib/cierre-periodo'
+import { buildCierrePreview, isPeriodoCerrado, isCerradoParaCurso, isPublicadoParaCurso } from '@/lib/cierre-periodo'
 
 const alumnos = [{ id: 'a1', nombre: 'Juan', apellido: 'Pérez' }]
 const materias = [{ id: 'm1', nombre: 'Inglés', curso_id: 'c1', curso_nombre: '1ro A' }]
@@ -95,5 +95,48 @@ describe('buildCierrePreview', () => {
     })
     expect(result.materias_sin_asistencia[0].materia_id).toBe('m1')
     expect(result.materias_sin_asistencia[0].curso_nombre).toBe('1ro A')
+  })
+})
+
+describe('isCerradoParaCurso', () => {
+  it('false when period open and no override', () => {
+    expect(isCerradoParaCurso(null, null)).toBe(false)
+  })
+  it('true when period closed and no override', () => {
+    expect(isCerradoParaCurso('2026-10-01T00:00:00Z', null)).toBe(true)
+  })
+  it('false when period closed but abierto_at is set (explicit reopen)', () => {
+    expect(isCerradoParaCurso('2026-10-01T00:00:00Z', {
+      cerrado_at: null, publicado_at: null, abierto_at: '2026-10-10T00:00:00Z'
+    })).toBe(false)
+  })
+  it('true when period open but override has cerrado_at (early close)', () => {
+    expect(isCerradoParaCurso(null, {
+      cerrado_at: '2026-10-05T00:00:00Z', publicado_at: null, abierto_at: null
+    })).toBe(true)
+  })
+  it('false when override has both cerrado_at and abierto_at (reopen wins)', () => {
+    expect(isCerradoParaCurso('2026-10-01T00:00:00Z', {
+      cerrado_at: '2026-10-01T00:00:00Z', publicado_at: null, abierto_at: '2026-10-10T00:00:00Z'
+    })).toBe(false)
+  })
+})
+
+describe('isPublicadoParaCurso', () => {
+  it('false when period not published and no override', () => {
+    expect(isPublicadoParaCurso(null, null)).toBe(false)
+  })
+  it('true when period published and no override', () => {
+    expect(isPublicadoParaCurso('2026-10-02T00:00:00Z', null)).toBe(true)
+  })
+  it('false when period published but abierto_at overrides', () => {
+    expect(isPublicadoParaCurso('2026-10-02T00:00:00Z', {
+      cerrado_at: null, publicado_at: null, abierto_at: '2026-10-10T00:00:00Z'
+    })).toBe(false)
+  })
+  it('true when period not published but override has publicado_at', () => {
+    expect(isPublicadoParaCurso(null, {
+      cerrado_at: '2026-10-05T00:00:00Z', publicado_at: '2026-10-06T00:00:00Z', abierto_at: null
+    })).toBe(true)
   })
 })

@@ -83,3 +83,41 @@ export function buildCierrePreview(opts: BuildCierrePreviewOpts): CierrePreview 
 export function isPeriodoCerrado(cerrado_at: string | null | undefined): boolean {
   return cerrado_at != null
 }
+
+export type PeriodoCierreOverride = {
+  cerrado_at:   string | null
+  publicado_at: string | null
+  abierto_at:   string | null
+} | null
+
+/**
+ * Returns true if the period/course is considered "cerrado" (closed).
+ * Logic:
+ *   1. If override has abierto_at → always false (explicit reopen wins)
+ *   2. If override has cerrado_at → true
+ *   3. Fall back to period-level periodoCerradoAt
+ */
+export function isCerradoParaCurso(
+  periodoCerradoAt: string | null,
+  override: PeriodoCierreOverride
+): boolean {
+  if (override != null && override.abierto_at != null) return false
+  if (override != null && override.cerrado_at != null) return true
+  return periodoCerradoAt != null
+}
+
+/**
+ * Returns true if the period/course is considered "publicado" (published).
+ * Logic:
+ *   1. If override has abierto_at → always false (explicit reopen wins)
+ *   2. If override has publicado_at → true
+ *   3. Fall back to period-level periodoPublicadoAt
+ */
+export function isPublicadoParaCurso(
+  periodoPublicadoAt: string | null,
+  override: PeriodoCierreOverride
+): boolean {
+  if (override != null && override.abierto_at != null) return false
+  if (override != null && override.publicado_at != null) return true
+  return periodoPublicadoAt != null
+}
