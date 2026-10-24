@@ -28,5 +28,11 @@ export async function POST(_request: NextRequest, { params }: Params) {
     .eq('id', periodo_id)
   if (updateErr) return Err.server(updateErr.message)
 
+  // Reset per-curso close state
+  await supabase
+    .from('periodo_cierre_cursos')
+    .delete()
+    .eq('periodo_id', periodo_id)
+
   return ok({ reabierto: true })
 }

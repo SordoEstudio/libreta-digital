@@ -29,5 +29,11 @@ export async function POST(_request: NextRequest, { params }: Params) {
     .eq('id', periodo_id)
   if (error) return Err.server(error.message)
 
+  // Null out publicado_at for all existing per-curso rows
+  await supabase
+    .from('periodo_cierre_cursos')
+    .update({ publicado_at: null })
+    .eq('periodo_id', periodo_id)
+
   return ok({ despublicado: true })
 }

@@ -13,14 +13,15 @@ export async function POST(_request: NextRequest, { params }: Params) {
 
   const supabase = await createClient()
 
-  const { data: periodo, error: periodoErr } = await supabase
+  const { data: periodoRaw, error: periodoErr } = await supabase
     .from('periodos')
-    .select('id, cerrado_at, publicado_at')
+    .select('*')
     .eq('id', periodo_id)
     .eq('institucion_id', institucion_id)
     .is('deleted_at', null)
     .single()
-  if (periodoErr || !periodo) return Err.notFound('Período no encontrado')
+  if (periodoErr || !periodoRaw) return Err.notFound('Período no encontrado')
+  const periodo = periodoRaw as { id: string; cerrado_at: string | null; publicado_at: string | null; año_lectivo_id: string }
   if (!periodo.cerrado_at) return Err.validation('El período debe estar cerrado antes de publicar')
   if (periodo.publicado_at) return Err.conflict('El período ya está publicado')
 
@@ -29,6 +30,27 @@ export async function POST(_request: NextRequest, { params }: Params) {
     .update({ publicado_at: new Date().toISOString() })
     .eq('id', periodo_id)
   if (error) return Err.server(error.message)
+
+  // Sync periodo_cierre_cursos for all cursos in this año_lectivo
+  const { data: cursos } = await supabase
+    .from('cursos')
+    .select('id')
+    .eq('año_lectivo_id', periodo.año_lectivo_id)
+    .is('deleted_at', null)
+
+  if (cursos && cursos.length > 0) {
+    await supabase
+      .from('periodo_cierre_cursos')
+      .upsert(
+        cursos.map(c => ({
+          periodo_id,
+          curso_id: c.id,
+          publicado_at: new Date().toISOString(),
+          abierto_at: null,
+        })),
+        { onConflict: 'periodo_id,curso_id', ignoreDuplicates: false }
+      )
+  }
 
   return ok({ publicado: true })
 }
