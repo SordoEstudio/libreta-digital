@@ -29,6 +29,7 @@ export async function GET(request: NextRequest, { params }: Params) {
 
   const sp = request.nextUrl.searchParams
   const rol = sp.get('rol')
+  const rolesParam = sp.get('roles') // comma-separated, e.g. "docente,admin"
   const q = sp.get('q')
 
   const admin = createAdminClient()
@@ -37,26 +38,39 @@ export async function GET(request: NextRequest, { params }: Params) {
     .select('rol, activo, personas(id, nombre, apellido, email, telefono, dni, direccion)')
     .eq('institucion_id', institucion_id)
 
-  if (rol) query = query.eq('rol', rol)
+  if (rolesParam) {
+    const roles = rolesParam.split(',').map(r => r.trim()).filter(Boolean)
+    if (roles.length === 1) query = query.eq('rol', roles[0])
+    else if (roles.length > 1) query = query.in('rol', roles)
+  } else if (rol) {
+    query = query.eq('rol', rol)
+  }
 
   const { data, error } = await query
   if (error) return Err.server(error.message)
 
   type P = { id: string; nombre: string; apellido: string | null; email: string | null; telefono: string | null; dni: string | null; direccion: string | null } | null
-  let usuarios = data.map(m => {
-    const p = m.personas as P
-    return {
-      persona_id: p?.id,
-      nombre: p?.nombre ?? '',
-      apellido: p?.apellido ?? null,
-      email: p?.email ?? null,
-      telefono: p?.telefono ?? null,
-      dni: p?.dni ?? null,
-      direccion: p?.direccion ?? null,
-      rol: m.rol,
-      activo: m.activo,
-    }
-  })
+  const seenPersonaIds = new Set<string>()
+  let usuarios = data
+    .map(m => {
+      const p = m.personas as P
+      return {
+        persona_id: p?.id,
+        nombre: p?.nombre ?? '',
+        apellido: p?.apellido ?? null,
+        email: p?.email ?? null,
+        telefono: p?.telefono ?? null,
+        dni: p?.dni ?? null,
+        direccion: p?.direccion ?? null,
+        rol: m.rol,
+        activo: m.activo,
+      }
+    })
+    .filter(u => {
+      if (!u.persona_id || seenPersonaIds.has(u.persona_id)) return false
+      seenPersonaIds.add(u.persona_id)
+      return true
+    })
 
   if (q) {
     const lower = q.toLowerCase()
