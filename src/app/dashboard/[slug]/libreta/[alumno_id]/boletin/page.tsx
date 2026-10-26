@@ -1,5 +1,6 @@
 import { requireSession, isSuperadmin, hasAnyRole, hasRole } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -267,6 +268,30 @@ export default async function BoletinPage({ params }: Params) {
   const hasDimensionCol = [...materiaDataMap.values()].some(m => m.dimensions.size > 0)
   const noData = materiaDataMap.size === 0 && sortedCols.length === 0
 
+  // Fetch docentes for visible materias (admin client: personas RLS is own-only)
+  type DocenteMateria = { nombre: string; apellido: string | null; materias: string[] }
+  const docentesMateriaMap: DocenteMateria[] = []
+  if (materiaDataMap.size > 0) {
+    const adminClient = createAdminClient()
+    const { data: mdRows } = await adminClient
+      .from('materia_docentes')
+      .select('materia_id, personas(nombre, apellido)')
+      .in('materia_id', [...materiaDataMap.keys()])
+    type MDRow = { materia_id: string; personas: { nombre: string; apellido: string | null } | null }
+    const byPersona = new Map<string, { nombre: string; apellido: string | null; materias: string[] }>()
+    for (const row of (mdRows ?? []) as MDRow[]) {
+      if (!row.personas) continue
+      const key = `${row.personas.nombre}__${row.personas.apellido ?? ''}`
+      const matNombre = materiaDataMap.get(row.materia_id)?.nombre ?? ''
+      if (byPersona.has(key)) {
+        byPersona.get(key)!.materias.push(matNombre)
+      } else {
+        byPersona.set(key, { nombre: row.personas.nombre, apellido: row.personas.apellido, materias: matNombre ? [matNombre] : [] })
+      }
+    }
+    docentesMateriaMap.push(...byPersona.values())
+  }
+
   function formatNota(nota: NotaWithEv | undefined): string {
     if (!nota) return '—'
     if (nota.valor_literal === 'A') return 'Ausente'
@@ -512,6 +537,7 @@ export default async function BoletinPage({ params }: Params) {
           directorNombre={inst.director_nombre ?? null}
           directorCargo={inst.director_cargo ?? null}
           instNombre={inst.nombre}
+          docentes={docentesMateriaMap}
         />
 
         {/* Footer */}
