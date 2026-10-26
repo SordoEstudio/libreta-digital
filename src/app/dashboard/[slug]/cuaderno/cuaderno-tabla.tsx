@@ -643,24 +643,28 @@ export default function CuadernoTabla({
                       className="sticky left-0 flex items-start gap-3 px-4 py-3 bg-muted/10 border-t border-border/20"
                       style={{ width: 'calc(100vw - 4rem)', maxWidth: '100%' }}
                     >
-                      <div className="flex flex-col gap-2 flex-1 max-w-2xl">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-xs font-medium text-muted-foreground">
-                            {periodoNombre} — {displayNombre(alumno)}
-                          </span>
-                          <span className="text-xs text-muted-foreground tabular-nums">
-                            {(obsTextos[alumno.id] ?? '').length}/1000
-                          </span>
-                        </div>
+                      <div className="flex flex-col gap-1.5 flex-1 max-w-2xl">
                         <textarea
                           value={obsTextos[alumno.id] ?? ''}
-                          onChange={e => setObsTextos(prev => ({ ...prev, [alumno.id]: e.target.value }))}
+                          onChange={e => {
+                            setObsTextos(prev => ({ ...prev, [alumno.id]: e.target.value }))
+                            e.target.style.height = 'auto'
+                            e.target.style.height = `${e.target.scrollHeight}px`
+                          }}
+                          onFocus={e => {
+                            e.target.style.height = 'auto'
+                            e.target.style.height = `${e.target.scrollHeight}px`
+                          }}
                           maxLength={1000}
-                          rows={3}
+                          rows={1}
                           autoFocus
                           placeholder="Observación del docente para este período..."
-                          className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                          className="w-full resize-none overflow-hidden rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                          style={{ minHeight: '2.25rem' }}
                         />
+                        <span className="text-xs text-muted-foreground tabular-nums text-right">
+                          {(obsTextos[alumno.id] ?? '').length}/1000
+                        </span>
                         <div className="flex gap-2">
                           <Button size="sm" onClick={() => handleSaveObs(alumno.id)} disabled={savingObsId === alumno.id}>
                             {savingObsId === alumno.id
