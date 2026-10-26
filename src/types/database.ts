@@ -1136,6 +1136,8 @@ export type Database = {
           created_at: string
           deleted_at: string | null
           direccion: string | null
+          director_cargo: string | null
+          director_nombre: string | null
           email: string | null
           id: string
           logo_cuadrado_url: string | null
@@ -1155,6 +1157,8 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           direccion?: string | null
+          director_cargo?: string | null
+          director_nombre?: string | null
           email?: string | null
           id?: string
           logo_cuadrado_url?: string | null
@@ -1174,6 +1178,8 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           direccion?: string | null
+          director_cargo?: string | null
+          director_nombre?: string | null
           email?: string | null
           id?: string
           logo_cuadrado_url?: string | null
@@ -1711,6 +1717,58 @@ export type Database = {
             columns: ["persona_id"]
             isOneToOne: false
             referencedRelation: "personas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      observaciones_boletin: {
+        Row: {
+          alumno_id: string
+          autor_id: string | null
+          created_at: string
+          id: string
+          periodo_id: string
+          texto: string
+          updated_at: string
+        }
+        Insert: {
+          alumno_id: string
+          autor_id?: string | null
+          created_at?: string
+          id?: string
+          periodo_id: string
+          texto: string
+          updated_at?: string
+        }
+        Update: {
+          alumno_id?: string
+          autor_id?: string | null
+          created_at?: string
+          id?: string
+          periodo_id?: string
+          texto?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "observaciones_boletin_alumno_id_fkey"
+            columns: ["alumno_id"]
+            isOneToOne: false
+            referencedRelation: "alumnos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "observaciones_boletin_autor_id_fkey"
+            columns: ["autor_id"]
+            isOneToOne: false
+            referencedRelation: "personas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "observaciones_boletin_periodo_id_fkey"
+            columns: ["periodo_id"]
+            isOneToOne: false
+            referencedRelation: "periodos"
             referencedColumns: ["id"]
           },
         ]
