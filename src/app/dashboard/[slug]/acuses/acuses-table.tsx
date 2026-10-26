@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Download } from 'lucide-react'
+import { Download, ChevronDown, ChevronRight } from 'lucide-react'
 
 export type Responsable = {
   persona_id: string
@@ -27,6 +27,13 @@ export type AlumnoAcuse = {
 interface Props {
   rows: AlumnoAcuse[]
   periodoNombre: string
+}
+
+type GrupoCurso = {
+  nombre: string
+  rows: AlumnoAcuse[]
+  confirmados: number
+  totalResponsables: number
 }
 
 function exportCsv(rows: AlumnoAcuse[], periodoNombre: string) {
@@ -54,12 +61,42 @@ function exportCsv(rows: AlumnoAcuse[], periodoNombre: string) {
 
 export function AcusesTable({ rows, periodoNombre }: Props) {
   const [selectedAlumno, setSelectedAlumno] = useState<AlumnoAcuse | null>(null)
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
+
+  const grupos: GrupoCurso[] = useMemo(() => {
+    const map = new Map<string, AlumnoAcuse[]>()
+    for (const row of rows) {
+      const key = row.curso_nombre ?? '(Sin curso)'
+      if (!map.has(key)) map.set(key, [])
+      map.get(key)!.push(row)
+    }
+    return [...map.entries()]
+      .sort(([a], [b]) => a.localeCompare(b, 'es'))
+      .map(([nombre, grupoRows]) => ({
+        nombre,
+        rows: grupoRows,
+        confirmados: grupoRows.reduce((sum, r) => sum + r.confirmed_count, 0),
+        totalResponsables: grupoRows.reduce((sum, r) => sum + r.total_count, 0),
+      }))
+  }, [rows])
+
+  function toggleCurso(nombre: string) {
+    setCollapsed(prev => {
+      const next = new Set(prev)
+      if (next.has(nombre)) next.delete(nombre)
+      else next.add(nombre)
+      return next
+    })
+  }
+
+  const multiGrupo = grupos.length > 1
 
   return (
     <>
       <div className="flex items-center justify-between gap-2 mb-3">
         <p className="text-sm text-muted-foreground">
           {rows.length} alumno{rows.length !== 1 ? 's' : ''}
+          {multiGrupo && <span className="ml-1">· {grupos.length} cursos</span>}
         </p>
         <Button
           variant="outline"
@@ -72,86 +109,114 @@ export function AcusesTable({ rows, periodoNombre }: Props) {
         </Button>
       </div>
 
-      <div className="rounded-lg border overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b bg-muted/40">
-              <th className="text-left px-4 py-2.5 font-medium text-muted-foreground text-xs uppercase tracking-wide">
-                Alumno
-              </th>
-              <th className="text-left px-4 py-2.5 font-medium text-muted-foreground text-xs uppercase tracking-wide hidden sm:table-cell">
-                Curso
-              </th>
-              <th className="text-left px-4 py-2.5 font-medium text-muted-foreground text-xs uppercase tracking-wide">
-                Confirmaciones
-              </th>
-              <th className="text-left px-4 py-2.5 font-medium text-muted-foreground text-xs uppercase tracking-wide hidden md:table-cell">
-                Última confirmación
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map(row => {
-              const nombreCompleto = row.alumno_apellido
-                ? `${row.alumno_apellido}, ${row.alumno_nombre}`
-                : row.alumno_nombre
+      <div className="flex flex-col gap-3">
+        {grupos.map(grupo => {
+          const isCollapsed = collapsed.has(grupo.nombre)
+          const allOk = grupo.confirmados === grupo.totalResponsables && grupo.totalResponsables > 0
+          const noneOk = grupo.confirmados === 0
 
-              const allConfirmed = row.confirmed_count === row.total_count && row.total_count > 0
-              const noneConfirmed = row.confirmed_count === 0
-              const badgeVariant = allConfirmed
-                ? 'default'
-                : noneConfirmed
-                ? 'destructive'
-                : 'warning'
-              const badgeLabel = `${row.confirmed_count}/${row.total_count}${allConfirmed ? ' ✓' : ''}`
-
-              const lastConfirmed = row.last_confirmed_at
-                ? new Date(row.last_confirmed_at).toLocaleString('es-AR', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })
-                : '—'
-
-              return (
-                <tr
-                  key={row.alumno_id}
-                  className="border-b last:border-0 hover:bg-muted/30 cursor-pointer"
-                  onClick={() => setSelectedAlumno(row)}
+          return (
+            <div key={grupo.nombre} className="rounded-lg border overflow-hidden">
+              {multiGrupo && (
+                <button
+                  className="w-full flex items-center justify-between px-4 py-2.5 bg-muted/40 hover:bg-muted/60 transition-colors text-left"
+                  onClick={() => toggleCurso(grupo.nombre)}
                 >
-                  <td className="px-4 py-2.5 font-medium">{nombreCompleto}</td>
-                  <td className="px-4 py-2.5 text-muted-foreground hidden sm:table-cell">
-                    {row.curso_nombre ?? '—'}
-                  </td>
-                  <td className="px-4 py-2.5">
-                    <Badge
-                      variant={badgeVariant}
-                      className={
-                        allConfirmed
-                          ? 'bg-green-100 text-green-700 border-green-200'
-                          : undefined
-                      }
-                    >
-                      {badgeLabel}
-                    </Badge>
-                  </td>
-                  <td className="px-4 py-2.5 text-muted-foreground whitespace-nowrap hidden md:table-cell">
-                    {lastConfirmed}
-                  </td>
-                </tr>
-              )
-            })}
-            {rows.length === 0 && (
-              <tr>
-                <td colSpan={4} className="px-4 py-8 text-center text-sm text-muted-foreground">
-                  No hay alumnos inscriptos en este período.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+                  <div className="flex items-center gap-3">
+                    {isCollapsed
+                      ? <ChevronRight className="size-4 text-muted-foreground shrink-0" />
+                      : <ChevronDown className="size-4 text-muted-foreground shrink-0" />
+                    }
+                    <span className="font-medium text-sm">{grupo.nombre}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {grupo.rows.length} alumno{grupo.rows.length !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  <span className={`text-xs font-medium ${allOk ? 'text-green-600' : noneOk ? 'text-destructive' : 'text-amber-600'}`}>
+                    {grupo.confirmados}/{grupo.totalResponsables} confirmados
+                  </span>
+                </button>
+              )}
+
+              {!isCollapsed && (
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-muted/20">
+                      <th className="text-left px-4 py-2.5 font-medium text-muted-foreground text-xs uppercase tracking-wide">
+                        Alumno
+                      </th>
+                      {!multiGrupo && (
+                        <th className="text-left px-4 py-2.5 font-medium text-muted-foreground text-xs uppercase tracking-wide hidden sm:table-cell">
+                          Curso
+                        </th>
+                      )}
+                      <th className="text-left px-4 py-2.5 font-medium text-muted-foreground text-xs uppercase tracking-wide">
+                        Confirmaciones
+                      </th>
+                      <th className="text-left px-4 py-2.5 font-medium text-muted-foreground text-xs uppercase tracking-wide hidden md:table-cell">
+                        Última confirmación
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {grupo.rows.map(row => {
+                      const nombreCompleto = row.alumno_apellido
+                        ? `${row.alumno_apellido}, ${row.alumno_nombre}`
+                        : row.alumno_nombre
+
+                      const allConfirmed = row.confirmed_count === row.total_count && row.total_count > 0
+                      const noneConfirmed = row.confirmed_count === 0
+                      const badgeVariant = allConfirmed ? 'default' : noneConfirmed ? 'destructive' : 'warning'
+                      const badgeLabel = `${row.confirmed_count}/${row.total_count}${allConfirmed ? ' ✓' : ''}`
+
+                      const lastConfirmed = row.last_confirmed_at
+                        ? new Date(row.last_confirmed_at).toLocaleString('es-AR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })
+                        : '—'
+
+                      return (
+                        <tr
+                          key={row.alumno_id}
+                          className="border-b last:border-0 hover:bg-muted/30 cursor-pointer"
+                          onClick={() => setSelectedAlumno(row)}
+                        >
+                          <td className="px-4 py-2.5 font-medium">{nombreCompleto}</td>
+                          {!multiGrupo && (
+                            <td className="px-4 py-2.5 text-muted-foreground hidden sm:table-cell">
+                              {row.curso_nombre ?? '—'}
+                            </td>
+                          )}
+                          <td className="px-4 py-2.5">
+                            <Badge
+                              variant={badgeVariant}
+                              className={allConfirmed ? 'bg-green-100 text-green-700 border-green-200' : undefined}
+                            >
+                              {badgeLabel}
+                            </Badge>
+                          </td>
+                          <td className="px-4 py-2.5 text-muted-foreground whitespace-nowrap hidden md:table-cell">
+                            {lastConfirmed}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )
+        })}
+
+        {rows.length === 0 && (
+          <div className="rounded-lg border px-4 py-8 text-center text-sm text-muted-foreground">
+            No hay alumnos inscriptos en este período.
+          </div>
+        )}
       </div>
 
       {/* Drawer — responsables detail */}

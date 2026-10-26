@@ -2,12 +2,10 @@ import { requireSession, isSuperadmin, hasAnyRole, hasRole } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect, notFound } from 'next/navigation'
-import { Card, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import { BookOpen } from 'lucide-react'
+import { BookOpen, ChevronRight } from 'lucide-react'
 import NuevoCursoSheet from './nuevo-curso-sheet'
 
 type Params = { params: Promise<{ slug: string }> }
@@ -85,39 +83,29 @@ export default async function CursosPage({ params }: Params) {
         <EmptyState icon={BookOpen} title="No hay año lectivo activo." />
       )}
 
-      {añoActivo && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {visibleCursos.map(curso => (
-            <Card key={curso.id} className="flex flex-col hover:shadow-md transition-shadow">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base">{curso.nombre}</CardTitle>
-                <CardDescription className="flex items-center gap-2">
-                  {curso.nivel && <Badge variant="outline">{curso.nivel}</Badge>}
-                  {curso.turno && <Badge variant="secondary">{curso.turno}</Badge>}
-                </CardDescription>
-              </CardHeader>
-              <CardFooter>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="w-full"
-                  render={<Link href={`/dashboard/${slug}/cursos/${curso.id}`} />}
-                >
-                  <BookOpen data-icon="inline-start" />
-                  Ver materias
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
+      {añoActivo && visibleCursos.length === 0 && (
+        <EmptyState
+          icon={BookOpen}
+          title={isAdminLevel ? 'Sin cursos para este año lectivo.' : 'Sin materias asignadas.'}
+        />
+      )}
 
-          {visibleCursos.length === 0 && (
-            <div className="col-span-full">
-              <EmptyState
-                icon={BookOpen}
-                title={isAdminLevel ? 'Sin cursos para este año lectivo.' : 'Sin materias asignadas.'}
-              />
-            </div>
-          )}
+      {añoActivo && visibleCursos.length > 0 && (
+        <div className="flex flex-col divide-y border rounded-lg overflow-hidden">
+          {visibleCursos.map(curso => (
+            <Link
+              key={curso.id}
+              href={`/dashboard/${slug}/cursos/${curso.id}`}
+              className="flex items-center justify-between px-4 py-3 hover:bg-muted/40 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <span className="font-medium">{curso.nombre}</span>
+                {curso.nivel && <Badge variant="outline">{curso.nivel}</Badge>}
+                {curso.turno && <Badge variant="secondary" className="capitalize">{curso.turno}</Badge>}
+              </div>
+              <ChevronRight className="size-4 text-muted-foreground shrink-0" />
+            </Link>
+          ))}
         </div>
       )}
     </div>
