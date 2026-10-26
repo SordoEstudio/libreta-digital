@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { getSession, isSuperadmin, hasAnyRole } from '@/lib/auth'
 import { ok, Err } from '@/lib/api'
+import { logActividad } from '@/lib/actividad'
 
 const BulkRefSchema = z.object({
   evaluacion_ref_id: z.string().uuid(),
@@ -70,5 +71,15 @@ export async function POST(request: NextRequest) {
     .upsert(toUpsert, { onConflict: 'evaluacion_ref_id,alumno_id,dimension_id' })
 
   if (error) return Err.server(error.message)
+
+  logActividad({
+    institucion_id: evRef.institucion_id,
+    persona_id: session.persona_id,
+    accion: 'cargar_notas_referencia',
+    entidad: 'evaluaciones_referencia',
+    entidad_id: evaluacion_ref_id,
+    metadata: { count: toUpsert.length },
+  })
+
   return ok({ upserted: toUpsert.length, skipped: notas.length - toUpsert.length })
 }
