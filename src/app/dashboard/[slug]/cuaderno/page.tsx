@@ -169,6 +169,7 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
     periodoCerrado: boolean
     evalsLibreta: EvalLibretaCol[]
     notaAprobacion: number | null
+    observacionesMap?: Record<string, string>
   } | null = null
 
   if (selectedMateria && (selectedPeriodo || isAnual || isTodos)) {
@@ -347,6 +348,20 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
       }
     })
 
+    // Observaciones del boletín — solo cuando hay período específico seleccionado
+    let observacionesMap: Record<string, string> | undefined
+    if (selectedPeriodo && alumnoIds.length > 0) {
+      const { data: obsRaw } = await supabase
+        .from('observaciones_boletin')
+        .select('alumno_id, texto')
+        .in('alumno_id', alumnoIds)
+        .eq('periodo_id', selectedPeriodo.id)
+      observacionesMap = {}
+      for (const o of obsRaw ?? []) {
+        if (o.alumno_id) observacionesMap[o.alumno_id] = o.texto
+      }
+    }
+
     tableData = {
       alumnos,
       evalRefs,
@@ -354,6 +369,7 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
       periodoCerrado,
       evalsLibreta,
       notaAprobacion,
+      observacionesMap,
     }
   }
 
@@ -418,6 +434,7 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
             periodoCerrado={tableData.periodoCerrado}
             evalsLibreta={tableData.evalsLibreta}
             notaAprobacion={tableData.notaAprobacion}
+            observacionesMap={tableData.observacionesMap}
             slug={slug}
           />
         </MobileOrientationGuard>
