@@ -102,7 +102,7 @@ export default function EditarMateriaSheet({
     if (!open) return
     setDimensiones(initialDimensiones)
     setLoadingDocentes(true)
-    fetch(`/api/v1/instituciones/${instId}/usuarios?rol=docente`)
+    fetch(`/api/v1/instituciones/${instId}/usuarios?roles=docente,admin`)
       .then(r => r.json())
       .then(json => setDocentes((json.data ?? []).filter((d: { activo: boolean }) => d.activo) as Docente[]))
       .catch(() => {})
