@@ -267,6 +267,7 @@ export default async function BoletinPage({ params }: Params) {
   }
 
   const hasDefinitiva = [...materiaDataMap.values()].some(m => m.definitivaMap.size > 0)
+  const hasDimensionCol = [...materiaDataMap.values()].some(m => m.dimensions.size > 0)
   const noData = materiaDataMap.size === 0 && sortedCols.length === 0
 
   function formatNota(nota: NotaWithEv | undefined): string {
@@ -319,6 +320,9 @@ export default async function BoletinPage({ params }: Params) {
                   <th className="text-left pb-1 pr-4 font-medium border-b-2 border-border" rowSpan={2}>
                     Materia
                   </th>
+                  {hasDimensionCol && (
+                    <th className="pb-1 pr-4 border-b-2 border-border" rowSpan={2} />
+                  )}
                   {periodoGroups.map(pg => (
                     <th
                       key={pg.id ?? 'sin-periodo'}
@@ -353,12 +357,6 @@ export default async function BoletinPage({ params }: Params) {
                 {[...materiaDataMap.entries()].map(([matId, matData]) => {
                   const sortedDims = [...matData.dimensions.values()].sort((a, b) => a.orden - b.orden)
                   const hasDims = sortedDims.length > 0
-                  const asist = asistenciaMap.get(matId)
-                  const totalInasist = asist ? (asist.inasistencias_justificadas + asist.inasistencias_injustificadas) : 0
-                  const asistInfo = totalInasist > 0
-                    ? `${totalInasist} inasistencia${totalInasist !== 1 ? 's' : ''}`
-                    : null
-
                   if (hasDims) {
                     return sortedDims.map((dim, dimIdx) => (
                       <tr
@@ -376,11 +374,12 @@ export default async function BoletinPage({ params }: Params) {
                             rowSpan={sortedDims.length}
                           >
                             {matData.nombre}
-                            {asistInfo && (
-                              <span className="block text-xs font-normal text-muted-foreground print:text-gray-500 mt-0.5">
-                                {asistInfo}
-                              </span>
-                            )}
+                          </td>
+                        )}
+                        {/* Dimension name */}
+                        {hasDimensionCol && (
+                          <td className="py-1.5 pr-4 text-sm text-muted-foreground print:text-gray-600 whitespace-nowrap">
+                            {dim.nombre}
                           </td>
                         )}
                         {/* Template columns for this dimension */}
@@ -417,12 +416,8 @@ export default async function BoletinPage({ params }: Params) {
                     <tr key={matId} className="border-t-2 border-border/60 print:border-gray-300">
                       <td className="py-1.5 pr-4 font-medium">
                         {matData.nombre}
-                        {asistInfo && (
-                          <span className="block text-xs font-normal text-muted-foreground print:text-gray-500 mt-0.5">
-                            {asistInfo}
-                          </span>
-                        )}
                       </td>
+                      {hasDimensionCol && <td />}
                       {sortedCols.map(col => {
                         const nota = matData.notasMap.get(col.templateId)?.get(null)
                         const isAusente = nota?.valor_literal === 'A'
@@ -452,9 +447,42 @@ export default async function BoletinPage({ params }: Params) {
           </div>
         )}
 
+        {/* Asistencia */}
+        {asistenciaMap.size > 0 && (
+          <div className="mt-4">
+            <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 print:text-gray-600">
+              Asistencia
+            </h2>
+            <div className="flex flex-col gap-1">
+              {[...materiaDataMap.entries()]
+                .filter(([matId]) => {
+                  const a = asistenciaMap.get(matId)
+                  return a && (a.inasistencias_justificadas + a.inasistencias_injustificadas) > 0
+                })
+                .map(([matId, matData]) => {
+                  const a = asistenciaMap.get(matId)!
+                  const total = a.inasistencias_justificadas + a.inasistencias_injustificadas
+                  const partes: string[] = []
+                  if (a.inasistencias_injustificadas > 0)
+                    partes.push(`${a.inasistencias_injustificadas} injustificada${a.inasistencias_injustificadas !== 1 ? 's' : ''}`)
+                  if (a.inasistencias_justificadas > 0)
+                    partes.push(`${a.inasistencias_justificadas} justificada${a.inasistencias_justificadas !== 1 ? 's' : ''}`)
+                  return (
+                    <p key={matId} className="text-sm text-muted-foreground print:text-gray-600">
+                      <span className="font-medium text-foreground print:text-black">{matData.nombre}</span>
+                      {' — '}
+                      {total} inasistencia{total !== 1 ? 's' : ''}
+                      {partes.length > 0 && ` (${partes.join(', ')})`}
+                    </p>
+                  )
+                })}
+            </div>
+          </div>
+        )}
+
         {/* Observaciones del docente */}
         {periodosBoletin.length > 0 && (canEditObservaciones || obsMap.size > 0) && (
-          <div className="mt-8">
+          <div className={`mt-8${obsMap.size === 0 ? ' print:hidden' : ''}`}>
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3 print:text-gray-600">
               Observaciones del docente
             </h2>
