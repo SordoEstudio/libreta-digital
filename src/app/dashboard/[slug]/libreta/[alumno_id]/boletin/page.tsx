@@ -480,19 +480,15 @@ export default async function BoletinPage({ params }: Params) {
           </div>
         )}
 
-        {/* Observaciones del docente */}
-        {periodosBoletin.length > 0 && (canEditObservaciones || obsMap.size > 0) && (
-          <div className={`mt-8${obsMap.size === 0 ? ' print:hidden' : ''}`}>
+        {/* Observaciones del docente — solo períodos con texto */}
+        {obsMap.size > 0 && (
+          <div className="mt-8">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3 print:text-gray-600">
               Observaciones del docente
             </h2>
             <div className="flex flex-col gap-4">
               {periodosBoletin
-                .filter(p => {
-                  if (canEditObservaciones) return true
-                  const ov = overrideByPeriodo.get(p.id) ?? null
-                  return isPublicadoParaCurso(p.publicado_at, ov) && obsMap.has(p.id)
-                })
+                .filter(p => obsMap.has(p.id))
                 .map(p => {
                   const obs = obsMap.get(p.id)
                   return (
@@ -508,6 +504,35 @@ export default async function BoletinPage({ params }: Params) {
                     </div>
                   )
                 })
+              }
+            </div>
+          </div>
+        )}
+
+        {/* Agregar observaciones — editores, períodos publicados sin obs, screen only */}
+        {canEditObservaciones && periodosBoletin.length > 0 && (
+          <div className="print:hidden mt-6">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
+              Agregar observación
+            </h2>
+            <div className="flex flex-col gap-4">
+              {periodosBoletin
+                .filter(p => {
+                  const ov = overrideByPeriodo.get(p.id) ?? null
+                  return isPublicadoParaCurso(p.publicado_at, ov) && !obsMap.has(p.id)
+                })
+                .map(p => (
+                  <div key={p.id}>
+                    <p className="text-xs font-medium text-muted-foreground mb-1">{p.nombre}</p>
+                    <ObservacionEditor
+                      alumnoId={alumno_id}
+                      periodoId={p.id}
+                      periodoNombre={p.nombre}
+                      initialTexto=""
+                      canEdit
+                    />
+                  </div>
+                ))
               }
             </div>
           </div>
