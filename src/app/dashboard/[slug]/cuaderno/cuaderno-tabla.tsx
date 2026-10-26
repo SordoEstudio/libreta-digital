@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Save, Loader2, ExternalLink } from 'lucide-react'
+import { Save, Loader2, ExternalLink, MessageSquarePlus, MessageSquare } from 'lucide-react'
 import CuadernoAccionesCol from './cuaderno-acciones-col'
 
 interface Alumno { id: string; nombre: string; apellido: string | null }
@@ -54,6 +54,7 @@ interface Props {
   periodoCerrado?: boolean
   evalsLibreta?: EvalLibretaColTabla[]
   notaAprobacion?: number | null
+  observacionesMap?: Record<string, string>
   slug: string
 }
 
@@ -101,6 +102,7 @@ export default function CuadernoTabla({
   periodoCerrado,
   evalsLibreta,
   notaAprobacion,
+  observacionesMap,
   slug,
 }: Props) {
   const router = useRouter()
@@ -139,6 +141,11 @@ export default function CuadernoTabla({
   })
   const [savingProceso, setSavingProceso] = useState(false)
   const [saving, setSaving] = useState(false)
+
+  // Observaciones accordion
+  const [expandedAlumnoId, setExpandedAlumnoId] = useState<string | null>(null)
+  const [obsTextos, setObsTextos] = useState<Record<string, string>>(() => observacionesMap ?? {})
+  const [savingObsId, setSavingObsId] = useState<string | null>(null)
 
   // Libreta state — notasMap keys are `${alumnoId}::${dimId|'__'}`, procesoKey = `${evalId}::${alumnoId}::${dimId|'__'}`
   const [valoresLibreta, setValoresLibreta] = useState<Record<string, string>>(() => {
@@ -196,6 +203,38 @@ export default function CuadernoTabla({
   function shouldShowRCol(ev: EvalLibretaColTabla, dim: { id: string } | null): boolean {
     if (!showRecuperatorios || !ev.recuperatorio) return false
     return !allApprovedDims.has(`${ev.id}::${dim?.id ?? '__'}`)
+  }
+
+  const totalColCount = useMemo(() => {
+    let n = 1 // alumno
+    if (showLibreta && (evalsLibreta ?? []).length > 0) n += libretaColCount
+    if (showProceso && evalRefsFiltradas.length > 0) n += procesoColCount
+    if (showProceso && evalRefsFiltradas.some(ev => ev.tipo === 'numerica')) n += 1
+    if (observacionesMap !== undefined) n += 1
+    return n
+  }, [showLibreta, evalsLibreta, libretaColCount, showProceso, evalRefsFiltradas, procesoColCount, observacionesMap])
+
+  async function handleSaveObs(alumnoId: string, eliminar = false) {
+    setSavingObsId(alumnoId)
+    const texto = eliminar ? '' : (obsTextos[alumnoId] ?? '').trim()
+    const res = await fetch('/api/v1/observaciones-boletin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ alumno_id: alumnoId, periodo_id: periodoId, texto }),
+    })
+    setSavingObsId(null)
+    if (res.ok) {
+      if (texto === '') {
+        setObsTextos(prev => { const n = { ...prev }; delete n[alumnoId]; return n })
+        setExpandedAlumnoId(null)
+      } else {
+        setObsTextos(prev => ({ ...prev, [alumnoId]: texto }))
+      }
+      toast.success(eliminar ? 'Observación eliminada' : 'Observación guardada')
+      router.refresh()
+    } else {
+      toast.error('Error al guardar')
+    }
   }
 
   async function handleSaveProceso(): Promise<{ errors: number }> {
@@ -374,6 +413,7 @@ export default function CuadernoTabla({
                   Referencia
                 </th>
               )}
+              {observacionesMap !== undefined && <th className="border-l" />}
             </tr>
 
             {/* Row 2: eval names (with colSpan over their dims) */}
@@ -436,6 +476,11 @@ export default function CuadernoTabla({
                   Prom.
                 </th>
               )}
+              {observacionesMap !== undefined && (
+                <th rowSpan={2} className="text-center px-2 py-2 font-medium text-xs text-muted-foreground min-w-24 border-l align-middle">
+                  Obs.
+                </th>
+              )}
             </tr>
 
             {/* Row 3: dimension names */}
@@ -483,7 +528,7 @@ export default function CuadernoTabla({
           <tbody>
             {sorted.map((alumno, idx) => {
               const promedio = showProceso ? calcPromedio(alumno.id, evalRefsFiltradas) : null
-              return (
+              const row = (
                 <tr key={alumno.id} className={idx % 2 === 0 ? '' : 'bg-muted/10'}>
                   <td className="px-3 py-1.5 font-medium sticky left-0 bg-background border-r">
                     {displayNombre(alumno)}
@@ -574,8 +619,75 @@ export default function CuadernoTabla({
                     </td>
                   )}
 
+                  {/* Obs cell */}
+                  {observacionesMap !== undefined && (
+                    <td
+                      className="px-2 py-1 border-l cursor-pointer hover:bg-muted/30 transition-colors"
+                      onClick={() => setExpandedAlumnoId(expandedAlumnoId === alumno.id ? null : alumno.id)}
+                    >
+                      {obsTextos[alumno.id]
+                        ? <span className="text-xs text-muted-foreground line-clamp-1 block max-w-[96px]">{obsTextos[alumno.id]}</span>
+                        : <MessageSquarePlus className="size-3.5 text-muted-foreground/30 mx-auto" />
+                      }
+                    </td>
+                  )}
                 </tr>
               )
+
+              if (observacionesMap === undefined || expandedAlumnoId !== alumno.id) return row
+
+              return [row,
+                <tr key={`obs-expanded::${alumno.id}`}>
+                  <td colSpan={totalColCount} className="p-0 border-b border-border/30">
+                    <div
+                      className="sticky left-0 flex items-start gap-3 px-4 py-3 bg-muted/10 border-t border-border/20"
+                      style={{ width: 'calc(100vw - 4rem)', maxWidth: '100%' }}
+                    >
+                      <div className="flex flex-col gap-2 flex-1 max-w-2xl">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs font-medium text-muted-foreground">
+                            {periodoNombre} — {displayNombre(alumno)}
+                          </span>
+                          <span className="text-xs text-muted-foreground tabular-nums">
+                            {(obsTextos[alumno.id] ?? '').length}/1000
+                          </span>
+                        </div>
+                        <textarea
+                          value={obsTextos[alumno.id] ?? ''}
+                          onChange={e => setObsTextos(prev => ({ ...prev, [alumno.id]: e.target.value }))}
+                          maxLength={1000}
+                          rows={3}
+                          autoFocus
+                          placeholder="Observación del docente para este período..."
+                          className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                        />
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={() => handleSaveObs(alumno.id)} disabled={savingObsId === alumno.id}>
+                            {savingObsId === alumno.id
+                              ? <><Loader2 data-icon="inline-start" className="animate-spin size-3.5" />Guardando...</>
+                              : 'Guardar'
+                            }
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => setExpandedAlumnoId(null)}>
+                            Cerrar
+                          </Button>
+                          {obsTextos[alumno.id] && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-destructive hover:text-destructive ml-auto"
+                              disabled={savingObsId === alumno.id}
+                              onClick={() => handleSaveObs(alumno.id, true)}
+                            >
+                              Eliminar
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                </tr>,
+              ]
             })}
           </tbody>
         </table>
