@@ -54,7 +54,7 @@ export function MobileHeader({ session }: MobileHeaderProps) {
 
   return (
     <>
-      <header className="md:hidden sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-white/10 bg-harvi-dark px-4">
+      <header className="md:hidden print:hidden sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-white/10 bg-harvi-dark px-4">
         {logo ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={logo} alt="" className="size-8 rounded-md object-contain shrink-0 bg-white" />

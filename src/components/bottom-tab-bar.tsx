@@ -127,7 +127,7 @@ export function BottomTabBar({ session }: BottomTabBarProps) {
 
   return (
     <nav
-      className="md:hidden flex shrink-0 border-t border-white/10 bg-harvi-dark"
+      className="md:hidden print:hidden flex shrink-0 border-t border-white/10 bg-harvi-dark"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
       {tabs.map(tab => {
