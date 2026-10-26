@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
 import PrintButton from './print-button'
+import ObservacionEditor from './observacion-editor'
+import FirmasSection from './firmas-section'
 import { labelConceptual } from '@/lib/conceptual'
 import { isPublicadoParaCurso, PeriodoCierreOverride } from '@/lib/cierre-periodo'
 
@@ -17,7 +19,7 @@ export default async function BoletinPage({ params }: Params) {
   const supabase = await createClient()
   const { data: inst } = await supabase
     .from('instituciones')
-    .select('id, nombre, logo_rectangular_url')
+    .select('id, nombre, logo_rectangular_url, director_nombre, director_cargo')
     .eq('slug', slug)
     .single()
 
@@ -44,6 +46,7 @@ export default async function BoletinPage({ params }: Params) {
   }
 
   const isResponsableOnly = !isSuperadmin(session) && !hasRole(session, inst.id, 'admin') && !hasRole(session, inst.id, 'docente') && hasRole(session, inst.id, 'responsable')
+  const canEditObservaciones = isSuperadmin(session) || hasRole(session, inst.id, 'admin') || hasRole(session, inst.id, 'docente')
   const backHref = isAlumnoOnly
     ? `/dashboard/${slug}`
     : isResponsableOnly ? `/dashboard/${slug}/mis-alumnos` : `/dashboard/${slug}/alumnos`
@@ -148,6 +151,45 @@ export default async function BoletinPage({ params }: Params) {
     )
   }
 
+  // Curso, año, periodos and observaciones for the observaciones section
+  let añoLectivoId: string | null = null
+  let cursoNombre: string | undefined
+  let añoNombre: string | undefined
+  if (activaInsc?.curso_id) {
+    const { data: cursoRow } = await supabase
+      .from('cursos')
+      .select('*')
+      .eq('id', activaInsc.curso_id)
+      .single()
+    cursoNombre = cursoRow?.nombre
+    añoLectivoId = cursoRow?.año_lectivo_id ?? null
+    if (añoLectivoId) {
+      const { data: añoRow } = await supabase
+        .from('años_lectivos')
+        .select('nombre')
+        .eq('id', añoLectivoId)
+        .single()
+      añoNombre = añoRow?.nombre
+    }
+  }
+
+  type PeriodoBoletin = { id: string; nombre: string; orden: number; publicado_at: string | null }
+  const { data: periodosAnoData } = añoLectivoId
+    ? await supabase
+        .from('periodos')
+        .select('id, nombre, orden, publicado_at')
+        .eq('año_lectivo_id', añoLectivoId)
+        .is('deleted_at', null)
+        .order('orden')
+    : { data: null }
+  const periodosBoletin: PeriodoBoletin[] = [...(periodosAnoData ?? [])].sort((a, b) => a.orden - b.orden)
+
+  const { data: observaciones } = await supabase
+    .from('observaciones_boletin')
+    .select('id, periodo_id, texto, updated_at')
+    .eq('alumno_id', alumno_id)
+  const obsMap = new Map((observaciones ?? []).map(o => [o.periodo_id, o]))
+
   // Responsables only see notes from published periods (including the annual period)
   const notasVisible = isResponsableOnly
     ? (notas ?? []).filter(n => {
@@ -234,20 +276,6 @@ export default async function BoletinPage({ params }: Params) {
     const dim = nota.materias_dimensiones as Dimension | null
     if (dim?.tipo === 'conceptual' && nota.valor_literal) return labelConceptual(nota.valor_literal)
     return nota.valor_literal ?? '—'
-  }
-
-  // Curso / año lectivo
-  type Inscripcion = { curso_id: string; activo: boolean; deleted_at: string | null }
-  const inscripcion = ((alumno.alumno_inscripciones ?? []) as Inscripcion[]).find(i => i.activo && !i.deleted_at)
-  let cursoNombre: string | undefined
-  let añoNombre: string | undefined
-  if (inscripcion?.curso_id) {
-    const { data: cursoRow } = await supabase.from('cursos').select('*').eq('id', inscripcion.curso_id).single()
-    cursoNombre = cursoRow?.nombre
-    if (cursoRow?.año_lectivo_id) {
-      const { data: añoRow } = await supabase.from('años_lectivos').select('*').eq('id', cursoRow.año_lectivo_id).single()
-      añoNombre = añoRow?.nombre
-    }
   }
 
   return (
@@ -424,8 +452,48 @@ export default async function BoletinPage({ params }: Params) {
           </div>
         )}
 
+        {/* Observaciones del docente */}
+        {periodosBoletin.length > 0 && (canEditObservaciones || obsMap.size > 0) && (
+          <div className="mt-8">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3 print:text-gray-600">
+              Observaciones del docente
+            </h2>
+            <div className="flex flex-col gap-4">
+              {periodosBoletin
+                .filter(p => {
+                  if (canEditObservaciones) return true
+                  const ov = overrideByPeriodo.get(p.id) ?? null
+                  return isPublicadoParaCurso(p.publicado_at, ov) && obsMap.has(p.id)
+                })
+                .map(p => {
+                  const obs = obsMap.get(p.id)
+                  return (
+                    <div key={p.id}>
+                      <p className="text-xs font-medium text-muted-foreground mb-1 print:text-gray-600">{p.nombre}</p>
+                      <ObservacionEditor
+                        alumnoId={alumno_id}
+                        periodoId={p.id}
+                        periodoNombre={p.nombre}
+                        initialTexto={obs?.texto ?? ''}
+                        canEdit={canEditObservaciones}
+                      />
+                    </div>
+                  )
+                })
+              }
+            </div>
+          </div>
+        )}
+
+        {/* Firmas — print only */}
+        <FirmasSection
+          directorNombre={inst.director_nombre ?? null}
+          directorCargo={inst.director_cargo ?? null}
+          instNombre={inst.nombre}
+        />
+
         {/* Footer */}
-        <div className="mt-8 pt-4 border-t text-xs text-muted-foreground print:text-gray-500 text-center">
+        <div className="mt-8 pt-4 border-t text-xs text-muted-foreground print:text-gray-500 text-center print:hidden">
           Libreta Digital · {inst.nombre}
         </div>
       </div>
