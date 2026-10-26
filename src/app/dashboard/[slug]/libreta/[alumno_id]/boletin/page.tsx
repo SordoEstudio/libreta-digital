@@ -46,7 +46,6 @@ export default async function BoletinPage({ params }: Params) {
   }
 
   const isResponsableOnly = !isSuperadmin(session) && !hasRole(session, inst.id, 'admin') && !hasRole(session, inst.id, 'docente') && hasRole(session, inst.id, 'responsable')
-  const canEditObservaciones = isSuperadmin(session) || hasRole(session, inst.id, 'admin') || hasRole(session, inst.id, 'docente')
   const backHref = isAlumnoOnly
     ? `/dashboard/${slug}`
     : isResponsableOnly ? `/dashboard/${slug}/mis-alumnos` : `/dashboard/${slug}/alumnos`
@@ -190,18 +189,16 @@ export default async function BoletinPage({ params }: Params) {
     .eq('alumno_id', alumno_id)
   const obsMap = new Map((observaciones ?? []).map(o => [o.periodo_id, o]))
 
-  // Responsables only see notes from published periods (including the annual period)
-  const notasVisible = isResponsableOnly
-    ? (notas ?? []).filter(n => {
-        const ev = n.evaluaciones as Evaluacion | null
-        if (!ev?.periodo_id || !ev?.periodos) return false
-        const ov = overrideByPeriodo.get(ev.periodo_id) ?? null
-        return isPublicadoParaCurso(
-          (ev.periodos as { publicado_at: string | null }).publicado_at,
-          ov
-        )
-      })
-    : (notas ?? [])
+  // Boletín shows only published periods for all roles
+  const notasVisible = (notas ?? []).filter(n => {
+    const ev = n.evaluaciones as Evaluacion | null
+    if (!ev?.periodo_id || !ev?.periodos) return false
+    const ov = overrideByPeriodo.get(ev.periodo_id) ?? null
+    return isPublicadoParaCurso(
+      (ev.periodos as { publicado_at: string | null }).publicado_at,
+      ov
+    )
+  })
 
   const templateColMap = new Map<string, TemplateCol>()
   const materiaDataMap = new Map<string, MateriaData>()
@@ -499,7 +496,7 @@ export default async function BoletinPage({ params }: Params) {
                         periodoId={p.id}
                         periodoNombre={p.nombre}
                         initialTexto={obs?.texto ?? ''}
-                        canEdit={canEditObservaciones}
+                        canEdit={false}
                       />
                     </div>
                   )
@@ -509,34 +506,6 @@ export default async function BoletinPage({ params }: Params) {
           </div>
         )}
 
-        {/* Agregar observaciones — editores, períodos publicados sin obs, screen only */}
-        {canEditObservaciones && periodosBoletin.length > 0 && (
-          <div className="print:hidden mt-6">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-              Agregar observación
-            </h2>
-            <div className="flex flex-col gap-4">
-              {periodosBoletin
-                .filter(p => {
-                  const ov = overrideByPeriodo.get(p.id) ?? null
-                  return isPublicadoParaCurso(p.publicado_at, ov) && !obsMap.has(p.id)
-                })
-                .map(p => (
-                  <div key={p.id}>
-                    <p className="text-xs font-medium text-muted-foreground mb-1">{p.nombre}</p>
-                    <ObservacionEditor
-                      alumnoId={alumno_id}
-                      periodoId={p.id}
-                      periodoNombre={p.nombre}
-                      initialTexto=""
-                      canEdit
-                    />
-                  </div>
-                ))
-              }
-            </div>
-          </div>
-        )}
 
         {/* Firmas — print only */}
         <FirmasSection
