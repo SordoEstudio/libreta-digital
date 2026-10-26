@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getSession, isSuperadmin, hasAnyRole } from '@/lib/auth'
 import { ok, Err } from '@/lib/api'
 import { notificarNotaCargada } from '@/lib/notificaciones'
+import { logActividad } from '@/lib/actividad'
 import { isCerradoParaCurso, PeriodoCierreOverride } from '@/lib/cierre-periodo'
 
 const BulkSchema = z.object({
@@ -116,6 +117,20 @@ export async function POST(request: NextRequest) {
     .select('nombre, logo_rectangular_url')
     .eq('id', evaluacion.institucion_id)
     .single()
+
+  logActividad({
+    institucion_id: evaluacion.institucion_id,
+    persona_id: session.persona_id,
+    accion: 'cargar_notas',
+    entidad: 'evaluaciones',
+    entidad_id: evaluacion_id,
+    metadata: {
+      evaluacion_nombre: evaluacion.nombre,
+      materia_nombre: (mat?.materias_catalogo as { nombre: string } | null)?.nombre ?? '',
+      curso_nombre: mat?.cursos?.nombre ?? '',
+      count: data.length,
+    },
+  })
 
   // Deduplicate notifications by alumno_id — one notif per alumno regardless of dimensions
   const notifByAlumno = new Map<string, typeof data[number]>()

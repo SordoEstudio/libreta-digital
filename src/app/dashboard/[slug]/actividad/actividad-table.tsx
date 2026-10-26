@@ -13,6 +13,11 @@ const ACCION_LABELS: Record<string, string> = {
   invitar_usuario: 'Reenvió invitación',
   confirmar_boletin: 'Confirmó boletín',
   quitar_confirmacion_boletin: 'Quitó confirmación',
+  publicar_periodo: 'Publicó período',
+  despublicar_periodo: 'Despublicó período',
+  publicar_periodo_curso: 'Publicó período (curso)',
+  cargar_notas: 'Cargó notas',
+  cargar_notas_referencia: 'Cargó notas de referencia',
 }
 
 function metadataResumen(accion: string, metadata: Record<string, unknown> | null): string {
@@ -26,6 +31,22 @@ function metadataResumen(accion: string, metadata: Record<string, unknown> | nul
   }
   if (accion === 'cambiar_rol') {
     return metadata.rol_nuevo ? `→ ${metadata.rol_nuevo}` : ''
+  }
+  if (accion === 'publicar_periodo' || accion === 'despublicar_periodo') {
+    return metadata.periodo_nombre ? String(metadata.periodo_nombre) : ''
+  }
+  if (accion === 'publicar_periodo_curso') {
+    const parts: string[] = []
+    if (metadata.periodo_nombre) parts.push(String(metadata.periodo_nombre))
+    if (metadata.curso_nombre) parts.push(String(metadata.curso_nombre))
+    return parts.join(' · ')
+  }
+  if (accion === 'cargar_notas') {
+    const parts: string[] = []
+    if (metadata.materia_nombre) parts.push(String(metadata.materia_nombre))
+    if (metadata.evaluacion_nombre) parts.push(String(metadata.evaluacion_nombre))
+    if (metadata.count) parts.push(`(${metadata.count} notas)`)
+    return parts.join(' · ')
   }
   return ''
 }
