@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { BookOpen, Settings } from 'lucide-react'
 import { BrandingSheet } from './branding-sheet'
 import TerminoRecuperatorioForm from './termino-recuperatorio-form'
+import DirectorForm from './director-form'
 import AñoSelector from './año-selector'
 import NuevoAñoSheet from './periodos/nuevo-año-sheet'
 import NuevoCursoSheet from '../cursos/nuevo-curso-sheet'
@@ -32,7 +33,7 @@ export default async function ConfiguracionPage({ params, searchParams }: Props)
 
   const { data: inst } = await supabase
     .from('instituciones')
-    .select('id, nombre, logo_cuadrado_url, logo_rectangular_url, termino_recuperatorio')
+    .select('id, nombre, logo_cuadrado_url, logo_rectangular_url, termino_recuperatorio, director_nombre, director_cargo')
     .eq('slug', slug)
     .is('deleted_at', null)
     .single()
@@ -269,6 +270,19 @@ export default async function ConfiguracionPage({ params, searchParams }: Props)
         <TerminoRecuperatorioForm
           instId={inst.id}
           value={inst.termino_recuperatorio ?? 'Recuperatorio'}
+        />
+      </div>
+
+      {/* Director/a */}
+      <div className="flex items-center justify-between rounded-lg border px-4 py-3 gap-4 flex-wrap">
+        <div>
+          <p className="text-sm font-medium">Director/a del establecimiento</p>
+          <p className="text-xs text-muted-foreground">Aparece como firma en el boletín impreso</p>
+        </div>
+        <DirectorForm
+          instId={inst.id}
+          directorNombre={inst.director_nombre ?? ''}
+          directorCargo={inst.director_cargo ?? 'Director/a'}
         />
       </div>
 
