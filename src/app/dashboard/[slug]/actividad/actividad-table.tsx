@@ -13,6 +13,7 @@ const ACCION_LABELS: Record<string, string> = {
   invitar_usuario: 'Reenvió invitación',
   confirmar_boletin: 'Confirmó boletín',
   quitar_confirmacion_boletin: 'Quitó confirmación',
+  reabrir_periodo: 'Reabrió período',
   publicar_periodo: 'Publicó período',
   despublicar_periodo: 'Despublicó período',
   publicar_periodo_curso: 'Publicó período (curso)',
@@ -36,7 +37,7 @@ function metadataResumen(accion: string, metadata: Record<string, unknown> | nul
   if (accion === 'cambiar_rol') {
     return metadata.rol_nuevo ? `→ ${metadata.rol_nuevo}` : ''
   }
-  if (accion === 'publicar_periodo' || accion === 'despublicar_periodo') {
+  if (accion === 'reabrir_periodo' || accion === 'publicar_periodo' || accion === 'despublicar_periodo') {
     return metadata.periodo_nombre ? String(metadata.periodo_nombre) : ''
   }
   if (accion === 'publicar_periodo_curso' || accion === 'despublicar_periodo_curso' || accion === 'cerrar_curso' || accion === 'reabrir_curso') {
