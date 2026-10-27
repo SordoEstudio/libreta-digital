@@ -18,6 +18,7 @@ import PublicarAñoButton from './publicar-ano-button'
 import RenombrarPeriodoButton from './renombrar-periodo-button'
 import CierreGranularTable from './cierre-granular-table'
 import { PeriodoCierreCollapsible } from './periodo-cierre-collapsible'
+import { isCerradoParaCurso, isPublicadoParaCurso } from '@/lib/cierre-periodo'
 
 type Params = { params: Promise<{ slug: string }> }
 
@@ -123,30 +124,57 @@ export default async function AñosLectivosPage({ params }: Params) {
             const periodoAnual = todosLosPeriodos.find(p => p.tipo === 'anual') ?? null
 
             const renderPeriodoActions = (p: Periodo, showRename: boolean) => {
+              const cursosAño = cursosByAño.get(año.id) ?? []
+              const overridesP = cierresMap.get(p.id)
+              const cursosEstado = cursosAño.map(c => ({
+                cerrado: isCerradoParaCurso(p.cerrado_at, overridesP?.get(c.id) ?? null),
+                publicado: isPublicadoParaCurso(p.publicado_at, overridesP?.get(c.id) ?? null),
+              }))
+              const hayCursos = cursosEstado.length > 0
+              const todosCerrados = hayCursos && cursosEstado.every(c => c.cerrado)
+              const todosPublicados = hayCursos && cursosEstado.every(c => c.publicado)
+              const algunoPublicado = cursosEstado.some(c => c.publicado)
+              const algunoCerradoOPublicado = cursosEstado.some(c => c.cerrado || c.publicado)
+
+              // Fall back to period-level if no courses
+              const mostrarCerrar = hayCursos ? !todosCerrados : !p.cerrado_at
+              const mostrarPublicar = hayCursos ? (todosCerrados && !todosPublicados) : (!!p.cerrado_at && !p.publicado_at)
+              const mostrarDespublicar = hayCursos ? todosPublicados : !!p.publicado_at
+              const mostrarNotificar = hayCursos ? algunoPublicado : !!p.publicado_at
+              const mostrarReabrir = hayCursos ? algunoCerradoOPublicado : !!p.cerrado_at
+
               const badges = (
                 <>
                   {p.activo && <Badge>Activo</Badge>}
-                  {p.cerrado_at && <Badge variant="secondary">Cerrado</Badge>}
-                  {p.publicado_at && <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200">Publicado</Badge>}
+                  {todosCerrados && !todosPublicados && <Badge variant="secondary">Cerrado</Badge>}
+                  {todosPublicados && <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200">Publicado</Badge>}
+                  {!hayCursos && p.cerrado_at && !p.publicado_at && <Badge variant="secondary">Cerrado</Badge>}
+                  {!hayCursos && p.publicado_at && <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200">Publicado</Badge>}
+                  {hayCursos && !todosCerrados && algunoCerradoOPublicado && <Badge variant="outline" className="text-xs text-muted-foreground">Parcial</Badge>}
                 </>
               )
               const headerActions = isAdmin ? (
                 <div className="flex items-center gap-1">
-                  {!p.cerrado_at && (
+                  {mostrarCerrar && (
                     <CerrarPeriodoSheet instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
                   )}
-                  {p.cerrado_at && !p.publicado_at && (
+                  {mostrarPublicar && (
                     <>
                       <ReabrirPeriodoButton instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
                       <PublicarPeriodoButton instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
                     </>
                   )}
-                  {p.cerrado_at && p.publicado_at && (
+                  {mostrarDespublicar && !mostrarPublicar && (
                     <>
                       <ReabrirPeriodoButton instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
                       <DespublicarPeriodoButton instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
-                      <NotificarPeriodoDialog instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
                     </>
+                  )}
+                  {mostrarNotificar && (
+                    <NotificarPeriodoDialog instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
+                  )}
+                  {mostrarReabrir && !mostrarPublicar && !mostrarDespublicar && (
+                    <ReabrirPeriodoButton instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
                   )}
                   {showRename && (
                     <RenombrarPeriodoButton instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
