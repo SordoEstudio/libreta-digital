@@ -119,5 +119,6 @@ export function isPublicadoParaCurso(
 ): boolean {
   if (override != null && override.abierto_at != null) return false
   if (override != null && override.publicado_at != null) return true
+  if (override != null) return false
   return periodoPublicadoAt != null
 }
