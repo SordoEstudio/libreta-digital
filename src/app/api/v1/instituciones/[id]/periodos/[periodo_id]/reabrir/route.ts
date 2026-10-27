@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getSession, isSuperadmin, hasRole } from '@/lib/auth'
 import { ok, Err } from '@/lib/api'
+import { logActividad } from '@/lib/actividad'
 
 type Params = { params: Promise<{ id: string; periodo_id: string }> }
 
@@ -15,7 +16,7 @@ export async function POST(_request: NextRequest, { params }: Params) {
 
   const { data: periodo, error: periodoErr } = await supabase
     .from('periodos')
-    .select('id')
+    .select('id, nombre')
     .eq('id', periodo_id)
     .eq('institucion_id', institucion_id)
     .is('deleted_at', null)
@@ -24,15 +25,24 @@ export async function POST(_request: NextRequest, { params }: Params) {
 
   const { error: updateErr } = await supabase
     .from('periodos')
-    .update({ cerrado_at: null, cerrado_por: null })
+    .update({ cerrado_at: null, publicado_at: null })
     .eq('id', periodo_id)
   if (updateErr) return Err.server(updateErr.message)
 
-  // Reset per-curso close state
+  // Reset all per-curso overrides
   await supabase
     .from('periodo_cierre_cursos')
     .delete()
     .eq('periodo_id', periodo_id)
+
+  void logActividad({
+    institucion_id,
+    persona_id: session.persona_id,
+    accion: 'reabrir_periodo',
+    entidad: 'periodos',
+    entidad_id: periodo_id,
+    metadata: { periodo_nombre: (periodo as { nombre: string }).nombre },
+  })
 
   return ok({ reabierto: true })
 }
