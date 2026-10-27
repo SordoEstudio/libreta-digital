@@ -14,7 +14,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { isCerradoParaCurso, isPublicadoParaCurso } from '@/lib/cierre-periodo'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Mail } from 'lucide-react'
 
 interface Props {
   instId: string
@@ -32,13 +32,14 @@ interface Props {
   periodoPublicadoAt: string | null
 }
 
-type Action = 'cerrar' | 'publicar' | 'reabrir' | 'despublicar'
+type Action = 'cerrar' | 'publicar' | 'reabrir' | 'despublicar' | 'notificar'
 
 const ACTION_LABEL: Record<Action, string> = {
   cerrar: 'Cerrado',
   publicar: 'Publicado',
   reabrir: 'Reabierto',
   despublicar: 'Despublicado',
+  notificar: 'Notificado',
 }
 
 export default function CierreGranularTable({
@@ -51,24 +52,33 @@ export default function CierreGranularTable({
   const router = useRouter()
   const [loading, setLoading] = useState<string | null>(null)
 
-  async function doAction(cursoId: string, action: Action): Promise<boolean> {
+  async function doAction(cursoId: string, action: Action): Promise<{ ok: boolean; enviados?: number; errores?: number }> {
     const res = await fetch(
       `/api/v1/instituciones/${instId}/periodos/${periodoId}/cursos/${cursoId}/${action}`,
       { method: 'POST' }
     )
-    return res.ok
+    if (action === 'notificar' && res.ok) {
+      const json = await res.json()
+      return { ok: true, enviados: json.data?.enviados ?? 0, errores: json.data?.errores ?? 0 }
+    }
+    return { ok: res.ok }
   }
 
   async function handleAction(cursoId: string, action: Action) {
     setLoading(`${cursoId}-${action}`)
     try {
-      const ok = await doAction(cursoId, action)
-      if (!ok) {
+      const result = await doAction(cursoId, action)
+      if (!result.ok) {
         toast.error('Error al realizar la acción')
         return
       }
-      toast.success(`Curso ${ACTION_LABEL[action].toLowerCase()}`)
-      router.refresh()
+      if (action === 'notificar') {
+        toast.success(`${result.enviados} email${result.enviados !== 1 ? 's' : ''} enviados`)
+        if ((result.errores ?? 0) > 0) toast.error(`${result.errores} errores al enviar`)
+      } else {
+        toast.success(`Curso ${ACTION_LABEL[action].toLowerCase()}`)
+        router.refresh()
+      }
     } catch {
       toast.error('Error de red')
     } finally {
@@ -84,19 +94,27 @@ export default function CierreGranularTable({
       if (action === 'publicar') return cerrado && !publicado
       if (action === 'reabrir') return cerrado || publicado
       if (action === 'despublicar') return publicado
+      if (action === 'notificar') return publicado
       return false
     })
     if (applicable.length === 0) return
     setLoading(`bulk-${action}`)
     try {
       const results = await Promise.allSettled(applicable.map(c => doAction(c.id, action)))
-      const failed = results.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value)).length
-      if (failed === 0) {
-        toast.success(`${applicable.length} curso${applicable.length !== 1 ? 's' : ''} ${ACTION_LABEL[action].toLowerCase()}${applicable.length !== 1 ? 's' : ''}`)
+      if (action === 'notificar') {
+        const totalEnviados = results.reduce((sum, r) => sum + (r.status === 'fulfilled' ? (r.value.enviados ?? 0) : 0), 0)
+        const totalErrores = results.reduce((sum, r) => sum + (r.status === 'fulfilled' ? (r.value.errores ?? 0) : 0), 0)
+        toast.success(`${totalEnviados} email${totalEnviados !== 1 ? 's' : ''} enviados`)
+        if (totalErrores > 0) toast.error(`${totalErrores} errores al enviar`)
       } else {
-        toast.warning(`${applicable.length - failed} ok, ${failed} con error`)
+        const failed = results.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.ok)).length
+        if (failed === 0) {
+          toast.success(`${applicable.length} curso${applicable.length !== 1 ? 's' : ''} ${ACTION_LABEL[action].toLowerCase()}${applicable.length !== 1 ? 's' : ''}`)
+        } else {
+          toast.warning(`${applicable.length - failed} ok, ${failed} con error`)
+        }
+        router.refresh()
       }
-      router.refresh()
     } catch {
       toast.error('Error de red')
     } finally {
@@ -112,12 +130,13 @@ export default function CierreGranularTable({
   const hasPublicable = cursos.some(c => isCerradoParaCurso(periodoCerradoAt, c.override) && !isPublicadoParaCurso(periodoPublicadoAt, c.override))
   const hasReabrible = cursos.some(c => isCerradoParaCurso(periodoCerradoAt, c.override) || isPublicadoParaCurso(periodoPublicadoAt, c.override))
   const hasDespublicable = cursos.some(c => isPublicadoParaCurso(periodoPublicadoAt, c.override))
+  const hasNotificable = cursos.some(c => isPublicadoParaCurso(periodoPublicadoAt, c.override))
   const isBulkLoading = loading?.startsWith('bulk-') ?? false
 
   return (
     <div className="flex flex-col gap-2">
       {/* Bulk actions */}
-      {(hasCerrable || hasPublicable || hasReabrible || hasDespublicable) && (
+      {(hasCerrable || hasPublicable || hasReabrible || hasDespublicable || hasNotificable) && (
         <div className="flex items-center gap-1.5 flex-wrap">
           <span className="text-xs text-muted-foreground mr-1">Todos:</span>
           {hasCerrable && (
@@ -142,6 +161,14 @@ export default function CierreGranularTable({
             <Button variant="outline" size="sm" disabled={loading !== null} onClick={() => handleBulkAction('reabrir')}>
               {loading === 'bulk-reabrir' && <Loader2 data-icon="inline-start" className="animate-spin" />}
               Reabrir todos
+            </Button>
+          )}
+          {hasNotificable && (
+            <Button variant="outline" size="sm" disabled={loading !== null} onClick={() => handleBulkAction('notificar')}>
+              {loading === 'bulk-notificar'
+                ? <Loader2 data-icon="inline-start" className="animate-spin" />
+                : <Mail data-icon="inline-start" />}
+              Notificar todos
             </Button>
           )}
           {isBulkLoading && <Loader2 className="size-4 animate-spin text-muted-foreground" />}
@@ -195,6 +222,12 @@ export default function CierreGranularTable({
                     )}
                     {publicado && (
                       <>
+                        <Button variant="outline" size="sm" disabled={loading !== null} onClick={() => handleAction(curso.id, 'notificar')}>
+                          {loading === `${curso.id}-notificar`
+                            ? <Loader2 data-icon="inline-start" className="animate-spin" />
+                            : <Mail data-icon="inline-start" />}
+                          Notificar
+                        </Button>
                         <Button variant="outline" size="sm" disabled={loading !== null} onClick={() => handleAction(curso.id, 'despublicar')}>
                           {loading === `${curso.id}-despublicar` && <Loader2 data-icon="inline-start" className="animate-spin" />}
                           Despublicar
