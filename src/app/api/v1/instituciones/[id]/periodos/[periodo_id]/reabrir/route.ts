@@ -35,7 +35,7 @@ export async function POST(_request: NextRequest, { params }: Params) {
     .delete()
     .eq('periodo_id', periodo_id)
 
-  void logActividad({
+  await logActividad({
     institucion_id,
     persona_id: session.persona_id,
     accion: 'reabrir_periodo',

@@ -63,7 +63,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     : rol !== undefined ? 'cambiar_rol'
     : 'editar_usuario'
 
-  logActividad({
+  await logActividad({
     institucion_id,
     persona_id: session.persona_id,
     accion,

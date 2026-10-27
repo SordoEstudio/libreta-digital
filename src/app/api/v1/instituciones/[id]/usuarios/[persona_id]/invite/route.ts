@@ -37,7 +37,7 @@ export async function POST(_request: NextRequest, { params }: Params) {
 
   if (error) return Err.server(error.message)
 
-  logActividad({
+  await logActividad({
     institucion_id,
     persona_id: session.persona_id,
     accion: 'invitar_usuario',

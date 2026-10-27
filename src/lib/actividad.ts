@@ -9,9 +9,9 @@ export type ActividadParams = {
   metadata?: Record<string, unknown> | null
 }
 
-export function logActividad(params: ActividadParams): void {
+export async function logActividad(params: ActividadParams): Promise<void> {
   const admin = createAdminClient()
-  void admin.from('actividad_log').insert({
+  await admin.from('actividad_log').insert({
     institucion_id: params.institucion_id,
     persona_id: params.persona_id ?? null,
     accion: params.accion,

@@ -181,7 +181,7 @@ export async function POST(request: NextRequest, { params }: Params) {
     logo_url: inst?.logo_rectangular_url ?? undefined,
   })
 
-  logActividad({
+  await logActividad({
     institucion_id,
     persona_id: session.persona_id,
     accion: 'crear_usuario',

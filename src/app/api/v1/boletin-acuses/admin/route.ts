@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
 
   if (error) return Err.server(error.message)
 
-  logActividad({
+  await logActividad({
     institucion_id,
     persona_id: session.persona_id,
     accion: 'confirmar_boletin',
@@ -79,7 +79,7 @@ export async function DELETE(request: NextRequest) {
 
   if (error) return Err.server(error.message)
 
-  logActividad({
+  await logActividad({
     institucion_id,
     persona_id: session.persona_id,
     accion: 'quitar_confirmacion_boletin',

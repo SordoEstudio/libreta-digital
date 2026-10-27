@@ -28,7 +28,7 @@ export async function POST(_request: NextRequest, { params }: Params) {
     .eq('id', periodo_id)
   if (error) return Err.server(error.message)
 
-  logActividad({
+  await logActividad({
     institucion_id,
     persona_id: session.persona_id,
     accion: 'despublicar_periodo',

@@ -51,7 +51,7 @@ export async function POST(_request: NextRequest, { params }: Params) {
     )
   if (upsertErr) return Err.server(upsertErr.message)
 
-  logActividad({
+  await logActividad({
     institucion_id,
     persona_id: session.persona_id,
     accion: 'reabrir_curso',

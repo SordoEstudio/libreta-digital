@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
 
   if (error) return Err.server(error.message)
 
-  logActividad({
+  await logActividad({
     institucion_id: evRef.institucion_id,
     persona_id: session.persona_id,
     accion: 'cargar_notas_referencia',
