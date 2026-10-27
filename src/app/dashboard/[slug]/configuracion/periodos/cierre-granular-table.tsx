@@ -230,16 +230,10 @@ export default function CierreGranularTable({
         {(hasCerrable || hasPublicable || hasReabrible || hasDespublicable || hasNotificable) && (
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="text-xs text-muted-foreground mr-1">Todos:</span>
-            {hasCerrable && (
-              <Button variant="outline" size="sm" disabled={loading !== null} onClick={() => queueBulkAction('cerrar')}>
-                {loading === 'bulk-cerrar' && <Loader2 data-icon="inline-start" className="animate-spin" />}
-                Cerrar todos
-              </Button>
-            )}
-            {hasPublicable && (
-              <Button variant="outline" size="sm" disabled={loading !== null} onClick={() => queueBulkAction('publicar')}>
-                {loading === 'bulk-publicar' && <Loader2 data-icon="inline-start" className="animate-spin" />}
-                Publicar todos
+            {hasReabrible && (
+              <Button variant="outline" size="sm" disabled={loading !== null} onClick={() => queueBulkAction('reabrir')}>
+                {loading === 'bulk-reabrir' && <Loader2 data-icon="inline-start" className="animate-spin" />}
+                Reabrir todos
               </Button>
             )}
             {hasDespublicable && (
@@ -248,14 +242,20 @@ export default function CierreGranularTable({
                 Despublicar todos
               </Button>
             )}
-            {hasReabrible && (
-              <Button variant="outline" size="sm" disabled={loading !== null} onClick={() => queueBulkAction('reabrir')}>
-                {loading === 'bulk-reabrir' && <Loader2 data-icon="inline-start" className="animate-spin" />}
-                Reabrir todos
+            {hasCerrable && (
+              <Button size="sm" disabled={loading !== null} onClick={() => queueBulkAction('cerrar')}>
+                {loading === 'bulk-cerrar' && <Loader2 data-icon="inline-start" className="animate-spin" />}
+                Cerrar todos
+              </Button>
+            )}
+            {hasPublicable && (
+              <Button size="sm" disabled={loading !== null} onClick={() => queueBulkAction('publicar')}>
+                {loading === 'bulk-publicar' && <Loader2 data-icon="inline-start" className="animate-spin" />}
+                Publicar todos
               </Button>
             )}
             {hasNotificable && (
-              <Button variant="outline" size="sm" disabled={loading !== null} onClick={() => queueBulkAction('notificar')}>
+              <Button size="sm" disabled={loading !== null} onClick={() => queueBulkAction('notificar')}>
                 {loading === 'bulk-notificar'
                   ? <Loader2 data-icon="inline-start" className="animate-spin" />
                   : <Mail data-icon="inline-start" />}
@@ -294,38 +294,38 @@ export default function CierreGranularTable({
                   <TableCell>
                     <div className="flex items-center gap-1">
                       {!cerrado && !publicado && (
-                        <Button variant="outline" size="sm" disabled={loading !== null} onClick={() => queueAction(curso.id, 'cerrar')}>
+                        <Button size="sm" disabled={loading !== null} onClick={() => queueAction(curso.id, 'cerrar')}>
                           {loading === `${curso.id}-cerrar` && <Loader2 data-icon="inline-start" className="animate-spin" />}
                           Cerrar
                         </Button>
                       )}
                       {cerrado && !publicado && (
                         <>
-                          <Button variant="outline" size="sm" disabled={loading !== null} onClick={() => queueAction(curso.id, 'publicar')}>
-                            {loading === `${curso.id}-publicar` && <Loader2 data-icon="inline-start" className="animate-spin" />}
-                            Publicar
-                          </Button>
                           <Button variant="outline" size="sm" disabled={loading !== null} onClick={() => queueAction(curso.id, 'reabrir')}>
                             {loading === `${curso.id}-reabrir` && <Loader2 data-icon="inline-start" className="animate-spin" />}
                             Reabrir
+                          </Button>
+                          <Button size="sm" disabled={loading !== null} onClick={() => queueAction(curso.id, 'publicar')}>
+                            {loading === `${curso.id}-publicar` && <Loader2 data-icon="inline-start" className="animate-spin" />}
+                            Publicar
                           </Button>
                         </>
                       )}
                       {publicado && (
                         <>
-                          <Button variant="outline" size="sm" disabled={loading !== null} onClick={() => queueAction(curso.id, 'notificar')}>
-                            {loading === `${curso.id}-notificar`
-                              ? <Loader2 data-icon="inline-start" className="animate-spin" />
-                              : <Mail data-icon="inline-start" />}
-                            Notificar
+                          <Button variant="outline" size="sm" disabled={loading !== null} onClick={() => queueAction(curso.id, 'reabrir')}>
+                            {loading === `${curso.id}-reabrir` && <Loader2 data-icon="inline-start" className="animate-spin" />}
+                            Reabrir
                           </Button>
                           <Button variant="outline" size="sm" disabled={loading !== null} onClick={() => queueAction(curso.id, 'despublicar')}>
                             {loading === `${curso.id}-despublicar` && <Loader2 data-icon="inline-start" className="animate-spin" />}
                             Despublicar
                           </Button>
-                          <Button variant="outline" size="sm" disabled={loading !== null} onClick={() => queueAction(curso.id, 'reabrir')}>
-                            {loading === `${curso.id}-reabrir` && <Loader2 data-icon="inline-start" className="animate-spin" />}
-                            Reabrir
+                          <Button size="sm" disabled={loading !== null} onClick={() => queueAction(curso.id, 'notificar')}>
+                            {loading === `${curso.id}-notificar`
+                              ? <Loader2 data-icon="inline-start" className="animate-spin" />
+                              : <Mail data-icon="inline-start" />}
+                            Notificar
                           </Button>
                         </>
                       )}
