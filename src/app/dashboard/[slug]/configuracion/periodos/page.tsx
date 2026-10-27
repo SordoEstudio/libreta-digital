@@ -17,6 +17,7 @@ import CerrarAñoButton from './cerrar-ano-button'
 import PublicarAñoButton from './publicar-ano-button'
 import RenombrarPeriodoButton from './renombrar-periodo-button'
 import CierreGranularTable from './cierre-granular-table'
+import { PeriodoCierreCollapsible } from './periodo-cierre-collapsible'
 
 type Params = { params: Promise<{ slug: string }> }
 
@@ -121,54 +122,61 @@ export default async function AñosLectivosPage({ params }: Params) {
             const periodosRegulares = todosLosPeriodos.filter(p => p.tipo !== 'anual').sort((a, b) => a.orden - b.orden)
             const periodoAnual = todosLosPeriodos.find(p => p.tipo === 'anual') ?? null
 
-            const renderPeriodoActions = (p: Periodo, showRename: boolean) => (
-              <div key={p.id} className="flex flex-col gap-3">
-                <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-medium">{p.nombre}</span>
-                    {p.activo && <Badge>Activo</Badge>}
-                    {p.cerrado_at && <Badge variant="secondary">Cerrado</Badge>}
-                    {p.publicado_at && <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200">Publicado</Badge>}
-                  </div>
-                  {isAdmin && (
-                    <div className="flex items-center gap-1">
-                      {!p.cerrado_at && (
-                        <CerrarPeriodoSheet instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
-                      )}
-                      {p.cerrado_at && !p.publicado_at && (
-                        <>
-                          <ReabrirPeriodoButton instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
-                          <PublicarPeriodoButton instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
-                        </>
-                      )}
-                      {p.cerrado_at && p.publicado_at && (
-                        <>
-                          <ReabrirPeriodoButton instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
-                          <DespublicarPeriodoButton instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
-                          <NotificarPeriodoDialog instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
-                        </>
-                      )}
-                      {showRename && (
-                        <RenombrarPeriodoButton instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
-                      )}
-                    </div>
+            const renderPeriodoActions = (p: Periodo, showRename: boolean) => {
+              const badges = (
+                <>
+                  {p.activo && <Badge>Activo</Badge>}
+                  {p.cerrado_at && <Badge variant="secondary">Cerrado</Badge>}
+                  {p.publicado_at && <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200">Publicado</Badge>}
+                </>
+              )
+              const headerActions = isAdmin ? (
+                <div className="flex items-center gap-1">
+                  {!p.cerrado_at && (
+                    <CerrarPeriodoSheet instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
+                  )}
+                  {p.cerrado_at && !p.publicado_at && (
+                    <>
+                      <ReabrirPeriodoButton instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
+                      <PublicarPeriodoButton instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
+                    </>
+                  )}
+                  {p.cerrado_at && p.publicado_at && (
+                    <>
+                      <ReabrirPeriodoButton instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
+                      <DespublicarPeriodoButton instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
+                      <NotificarPeriodoDialog instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
+                    </>
+                  )}
+                  {showRename && (
+                    <RenombrarPeriodoButton instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
                   )}
                 </div>
-                {isAdmin && (
-                  <CierreGranularTable
-                    instId={inst.id}
-                    periodoId={p.id}
-                    cursos={(cursosByAño.get(año.id) ?? []).map(c => ({
-                      id: c.id,
-                      nombre: c.nombre,
-                      override: cierresMap.get(p.id)?.get(c.id) ?? null,
-                    }))}
-                    periodoCerradoAt={p.cerrado_at}
-                    periodoPublicadoAt={p.publicado_at}
-                  />
-                )}
-              </div>
-            )
+              ) : null
+
+              return (
+                <PeriodoCierreCollapsible
+                  key={p.id}
+                  nombre={p.nombre}
+                  badges={badges}
+                  headerActions={headerActions}
+                >
+                  {isAdmin && (
+                    <CierreGranularTable
+                      instId={inst.id}
+                      periodoId={p.id}
+                      cursos={(cursosByAño.get(año.id) ?? []).map(c => ({
+                        id: c.id,
+                        nombre: c.nombre,
+                        override: cierresMap.get(p.id)?.get(c.id) ?? null,
+                      }))}
+                      periodoCerradoAt={p.cerrado_at}
+                      periodoPublicadoAt={p.publicado_at}
+                    />
+                  )}
+                </PeriodoCierreCollapsible>
+              )
+            }
 
             return (
               <Card key={año.id}>
