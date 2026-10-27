@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
     .eq('id', evaluacion.institucion_id)
     .single()
 
-  logActividad({
+  await logActividad({
     institucion_id: evaluacion.institucion_id,
     persona_id: session.persona_id,
     accion: 'cargar_notas',

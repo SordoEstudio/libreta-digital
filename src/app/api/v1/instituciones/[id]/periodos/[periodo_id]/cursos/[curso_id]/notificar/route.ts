@@ -95,7 +95,7 @@ export async function POST(_request: NextRequest, { params }: Params) {
   const enviados = results.filter(r => r.status === 'fulfilled' && r.value).length
   const errores = results.length - enviados
 
-  logActividad({
+  await logActividad({
     institucion_id,
     persona_id: session.persona_id,
     accion: 'notificar_curso',
