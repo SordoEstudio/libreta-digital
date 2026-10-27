@@ -1,6 +1,6 @@
 # QA — Nuevas funcionalidades (Octubre 2026)
 
-**Alcance:** Dimensiones por materia · Notas por dimensión (multi-columna) · Peso opcional (promedio directo) · Plantillas de dimensiones · Recuperatorios por dimensión · Notas de referencia (con dimensiones y período) · Cuaderno del docente · Cierre de período · Comunicados con confirmación · Cuaderno v2 (edición inline de proceso, acciones por columna) · Unidades por materia · Cuaderno v3 (gradebook unificado: libreta inline, recuperatorios, smart defaults, drill-down) · Módulo de contenidos (docente editor + responsable viewer) · Boletín unificado + mobile (Compartir/Guardar PDF) · Mobile UX (header, bottom bar por rol, orientation guard) · Home responsable rediseñado · Boletín acuse de recibo digital  
+**Alcance:** Dimensiones por materia · Notas por dimensión (multi-columna) · Peso opcional (promedio directo) · Plantillas de dimensiones · Recuperatorios por dimensión · Notas de referencia (con dimensiones y período) · Cuaderno del docente · Cierre de período global + cierre granular por curso · Comunicados con confirmación · Cuaderno v2 (edición inline de proceso, acciones por columna) · Unidades por materia · Cuaderno v3 (gradebook unificado: libreta inline, recuperatorios, smart defaults, drill-down) · Módulo de contenidos (docente editor + responsable viewer) · Boletín unificado + mobile (Compartir/Guardar PDF) · Mobile UX (header, bottom bar por rol, orientation guard) · Home responsable rediseñado · Boletín acuse de recibo digital · Registro de actividad · Observaciones y firmas del boletín (pendiente)  
 **Roles necesarios:** superadmin, admin, docente, responsable (con email real para probar envíos)  
 **Entorno:** staging o local con Supabase + Resend en modo test
 
@@ -235,6 +235,48 @@
 
 ### 5.5 Restricciones
 - [ ] Docente intenta cerrar período → opción no disponible (solo admin)
+
+### 5.6 Cierre granular — tab "Por curso"
+
+**Ruta:** `Configuración → Períodos → [período] → tab "Por curso"`
+
+- [ ] Admin abre período → tab "Por curso" visible junto a "Global"
+- [ ] Tabla muestra una fila por curso con columnas: Curso · Estado · Acciones
+- [ ] Estado inicial de cursos = badge "Abierto" (cuando período no cerrado globalmente)
+
+### 5.7 Cerrar curso individual
+
+- [ ] Período globalmente abierto → botón "Cerrar" visible para cada curso
+- [ ] Click "Cerrar" en un curso → AlertDialog con preview de datos faltantes (mismo que cierre global)
+  - Preview muestra alumnos sin notas y materias sin asistencia del curso
+  - Si todos los datos están completos → banner verde "Todos los datos están completos."
+  - Si faltan datos → banner ámbar con lista de materias y alumnos faltantes
+- [ ] Confirmar cierre → badge del curso cambia a "Cerrado" (warning)
+- [ ] Los otros cursos del período **no cambian** de estado
+- [ ] Notas del curso cerrado quedan bloqueadas; notas de otros cursos siguen editables
+
+### 5.8 Publicar y notificar curso individual
+
+- [ ] Curso cerrado → botones "Reabrir" y "Publicar" visibles
+- [ ] Click "Publicar" → AlertDialog confirma "El boletín quedará visible para los responsables."
+- [ ] Confirmar → badge cambia a "Publicado" (verde)
+- [ ] Botones de estado publicado: "Reabrir" · "Despublicar" · "Notificar"
+- [ ] Click "Notificar" → emails enviados a responsables de los alumnos del curso → toast "N emails enviados"
+- [ ] Responsables de alumnos de ese curso reciben email; responsables de otros cursos **no reciben**
+
+### 5.9 Despublicar y reabrir curso
+
+- [ ] Curso publicado → click "Despublicar" → AlertDialog → confirmar → badge vuelve a "Cerrado"
+- [ ] Notas del curso vuelven a estar bloqueadas (cerrado, no abierto)
+- [ ] Curso cerrado o publicado → click "Reabrir" → AlertDialog → confirmar → badge vuelve a "Abierto"
+- [ ] Reabierto: notas del curso desbloqueadas; período global puede seguir cerrado/publicado sin afectar este curso
+
+### 5.10 Override individual vs. estado global
+
+- [ ] Período globalmente cerrado, curso con override `abierto_at` → badge del curso = "Abierto"
+- [ ] Período globalmente publicado, curso con override `abierto_at` → badge del curso = "Abierto" (override prevalece)
+- [ ] Período globalmente publicado sin overrides → todos los cursos muestran "Publicado" en tab Por curso
+- [ ] Acciones de cierre granular logueadas en `/actividad` (ver §18): `cerrar_curso`, `reabrir_curso`, `publicar_periodo_curso`, `despublicar_periodo_curso`, `notificar_curso`
 
 ---
 
@@ -907,6 +949,112 @@
 - [ ] Docente intenta acceder a `/acuses` → redirect a `/dashboard/[slug]`
 - [ ] Responsable intenta `POST /api/v1/boletin-acuses` con `alumno_id` de un alumno que no es el suyo → 400 o 403
 - [ ] Responsable intenta confirmar período no cerrado → 400
+
+---
+
+## 18. Registro de actividad
+
+**Ruta:** `/dashboard/[slug]/actividad` (link "Actividad" en sidebar, sección Configuración)  
+**Acceso:** solo admin y superadmin
+
+### 18.1 Acceso y restricciones
+
+- [ ] Admin ve link "Actividad" en sidebar → click → `/dashboard/[slug]/actividad`
+- [ ] Docente → **no ve** el link; acceso directo a la URL → redirect a `/dashboard/[slug]`
+- [ ] Responsable → mismo redirect
+- [ ] Página muestra título "Registro de actividad" + "Últimas N acciones registradas"
+
+### 18.2 Tabla de acciones
+
+- [ ] Tabla con columnas: Fecha · Persona · Acción · Detalle
+- [ ] Acciones muestran texto legible (ej. "Cerró curso" no "cerrar_curso")
+- [ ] Detalle muestra contexto (ej. "1er Bimestre · 1°A" para cerrar_curso)
+- [ ] Filas ordenadas por fecha desc (más reciente primero)
+- [ ] Vacío (sin acciones aún): sin error, tabla vacía o mensaje informativo
+
+### 18.3 Filtro de búsqueda
+
+- [ ] Input de búsqueda visible sobre la tabla
+- [ ] Escribir nombre de persona → tabla filtra filas que contienen ese texto (filtro client-side)
+- [ ] Escribir nombre de acción (ej. "Cerró") → filtra correctamente
+- [ ] Borrar texto → todas las filas reaparecen
+- [ ] Botón X para limpiar el filtro
+
+### 18.4 Acciones que generan entradas
+
+Realizar cada acción y verificar que aparece en `/actividad`:
+
+- [ ] **Crear usuario** → entrada "Creó usuario" con nombre, email y rol
+- [ ] **Editar usuario** → entrada "Editó usuario"
+- [ ] **Cambiar rol** → entrada "Cambió rol" con nuevo rol
+- [ ] **Cerrar período global** → entrada "Cerró período" con nombre del período *(nota: acción no mapeada en ACCION_LABELS — puede mostrar acción cruda)*
+- [ ] **Publicar período global** → entrada "Publicó período" con nombre
+- [ ] **Reabrir período global** → entrada "Reabrió período"
+- [ ] **Cerrar curso** (granular) → "Cerró curso" con período y nombre de curso
+- [ ] **Publicar curso** (granular) → "Publicó período (curso)"
+- [ ] **Reabrir curso** (granular) → "Reabrió curso"
+- [ ] **Despublicar curso** (granular) → "Despublicó período (curso)"
+- [ ] **Notificar curso** (granular) → "Notificó curso" con cantidad de emails
+- [ ] **Cargar notas** → "Cargó notas" con materia, evaluación y cantidad
+
+### 18.5 Límite de registros
+
+- [ ] Con más de 500 acciones → página muestra solo las últimas 500 (no 500+1)
+- [ ] "Últimas 500 acciones registradas" en el subtítulo
+
+---
+
+## 19. Observaciones y firmas del boletín
+
+> **Estado:** Pendiente de implementación (spec en `docs/superpowers/specs/2026-10-24-observaciones-firmas-design.md`).  
+> Estas pruebas se ejecutan una vez que la feature esté implementada.
+
+**Prerequisito:** migration `20261024000005_observaciones_firmas.sql` aplicada; columnas `director_nombre` y `director_cargo` en `instituciones`.
+
+### 19.1 Configuración de Director/a
+
+- [ ] Admin va a `Configuración` → sección "Director/a del establecimiento" visible
+- [ ] Campos: Cargo (default "Director/a") y Nombre (libre)
+- [ ] Completar "Lic. María García" y guardar → toast confirmación
+- [ ] Recargar página → valores persisten
+
+### 19.2 Sección Observaciones — editor (admin/docente)
+
+**Ruta:** `/dashboard/[slug]/libreta/[alumno_id]/boletin`
+
+- [ ] Admin/docente abre boletín → sección "Observaciones del docente" visible debajo de la tabla
+- [ ] Una fila por período del año activo
+- [ ] Período sin observación → botón "Agregar" → textarea inline aparece
+- [ ] Escribir "Muy buen desempeño." → "Guardar"
+- [ ] **Esperado:** texto aparece en la sección, botón cambia a "Editar"
+- [ ] "Editar" → textarea precargada con texto existente → modificar → "Guardar" → texto actualizado
+- [ ] "Eliminar" (aparece si hay texto) → observación eliminada, vuelve a "Agregar"
+- [ ] Observación máx. 1000 caracteres (superar el límite → error o truncado)
+
+### 19.3 Observaciones — vista responsable
+
+- [ ] Responsable abre boletín → sección "Observaciones del docente" visible **solo para períodos publicados**
+- [ ] Período publicado con observación → texto visible (sin botones editar/eliminar)
+- [ ] Período publicado sin observación → sección no aparece para ese período
+- [ ] Período no publicado → observación **no aparece** (aunque exista en DB)
+- [ ] Responsable intenta `POST /api/v1/observaciones-boletin` → 403
+
+### 19.4 Aislamiento de permisos
+
+- [ ] Docente con materia en el curso del alumno → puede escribir observación
+- [ ] Docente sin materia en el curso del alumno → no ve botón "Agregar"/  "Editar" (o recibe 403 si intenta API)
+- [ ] Admin de institución A no puede escribir observación de alumno de institución B
+
+### 19.5 Sección de firmas — impresión
+
+- [ ] En web: sección de firmas **no visible** (class `hidden print:block`)
+- [ ] Al imprimir (Ctrl+P o "Guardar PDF"):
+  - Área de firmas aparece al pie del documento
+  - Línea izquierda: "Firma del/la Responsable:" + guión de firma
+  - Línea derecha: "Firma del/la [director_cargo]:" + guión de firma + nombre del director
+  - Fecha generada en el momento (formato `dd/mm/aaaa` español)
+- [ ] Si `director_nombre` es null → línea derecha muestra solo `[director_cargo] · [inst.nombre]`
+- [ ] Fecha en firmas corresponde a la fecha del día (no almacenada)
 
 ---
 
