@@ -16,6 +16,10 @@ const ACCION_LABELS: Record<string, string> = {
   publicar_periodo: 'Publicó período',
   despublicar_periodo: 'Despublicó período',
   publicar_periodo_curso: 'Publicó período (curso)',
+  despublicar_periodo_curso: 'Despublicó período (curso)',
+  cerrar_curso: 'Cerró curso',
+  reabrir_curso: 'Reabrió curso',
+  notificar_curso: 'Notificó curso',
   cargar_notas: 'Cargó notas',
   cargar_notas_referencia: 'Cargó notas de referencia',
 }
@@ -35,10 +39,17 @@ function metadataResumen(accion: string, metadata: Record<string, unknown> | nul
   if (accion === 'publicar_periodo' || accion === 'despublicar_periodo') {
     return metadata.periodo_nombre ? String(metadata.periodo_nombre) : ''
   }
-  if (accion === 'publicar_periodo_curso') {
+  if (accion === 'publicar_periodo_curso' || accion === 'despublicar_periodo_curso' || accion === 'cerrar_curso' || accion === 'reabrir_curso') {
     const parts: string[] = []
     if (metadata.periodo_nombre) parts.push(String(metadata.periodo_nombre))
     if (metadata.curso_nombre) parts.push(String(metadata.curso_nombre))
+    return parts.join(' · ')
+  }
+  if (accion === 'notificar_curso') {
+    const parts: string[] = []
+    if (metadata.periodo_nombre) parts.push(String(metadata.periodo_nombre))
+    if (metadata.curso_nombre) parts.push(String(metadata.curso_nombre))
+    if (metadata.enviados != null) parts.push(`(${metadata.enviados} emails)`)
     return parts.join(' · ')
   }
   if (accion === 'cargar_notas') {

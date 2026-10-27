@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getSession, isSuperadmin, hasRole } from '@/lib/auth'
 import { ok, Err } from '@/lib/api'
 import { sendCierrePeriodo } from '@/lib/email'
+import { logActividad } from '@/lib/actividad'
 
 type Params = { params: Promise<{ id: string; periodo_id: string; curso_id: string }> }
 
@@ -32,6 +33,14 @@ export async function POST(_request: NextRequest, { params }: Params) {
     .is('deleted_at', null)
     .single()
   if (!inst) return Err.server('Institución no encontrada')
+
+  const { data: cursoData } = await supabase
+    .from('cursos')
+    .select('nombre')
+    .eq('id', curso_id)
+    .is('deleted_at', null)
+    .maybeSingle()
+  const cursoNombre = (cursoData as { nombre: string } | null)?.nombre ?? curso_id
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
 
@@ -85,6 +94,15 @@ export async function POST(_request: NextRequest, { params }: Params) {
 
   const enviados = results.filter(r => r.status === 'fulfilled' && r.value).length
   const errores = results.length - enviados
+
+  logActividad({
+    institucion_id,
+    persona_id: session.persona_id,
+    accion: 'notificar_curso',
+    entidad: 'cursos',
+    entidad_id: curso_id,
+    metadata: { periodo_nombre: periodo.nombre, curso_nombre: cursoNombre, enviados },
+  })
 
   return ok({ enviados, errores })
 }
