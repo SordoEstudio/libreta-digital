@@ -172,70 +172,70 @@ export default function CierreGranularTable({
             <AlertDialogTitle>
               {pendingAction && `¿${ACTION_VERB[pendingAction.action]} ${pendingAction.cursoNombres[0]}?`}
             </AlertDialogTitle>
-            <AlertDialogDescription asChild>
-              <div className="flex flex-col gap-3">
-                <p>{pendingAction && ACTION_DESCRIPTION[pendingAction.action]}</p>
-
-                {pendingAction?.action === 'cerrar' && (
-                  previewLoading ? (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Loader2 className="size-4 animate-spin" />
-                      Verificando datos del período...
-                    </div>
-                  ) : preview ? (
-                    preview.completo ? (
-                      <div className="flex items-start gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2.5 text-sm text-green-800">
-                        <CheckCircle2 className="size-4 mt-0.5 shrink-0" />
-                        <span>Todos los datos están completos.</span>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col gap-2">
-                        <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-800">
-                          <AlertTriangle className="size-4 mt-0.5 shrink-0" />
-                          <span>Podés cerrar igual, pero estos datos quedarán incompletos.</span>
-                        </div>
-                        {preview.materias_sin_notas.length > 0 && (
-                          <div className="text-sm">
-                            <p className="font-medium mb-1">Alumnos sin notas completas:</p>
-                            <ul className="flex flex-col gap-1">
-                              {preview.materias_sin_notas.map(m => (
-                                <li key={m.materia_id} className="text-muted-foreground">
-                                  <span className="font-medium text-foreground">{m.materia_nombre}</span>
-                                  {m.show_alumnos ? (
-                                    <>
-                                      {' '}
-                                      <span className="text-xs">({m.alumnos_faltantes}/{m.total_alumnos})</span>
-                                      <ul className="list-disc list-inside ml-3 mt-0.5 space-y-0.5">
-                                        {m.alumnos.map(a => (
-                                          <li key={a.alumno_id}>{a.alumno_nombre}</li>
-                                        ))}
-                                      </ul>
-                                    </>
-                                  ) : (
-                                    <span className="text-xs ml-1">(todos — {m.total_alumnos} alumnos)</span>
-                                  )}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                        {preview.materias_sin_asistencia.length > 0 && (
-                          <div className="text-sm">
-                            <p className="font-medium mb-1">Materias sin asistencia:</p>
-                            <ul className="flex flex-col gap-0.5">
-                              {preview.materias_sin_asistencia.map(m => (
-                                <li key={m.materia_id} className="text-muted-foreground">{m.materia_nombre}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      </div>
-                    )
-                  ) : null
-                )}
-              </div>
+            <AlertDialogDescription>
+              {pendingAction && ACTION_DESCRIPTION[pendingAction.action]}
             </AlertDialogDescription>
           </AlertDialogHeader>
+
+          {pendingAction?.action === 'cerrar' && (
+            <div className="flex flex-col gap-3 px-1 text-sm">
+              {previewLoading ? (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Loader2 className="size-4 animate-spin" />
+                  Verificando datos del período...
+                </div>
+              ) : preview ? (
+                preview.completo ? (
+                  <div className="flex items-start gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2.5 text-green-800">
+                    <CheckCircle2 className="size-4 mt-0.5 shrink-0" />
+                    <span>Todos los datos están completos.</span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-amber-800">
+                      <AlertTriangle className="size-4 mt-0.5 shrink-0" />
+                      <span>Podés cerrar igual, pero estos datos quedarán incompletos.</span>
+                    </div>
+                    {preview.materias_sin_notas.length > 0 && (
+                      <div>
+                        <p className="font-medium mb-1">Alumnos sin notas completas:</p>
+                        <ul className="flex flex-col gap-1">
+                          {preview.materias_sin_notas.map(m => (
+                            <li key={m.materia_id} className="text-muted-foreground">
+                              <span className="font-medium text-foreground">{m.materia_nombre}</span>
+                              {m.show_alumnos ? (
+                                <>
+                                  {' '}
+                                  <span className="text-xs">({m.alumnos_faltantes}/{m.total_alumnos})</span>
+                                  <ul className="list-disc list-inside ml-3 mt-0.5 space-y-0.5">
+                                    {m.alumnos.map(a => (
+                                      <li key={a.alumno_id}>{a.alumno_nombre}</li>
+                                    ))}
+                                  </ul>
+                                </>
+                              ) : (
+                                <span className="text-xs ml-1">(todos — {m.total_alumnos} alumnos)</span>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {preview.materias_sin_asistencia.length > 0 && (
+                      <div>
+                        <p className="font-medium mb-1">Materias sin asistencia:</p>
+                        <ul className="flex flex-col gap-0.5">
+                          {preview.materias_sin_asistencia.map(m => (
+                            <li key={m.materia_id} className="text-muted-foreground">{m.materia_nombre}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )
+              ) : null}
+            </div>
+          )}
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={executeConfirmed} disabled={previewLoading}>
