@@ -24,7 +24,8 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { isCerradoParaCurso, isPublicadoParaCurso } from '@/lib/cierre-periodo'
-import { Loader2, Mail } from 'lucide-react'
+import type { CierrePreview } from '@/lib/cierre-periodo'
+import { Loader2, Mail, AlertTriangle, CheckCircle2 } from 'lucide-react'
 
 interface Props {
   instId: string
@@ -48,6 +49,7 @@ interface PendingAction {
   action: Action
   cursoId: string
   cursoNombres: string[]
+  preview?: CierrePreview | null
 }
 
 const ACTION_LABEL: Record<Action, string> = {
@@ -84,6 +86,7 @@ export default function CierreGranularTable({
   const router = useRouter()
   const [loading, setLoading] = useState<string | null>(null)
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null)
+  const [previewLoading, setPreviewLoading] = useState(false)
 
   async function doAction(cursoId: string, action: Action): Promise<{ ok: boolean; enviados?: number; errores?: number }> {
     const res = await fetch(
@@ -119,8 +122,30 @@ export default function CierreGranularTable({
     }
   }
 
-  function queueAction(cursoId: string, action: Action) {
+  async function queueAction(cursoId: string, action: Action) {
     const nombre = cursos.find(c => c.id === cursoId)?.nombre ?? cursoId
+
+    if (action === 'cerrar') {
+      setPreviewLoading(true)
+      setPendingAction({ action, cursoId, cursoNombres: [nombre], preview: null })
+      try {
+        const res = await fetch(
+          `/api/v1/instituciones/${instId}/periodos/${periodoId}/cursos/${cursoId}/cierre-preview`
+        )
+        const json = await res.json()
+        if (res.ok) {
+          setPendingAction({ action, cursoId, cursoNombres: [nombre], preview: json.data as CierrePreview })
+        } else {
+          setPendingAction({ action, cursoId, cursoNombres: [nombre], preview: undefined })
+        }
+      } catch {
+        setPendingAction({ action, cursoId, cursoNombres: [nombre], preview: undefined })
+      } finally {
+        setPreviewLoading(false)
+      }
+      return
+    }
+
     setPendingAction({ action, cursoId, cursoNombres: [nombre] })
   }
 
@@ -137,6 +162,8 @@ export default function CierreGranularTable({
     return <p className="text-sm text-muted-foreground">Sin cursos en este período.</p>
   }
 
+  const preview = pendingAction?.preview ?? null
+
   return (
     <>
       <AlertDialog open={pendingAction !== null} onOpenChange={open => { if (!open) setPendingAction(null) }}>
@@ -145,14 +172,76 @@ export default function CierreGranularTable({
             <AlertDialogTitle>
               {pendingAction && `¿${ACTION_VERB[pendingAction.action]} ${pendingAction.cursoNombres[0]}?`}
             </AlertDialogTitle>
-            <AlertDialogDescription>
-              {pendingAction && ACTION_DESCRIPTION[pendingAction.action]}
+            <AlertDialogDescription asChild>
+              <div className="flex flex-col gap-3">
+                <p>{pendingAction && ACTION_DESCRIPTION[pendingAction.action]}</p>
+
+                {pendingAction?.action === 'cerrar' && (
+                  previewLoading ? (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Loader2 className="size-4 animate-spin" />
+                      Verificando datos del período...
+                    </div>
+                  ) : preview ? (
+                    preview.completo ? (
+                      <div className="flex items-start gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2.5 text-sm text-green-800">
+                        <CheckCircle2 className="size-4 mt-0.5 shrink-0" />
+                        <span>Todos los datos están completos.</span>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-800">
+                          <AlertTriangle className="size-4 mt-0.5 shrink-0" />
+                          <span>Podés cerrar igual, pero estos datos quedarán incompletos.</span>
+                        </div>
+                        {preview.materias_sin_notas.length > 0 && (
+                          <div className="text-sm">
+                            <p className="font-medium mb-1">Alumnos sin notas completas:</p>
+                            <ul className="flex flex-col gap-1">
+                              {preview.materias_sin_notas.map(m => (
+                                <li key={m.materia_id} className="text-muted-foreground">
+                                  <span className="font-medium text-foreground">{m.materia_nombre}</span>
+                                  {m.show_alumnos ? (
+                                    <>
+                                      {' '}
+                                      <span className="text-xs">({m.alumnos_faltantes}/{m.total_alumnos})</span>
+                                      <ul className="list-disc list-inside ml-3 mt-0.5 space-y-0.5">
+                                        {m.alumnos.map(a => (
+                                          <li key={a.alumno_id}>{a.alumno_nombre}</li>
+                                        ))}
+                                      </ul>
+                                    </>
+                                  ) : (
+                                    <span className="text-xs ml-1">(todos — {m.total_alumnos} alumnos)</span>
+                                  )}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {preview.materias_sin_asistencia.length > 0 && (
+                          <div className="text-sm">
+                            <p className="font-medium mb-1">Materias sin asistencia:</p>
+                            <ul className="flex flex-col gap-0.5">
+                              {preview.materias_sin_asistencia.map(m => (
+                                <li key={m.materia_id} className="text-muted-foreground">{m.materia_nombre}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  ) : null
+                )}
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={executeConfirmed}>
-              {pendingAction ? ACTION_VERB[pendingAction.action] : ''}
+            <AlertDialogAction onClick={executeConfirmed} disabled={previewLoading}>
+              {previewLoading
+                ? <><Loader2 className="size-4 animate-spin mr-1" />Verificando...</>
+                : pendingAction ? ACTION_VERB[pendingAction.action] : ''}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
