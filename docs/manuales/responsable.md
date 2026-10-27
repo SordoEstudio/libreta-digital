@@ -1,37 +1,49 @@
 # Manual del Responsable
 
-Como responsable (padre, madre o tutor) podés ver las libretas de tus hijos, seguir sus evaluaciones y confirmar comunicados de la institución.
+Como responsable (padre, madre o tutor) podés ver los boletines de tus hijos, seguir sus evaluaciones y confirmar comunicados de la institución.
 
 ---
 
-## Tus alumnos
+## Inicio
 
-Al ingresar al sistema vas directamente a **Mis alumnos**, donde aparecen los alumnos que la institución vinculó a tu cuenta.
+Al ingresar ves tu pantalla de inicio con:
 
-Si no ves ningún alumno, contactá al administrador de la institución para que realice la vinculación.
+- **Saludo** con tu nombre y la fecha de hoy
+- **Tarjetas de tus alumnos** — con nombre, curso y botón para ir al boletín
+- **Accesos rápidos** — Boletines, Comunicados, Contenidos (si está disponible)
+- **Banner de comunicados pendientes** — si hay comunicados sin confirmar, aparece un aviso
+
+Si no ves ningún alumno, contactá al administrador de la institución para que vincule tu cuenta.
 
 ---
 
-## Libreta de calificaciones
+## Boletines
 
-La libreta muestra todas las notas de tu hijo/a organizadas por materia y período.
+El boletín muestra todas las notas de tu hijo/a organizadas por materia y período.
 
-### Cómo verla
+### Cómo verlo
 
-1. Ir a **Mis alumnos**
-2. Hacer clic en **Ver libreta** junto al nombre del alumno
+1. Ir a **Boletines** en el menú
+2. Hacer clic en la tarjeta de tu hijo/a
 
-### Qué muestra la libreta
+### Confirmación de recibo
 
-- **Materias** — todas las materias del curso
-- **Períodos** — notas de cada trimestre o período del año
-- **Evaluaciones** — parciales, trabajos prácticos, etc.
-- **Asistencia** — inasistencias justificadas e injustificadas por materia
-- **Nota definitiva** — promedio final de cada materia por período
+La primera vez que accedés al boletín de un período publicado, el sistema te pide confirmar que recibiste el boletín. Esta confirmación queda registrada con fecha y hora.
 
-### Imprimir la libreta
+> Solo aparecen los períodos que el administrador cerró y publicó. Los períodos en curso no son visibles aún.
 
-En la libreta hay un botón **Imprimir** para obtener una copia en papel o PDF.
+### Qué muestra el boletín
+
+- **Materias** y sus dimensiones de evaluación
+- **Notas por período** — parciales, TPs, conceptos
+- **Nota definitiva** del período
+- **Asistencia** — inasistencias por materia
+
+### Imprimir o guardar el boletín
+
+En **celular**: botones **Compartir** (para enviar por WhatsApp u otra app) y **Guardar** (guarda como PDF).
+
+En **computadora**: botón con ícono de impresora → abre el diálogo para imprimir o guardar como PDF.
 
 ---
 
@@ -39,74 +51,55 @@ En la libreta hay un botón **Imprimir** para obtener una copia en papel o PDF.
 
 Los comunicados son mensajes de la institución o los docentes que necesitan tu confirmación de lectura.
 
-### Ver comunicados pendientes
+### Ver comunicados
 
-1. Ir a **Comunicados**
-2. Se muestra la lista de comunicados con su estado:
-   - **Pendiente** — todavía no confirmaste
-   - **Confirmado ✓** — ya confirmaste la lectura
+Ir a **Comunicados** → lista de todos los mensajes recibidos con su estado:
+- **Pendiente** — no confirmaste aún
+- **Confirmado ✓** — ya confirmaste la lectura
 
-El número de comunicados pendientes aparece como badge en el menú.
+El número de pendientes aparece como badge en el menú.
 
 ### Confirmar un comunicado
 
-1. Hacé clic en **Confirmar** junto al comunicado
-2. Se registra tu confirmación — no hay vuelta atrás
+Hacé clic en el comunicado → **Confirmar lectura**. También podés confirmar desde el email que recibiste, haciendo clic en el botón del mensaje.
+
+Una vez confirmado no puede revertirse.
 
 ---
 
 ## Contenidos
 
-Si la institución habilitó el módulo de contenidos, podés ver los materiales que comparten los docentes con tus hijos.
+Si la institución habilitó el módulo de contenidos, podés ver los materiales que comparten los docentes.
 
-### Acceder a los contenidos
+### Acceder
 
 1. Ir a **Contenidos**
-2. Seleccioná el curso de tu hijo/a
-3. Seleccioná la materia
-4. Dentro ves las unidades con los materiales disponibles
+2. Seleccioná el curso y la materia de tu hijo/a
+3. Dentro ves las unidades con los materiales disponibles
 
 ### Tipos de materiales
 
 - **Links** — enlaces a videos, documentos o páginas web
-- **Archivos** — PDFs e imágenes para descargar
-- **Notas** — texto con información del docente
+- **Archivos** — PDFs para descargar
+- **Imágenes** — imágenes para ver o descargar
 
 > Los contenidos son de solo lectura — no podés modificarlos.
 
 ---
 
-## Calendario
-
-El calendario muestra el horario semanal y las evaluaciones programadas de las materias de tu hijo/a.
-
-### Ver el calendario
-
-1. Ir a **Calendario**
-2. **Vista semanal** — horario de clases con día y hora
-3. **Vista evaluaciones** — fechas de evaluaciones próximas
-
-### Exportar el calendario
-
-Podés descargar el calendario en formato **iCal** para importarlo a:
-- Google Calendar
-- Apple Calendar
-- Outlook
-
-Hacé clic en el botón de descarga en la esquina del calendario.
-
----
-
 ## Preguntas frecuentes
 
-**¿No veo a mi hijo/a en Mis alumnos?**
-Contactá al administrador de la institución. Ellos deben vincular tu cuenta al alumno correspondiente.
+**¿No veo a mi hijo/a en Boletines?**
+Contactá al administrador de la institución. Deben vincular tu cuenta al alumno.
 
-**¿Puedo ver la libreta de un período anterior?**
-Sí, la libreta muestra todos los períodos del año lectivo actual en una sola vista.
+**¿Por qué no aparecen las notas del período actual?**
+El boletín solo muestra los períodos que el administrador cerró y publicó. Cuando el período termine, las notas quedarán visibles.
+
+**¿Puedo ver períodos anteriores?**
+Sí, el boletín muestra todos los períodos publicados del año lectivo en una sola vista.
 
 **¿Qué hago si una nota me parece incorrecta?**
-Comunicarte directamente con el docente o la administración de la institución. No podés modificar notas desde la plataforma.
+Comunicarte directamente con el docente o la administración. No podés modificar notas desde la plataforma.
 
 **¿El comunicado que confirmé sigue apareciendo?**
 Sí, aparece con el estado "Confirmado ✓" para tu registro. Los pendientes aparecen al tope de la lista.
