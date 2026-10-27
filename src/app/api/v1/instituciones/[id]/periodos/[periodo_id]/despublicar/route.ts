@@ -22,8 +22,6 @@ export async function POST(_request: NextRequest, { params }: Params) {
     .is('deleted_at', null)
     .single()
   if (periodoErr || !periodo) return Err.notFound('Período no encontrado')
-  if (!periodo.publicado_at) return Err.conflict('El período no está publicado')
-
   const { error } = await supabase
     .from('periodos')
     .update({ publicado_at: null })

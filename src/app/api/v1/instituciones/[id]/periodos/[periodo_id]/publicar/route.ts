@@ -23,12 +23,20 @@ export async function POST(_request: NextRequest, { params }: Params) {
     .single()
   if (periodoErr || !periodoRaw) return Err.notFound('Período no encontrado')
   const periodo = periodoRaw as { id: string; nombre: string; cerrado_at: string | null; publicado_at: string | null; año_lectivo_id: string }
-  if (!periodo.cerrado_at) return Err.validation('El período debe estar cerrado antes de publicar')
-  if (periodo.publicado_at) return Err.conflict('El período ya está publicado')
+  const now = new Date().toISOString()
+
+  // If not globally cerrado yet (courses may have been closed individually), set it now
+  if (!periodo.cerrado_at) {
+    const { error: cerrarErr } = await supabase
+      .from('periodos')
+      .update({ cerrado_at: now })
+      .eq('id', periodo_id)
+    if (cerrarErr) return Err.server(cerrarErr.message)
+  }
 
   const { error } = await supabase
     .from('periodos')
-    .update({ publicado_at: new Date().toISOString() })
+    .update({ publicado_at: now })
     .eq('id', periodo_id)
   if (error) return Err.server(error.message)
 
@@ -55,7 +63,7 @@ export async function POST(_request: NextRequest, { params }: Params) {
         cursos.map(c => ({
           periodo_id,
           curso_id: c.id,
-          publicado_at: new Date().toISOString(),
+          publicado_at: now,
           abierto_at: null,
         })),
         { onConflict: 'periodo_id,curso_id', ignoreDuplicates: false }
