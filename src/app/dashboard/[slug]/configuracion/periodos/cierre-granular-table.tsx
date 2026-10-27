@@ -46,7 +46,7 @@ type Action = 'cerrar' | 'publicar' | 'reabrir' | 'despublicar' | 'notificar'
 
 interface PendingAction {
   action: Action
-  cursoId: string | null  // null = bulk
+  cursoId: string
   cursoNombres: string[]
 }
 
@@ -85,19 +85,6 @@ export default function CierreGranularTable({
   const [loading, setLoading] = useState<string | null>(null)
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null)
 
-  function getApplicable(action: Action) {
-    return cursos.filter(c => {
-      const cerrado = isCerradoParaCurso(periodoCerradoAt, c.override)
-      const publicado = isPublicadoParaCurso(periodoPublicadoAt, c.override)
-      if (action === 'cerrar') return !cerrado && !publicado
-      if (action === 'publicar') return cerrado && !publicado
-      if (action === 'reabrir') return cerrado || publicado
-      if (action === 'despublicar') return publicado
-      if (action === 'notificar') return publicado
-      return false
-    })
-  }
-
   async function doAction(cursoId: string, action: Action): Promise<{ ok: boolean; enviados?: number; errores?: number }> {
     const res = await fetch(
       `/api/v1/instituciones/${instId}/periodos/${periodoId}/cursos/${cursoId}/${action}`,
@@ -132,42 +119,9 @@ export default function CierreGranularTable({
     }
   }
 
-  async function handleBulkAction(action: Action) {
-    const applicable = getApplicable(action)
-    if (applicable.length === 0) return
-    setLoading(`bulk-${action}`)
-    try {
-      const results = await Promise.allSettled(applicable.map(c => doAction(c.id, action)))
-      if (action === 'notificar') {
-        const totalEnviados = results.reduce((sum, r) => sum + (r.status === 'fulfilled' ? (r.value.enviados ?? 0) : 0), 0)
-        const totalErrores = results.reduce((sum, r) => sum + (r.status === 'fulfilled' ? (r.value.errores ?? 0) : 0), 0)
-        toast.success(`${totalEnviados} email${totalEnviados !== 1 ? 's' : ''} enviados`)
-        if (totalErrores > 0) toast.error(`${totalErrores} errores al enviar`)
-      } else {
-        const failed = results.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.ok)).length
-        if (failed === 0) {
-          toast.success(`${applicable.length} curso${applicable.length !== 1 ? 's' : ''} ${ACTION_LABEL[action].toLowerCase()}${applicable.length !== 1 ? 's' : ''}`)
-        } else {
-          toast.warning(`${applicable.length - failed} ok, ${failed} con error`)
-        }
-        router.refresh()
-      }
-    } catch {
-      toast.error('Error de red')
-    } finally {
-      setLoading(null)
-    }
-  }
-
   function queueAction(cursoId: string, action: Action) {
     const nombre = cursos.find(c => c.id === cursoId)?.nombre ?? cursoId
     setPendingAction({ action, cursoId, cursoNombres: [nombre] })
-  }
-
-  function queueBulkAction(action: Action) {
-    const applicable = getApplicable(action)
-    if (applicable.length === 0) return
-    setPendingAction({ action, cursoId: null, cursoNombres: applicable.map(c => c.nombre) })
   }
 
   async function executeConfirmed() {
@@ -176,8 +130,6 @@ export default function CierreGranularTable({
     setPendingAction(null)
     if (cursoId) {
       await handleAction(cursoId, action)
-    } else {
-      await handleBulkAction(action)
     }
   }
 
@@ -185,35 +137,16 @@ export default function CierreGranularTable({
     return <p className="text-sm text-muted-foreground">Sin cursos en este período.</p>
   }
 
-  const hasCerrable = cursos.some(c => !isCerradoParaCurso(periodoCerradoAt, c.override) && !isPublicadoParaCurso(periodoPublicadoAt, c.override))
-  const hasPublicable = cursos.some(c => isCerradoParaCurso(periodoCerradoAt, c.override) && !isPublicadoParaCurso(periodoPublicadoAt, c.override))
-  const hasReabrible = cursos.some(c => isCerradoParaCurso(periodoCerradoAt, c.override) || isPublicadoParaCurso(periodoPublicadoAt, c.override))
-  const hasDespublicable = cursos.some(c => isPublicadoParaCurso(periodoPublicadoAt, c.override))
-  const hasNotificable = cursos.some(c => isPublicadoParaCurso(periodoPublicadoAt, c.override))
-  const isBulkLoading = loading?.startsWith('bulk-') ?? false
-
-  const dialogTitle = pendingAction
-    ? pendingAction.cursoNombres.length === 1
-      ? `¿${ACTION_VERB[pendingAction.action]} ${pendingAction.cursoNombres[0]}?`
-      : `¿${ACTION_VERB[pendingAction.action]} ${pendingAction.cursoNombres.length} cursos?`
-    : ''
-
-  const dialogCursosList = pendingAction && pendingAction.cursoNombres.length > 1
-    ? pendingAction.cursoNombres.slice(0, 5).join(', ') +
-      (pendingAction.cursoNombres.length > 5 ? ` y ${pendingAction.cursoNombres.length - 5} más` : '')
-    : null
-
   return (
     <>
       <AlertDialog open={pendingAction !== null} onOpenChange={open => { if (!open) setPendingAction(null) }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{dialogTitle}</AlertDialogTitle>
+            <AlertDialogTitle>
+              {pendingAction && `¿${ACTION_VERB[pendingAction.action]} ${pendingAction.cursoNombres[0]}?`}
+            </AlertDialogTitle>
             <AlertDialogDescription>
               {pendingAction && ACTION_DESCRIPTION[pendingAction.action]}
-              {dialogCursosList && (
-                <> <span className="text-xs">({dialogCursosList})</span></>
-              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -226,46 +159,6 @@ export default function CierreGranularTable({
       </AlertDialog>
 
       <div className="flex flex-col gap-2">
-        {/* Bulk actions */}
-        {(hasCerrable || hasPublicable || hasReabrible || hasDespublicable || hasNotificable) && (
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-xs text-muted-foreground mr-1">Todos:</span>
-            {hasReabrible && (
-              <Button variant="outline" size="sm" disabled={loading !== null} onClick={() => queueBulkAction('reabrir')}>
-                {loading === 'bulk-reabrir' && <Loader2 data-icon="inline-start" className="animate-spin" />}
-                Reabrir todos
-              </Button>
-            )}
-            {hasDespublicable && (
-              <Button variant="outline" size="sm" disabled={loading !== null} onClick={() => queueBulkAction('despublicar')}>
-                {loading === 'bulk-despublicar' && <Loader2 data-icon="inline-start" className="animate-spin" />}
-                Despublicar todos
-              </Button>
-            )}
-            {hasCerrable && (
-              <Button size="sm" disabled={loading !== null} onClick={() => queueBulkAction('cerrar')}>
-                {loading === 'bulk-cerrar' && <Loader2 data-icon="inline-start" className="animate-spin" />}
-                Cerrar todos
-              </Button>
-            )}
-            {hasPublicable && (
-              <Button size="sm" disabled={loading !== null} onClick={() => queueBulkAction('publicar')}>
-                {loading === 'bulk-publicar' && <Loader2 data-icon="inline-start" className="animate-spin" />}
-                Publicar todos
-              </Button>
-            )}
-            {hasNotificable && (
-              <Button size="sm" disabled={loading !== null} onClick={() => queueBulkAction('notificar')}>
-                {loading === 'bulk-notificar'
-                  ? <Loader2 data-icon="inline-start" className="animate-spin" />
-                  : <Mail data-icon="inline-start" />}
-                Notificar todos
-              </Button>
-            )}
-            {isBulkLoading && <Loader2 className="size-4 animate-spin text-muted-foreground" />}
-          </div>
-        )}
-
         <Table>
           <TableHeader>
             <TableRow>

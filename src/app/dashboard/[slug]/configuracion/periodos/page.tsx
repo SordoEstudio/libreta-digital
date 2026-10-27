@@ -133,48 +133,38 @@ export default async function AñosLectivosPage({ params }: Params) {
               const hayCursos = cursosEstado.length > 0
               const todosCerrados = hayCursos && cursosEstado.every(c => c.cerrado)
               const todosPublicados = hayCursos && cursosEstado.every(c => c.publicado)
-              const algunoPublicado = cursosEstado.some(c => c.publicado)
               const algunoCerradoOPublicado = cursosEstado.some(c => c.cerrado || c.publicado)
 
-              // Fall back to period-level if no courses
-              const mostrarCerrar = hayCursos ? !todosCerrados : !p.cerrado_at
-              const mostrarPublicar = hayCursos ? (todosCerrados && !todosPublicados) : (!!p.cerrado_at && !p.publicado_at)
-              const mostrarDespublicar = hayCursos ? todosPublicados : !!p.publicado_at
-              const mostrarNotificar = hayCursos ? algunoPublicado : !!p.publicado_at
-              const mostrarReabrir = hayCursos ? algunoCerradoOPublicado : !!p.cerrado_at
+              // Single mutually-exclusive state drives the header
+              const estadoPeriodo = hayCursos
+                ? todosPublicados ? 'publicado' : todosCerrados ? 'cerrado' : 'abierto'
+                : p.publicado_at ? 'publicado' : p.cerrado_at ? 'cerrado' : 'abierto'
 
               const badges = (
                 <>
                   {p.activo && <Badge>Activo</Badge>}
-                  {todosCerrados && !todosPublicados && <Badge variant="secondary">Cerrado</Badge>}
-                  {todosPublicados && <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200">Publicado</Badge>}
-                  {!hayCursos && p.cerrado_at && !p.publicado_at && <Badge variant="secondary">Cerrado</Badge>}
-                  {!hayCursos && p.publicado_at && <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200">Publicado</Badge>}
-                  {hayCursos && !todosCerrados && algunoCerradoOPublicado && <Badge variant="outline" className="text-xs text-muted-foreground">Parcial</Badge>}
+                  {estadoPeriodo === 'cerrado' && <Badge variant="secondary">Cerrado</Badge>}
+                  {estadoPeriodo === 'publicado' && <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200">Publicado</Badge>}
+                  {hayCursos && estadoPeriodo === 'abierto' && algunoCerradoOPublicado && <Badge variant="outline" className="text-xs text-muted-foreground">Parcial</Badge>}
                 </>
               )
               const headerActions = isAdmin ? (
                 <div className="flex items-center gap-1">
-                  {mostrarCerrar && (
+                  {estadoPeriodo === 'abierto' && (
                     <CerrarPeriodoSheet instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
                   )}
-                  {mostrarPublicar && (
+                  {estadoPeriodo === 'cerrado' && (
                     <>
                       <ReabrirPeriodoButton instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
                       <PublicarPeriodoButton instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
                     </>
                   )}
-                  {mostrarDespublicar && !mostrarPublicar && (
+                  {estadoPeriodo === 'publicado' && (
                     <>
                       <ReabrirPeriodoButton instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
                       <DespublicarPeriodoButton instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
+                      <NotificarPeriodoDialog instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
                     </>
-                  )}
-                  {mostrarNotificar && (
-                    <NotificarPeriodoDialog instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
-                  )}
-                  {mostrarReabrir && !mostrarPublicar && !mostrarDespublicar && (
-                    <ReabrirPeriodoButton instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
                   )}
                   {showRename && (
                     <RenombrarPeriodoButton instId={inst.id} periodoId={p.id} periodoNombre={p.nombre} />
