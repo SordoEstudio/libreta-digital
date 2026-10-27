@@ -116,27 +116,38 @@ export default async function CursoDetallePage({ params }: Params) {
             <NuevaMateriaSheet cursoId={curso_id} instId={inst.id} />
           )}
         </div>
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          {visibleMaterias.map(materia => {
-            const nombre = materia.materias_catalogo?.nombre ?? ''
-            const horarios = (materia.materia_horarios ?? []).filter(h => !h.deleted_at)
-            const docenteNames = materia.materia_docentes
-              .map(d => {
-                const p = personaMap.get(d.persona_id)
-                return p ? (p.apellido ? `${p.apellido}, ${p.nombre}` : p.nombre) : null
-              })
-              .filter(Boolean) as string[]
-            const docentesActuales = materia.materia_docentes
-              .map(d => {
-                const p = personaMap.get(d.persona_id)
-                return p ? { persona_id: d.persona_id, nombre: p.nombre, apellido: p.apellido ?? null } : null
-              })
-              .filter(Boolean) as { persona_id: string; nombre: string; apellido: string | null }[]
-            return (
-              <Card key={materia.id} className="flex flex-col">
-                <CardHeader className="pb-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <CardTitle className="text-base leading-snug">{nombre}</CardTitle>
+        {visibleMaterias.length === 0 ? (
+          <EmptyState
+            icon={BookOpen}
+            title={isAdminLevel ? 'Sin materias en este curso.' : 'Sin materias asignadas en este curso.'}
+          />
+        ) : visibleMaterias.length > 6 ? (
+          <div className="flex flex-col divide-y border rounded-lg overflow-hidden">
+            {visibleMaterias.map(materia => {
+              const nombre = materia.materias_catalogo?.nombre ?? ''
+              const docenteNames = materia.materia_docentes
+                .map(d => {
+                  const p = personaMap.get(d.persona_id)
+                  return p ? (p.apellido ? `${p.apellido}, ${p.nombre}` : p.nombre) : null
+                })
+                .filter(Boolean) as string[]
+              const docentesActuales = materia.materia_docentes
+                .map(d => {
+                  const p = personaMap.get(d.persona_id)
+                  return p ? { persona_id: d.persona_id, nombre: p.nombre, apellido: p.apellido ?? null } : null
+                })
+                .filter(Boolean) as { persona_id: string; nombre: string; apellido: string | null }[]
+              return (
+                <div key={materia.id} className="flex items-center justify-between px-4 py-3 hover:bg-muted/40 transition-colors gap-3">
+                  <div className="flex flex-col gap-0.5 min-w-0">
+                    <span className="font-medium truncate">{nombre}</span>
+                    {docenteNames.length > 0 ? (
+                      <span className="text-xs text-muted-foreground truncate">{docenteNames.join(', ')}</span>
+                    ) : isAdminLevel ? (
+                      <Badge variant="warning" className="w-fit text-xs">Sin docente</Badge>
+                    ) : null}
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
                     {isAdminLevel && (
                       <EditarMateriaSheet
                         materiaId={materia.id}
@@ -146,68 +157,104 @@ export default async function CursoDetallePage({ params }: Params) {
                         instId={inst.id}
                       />
                     )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      render={<Link href={`/dashboard/${slug}/materias/${materia.id}/evaluaciones`} />}
+                    >
+                      <BookOpen data-icon="inline-start" />
+                      Evaluaciones
+                    </Button>
                   </div>
-                </CardHeader>
-                <CardContent className="flex flex-col gap-2">
-                  {docenteNames.length > 0 ? (
-                    <p className="text-xs text-muted-foreground">{docenteNames.join(', ')}</p>
-                  ) : isAdminLevel ? (
-                    <Badge variant="warning" className="w-fit text-xs">Sin docente</Badge>
-                  ) : null}
-                  {horarios.length > 0 && (
-                    <div className="flex flex-col gap-0.5">
-                      {horarios.map(h => (
-                        <span key={h.id} className="text-xs text-muted-foreground">
-                          {['', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'][h.dia_semana]} {h.hora_inicio.slice(0, 5)}–{h.hora_fin.slice(0, 5)}{h.aula ? ` · ${h.aula}` : ''}
-                        </span>
-                      ))}
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+            {visibleMaterias.map(materia => {
+              const nombre = materia.materias_catalogo?.nombre ?? ''
+              const horarios = (materia.materia_horarios ?? []).filter(h => !h.deleted_at)
+              const docenteNames = materia.materia_docentes
+                .map(d => {
+                  const p = personaMap.get(d.persona_id)
+                  return p ? (p.apellido ? `${p.apellido}, ${p.nombre}` : p.nombre) : null
+                })
+                .filter(Boolean) as string[]
+              const docentesActuales = materia.materia_docentes
+                .map(d => {
+                  const p = personaMap.get(d.persona_id)
+                  return p ? { persona_id: d.persona_id, nombre: p.nombre, apellido: p.apellido ?? null } : null
+                })
+                .filter(Boolean) as { persona_id: string; nombre: string; apellido: string | null }[]
+              return (
+                <Card key={materia.id} className="flex flex-col">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <CardTitle className="text-base leading-snug">{nombre}</CardTitle>
+                      {isAdminLevel && (
+                        <EditarMateriaSheet
+                          materiaId={materia.id}
+                          materiaNombre={nombre}
+                          docentesActuales={docentesActuales}
+                          initialDimensiones={[...materia.materias_dimensiones].sort((a, b) => a.orden - b.orden)}
+                          instId={inst.id}
+                        />
+                      )}
                     </div>
-                  )}
-                  {materia.materias_dimensiones.length > 0 && (
-                    <div className="flex flex-col gap-0.5">
-                      {[...materia.materias_dimensiones]
-                        .sort((a, b) => a.orden - b.orden)
-                        .map(d => (
-                          <span key={d.id} className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs text-muted-foreground w-fit">
-                            {d.nombre}
+                  </CardHeader>
+                  <CardContent className="flex flex-col gap-2">
+                    {docenteNames.length > 0 ? (
+                      <p className="text-xs text-muted-foreground">{docenteNames.join(', ')}</p>
+                    ) : isAdminLevel ? (
+                      <Badge variant="warning" className="w-fit text-xs">Sin docente</Badge>
+                    ) : null}
+                    {horarios.length > 0 && (
+                      <div className="flex flex-col gap-0.5">
+                        {horarios.map(h => (
+                          <span key={h.id} className="text-xs text-muted-foreground">
+                            {['', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'][h.dia_semana]} {h.hora_inicio.slice(0, 5)}–{h.hora_fin.slice(0, 5)}{h.aula ? ` · ${h.aula}` : ''}
                           </span>
                         ))}
-                    </div>
-                  )}
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    className="w-full mt-auto"
-                    render={<Link href={`/dashboard/${slug}/materias/${materia.id}/evaluaciones`} />}
-                  >
-                    <BookOpen data-icon="inline-start" />
-                    Evaluaciones
-                  </Button>
-                  {inst.modulo_contenidos && (
+                      </div>
+                    )}
+                    {materia.materias_dimensiones.length > 0 && (
+                      <div className="flex flex-col gap-0.5">
+                        {[...materia.materias_dimensiones]
+                          .sort((a, b) => a.orden - b.orden)
+                          .map(d => (
+                            <span key={d.id} className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs text-muted-foreground w-fit">
+                              {d.nombre}
+                            </span>
+                          ))}
+                      </div>
+                    )}
                     <Button
-                      variant="outline"
+                      variant="secondary"
                       size="sm"
-                      className="w-full"
-                      render={<Link href={`/dashboard/${slug}/contenidos/${curso_id}/${materia.id}`} />}
+                      className="w-full mt-auto"
+                      render={<Link href={`/dashboard/${slug}/materias/${materia.id}/evaluaciones`} />}
                     >
-                      <BookMarked data-icon="inline-start" />
-                      Contenidos
+                      <BookOpen data-icon="inline-start" />
+                      Evaluaciones
                     </Button>
-                  )}
-                </CardContent>
-              </Card>
-            )
-          })}
-
-          {visibleMaterias.length === 0 && (
-            <div className="col-span-full">
-              <EmptyState
-                icon={BookOpen}
-                title={isAdminLevel ? 'Sin materias en este curso.' : 'Sin materias asignadas en este curso.'}
-              />
-            </div>
-          )}
-        </div>
+                    {inst.modulo_contenidos && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        render={<Link href={`/dashboard/${slug}/contenidos/${curso_id}/${materia.id}`} />}
+                      >
+                        <BookMarked data-icon="inline-start" />
+                        Contenidos
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       {isAdminLevel && (
