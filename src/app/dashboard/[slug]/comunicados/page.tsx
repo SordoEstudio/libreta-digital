@@ -1,4 +1,4 @@
-import { requireSession, isSuperadmin, hasAnyRole } from '@/lib/auth'
+import { requireSession, isSuperadmin, hasAnyRole, hasRole } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect, notFound } from 'next/navigation'
@@ -32,6 +32,8 @@ export default async function ComunicadosPage({ params }: Params) {
 
   const isEditor = isSuperadmin(session) || hasAnyRole(session, inst.id, ['admin', 'docente'])
   const isOnlyResponsable = !isEditor && hasAnyRole(session, inst.id, ['responsable'])
+  const isAdmin = isSuperadmin(session) || hasAnyRole(session, inst.id, ['admin'])
+  const isDocente = !isAdmin && hasRole(session, inst.id, 'docente')
 
   if (!isEditor && !isOnlyResponsable) redirect(`/dashboard/${slug}`)
 
@@ -173,11 +175,26 @@ export default async function ComunicadosPage({ params }: Params) {
     materiasPorCurso.set(m.curso_id, arr)
   }
 
-  const cursos = (cursosRaw ?? []).map(c => ({
+  let allCursos = (cursosRaw ?? []).map(c => ({
     id: c.id,
     nombre: c.nombre,
     materias: materiasPorCurso.get(c.id) ?? [],
   }))
+
+  // Docentes only see courses where they have at least one materia assigned
+  if (isDocente && session.persona_id) {
+    const { data: matDocentes } = await supabase
+      .from('materia_docentes')
+      .select('materia_id')
+      .eq('persona_id', session.persona_id)
+    const materiaIds = new Set((matDocentes ?? []).map(md => md.materia_id))
+    // Keep courses that contain at least one of the docente's materias
+    allCursos = allCursos.filter(c =>
+      c.materias.some(m => materiaIds.has(m.id))
+    )
+  }
+
+  const cursos = allCursos
 
   return (
     <div className="flex flex-col gap-6">
@@ -186,7 +203,7 @@ export default async function ComunicadosPage({ params }: Params) {
           <h1 className="text-xl font-semibold md:text-2xl">Comunicados</h1>
           <p className="text-sm text-muted-foreground">{inst.nombre}</p>
         </div>
-        <NuevoComunicadoSheet slug={slug} cursos={cursos} />
+        <NuevoComunicadoSheet slug={slug} cursos={cursos} isAdmin={isAdmin} />
       </div>
 
       {comunicados.length > 0 ? (

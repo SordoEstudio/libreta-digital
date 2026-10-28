@@ -13,9 +13,10 @@ import { toast } from 'sonner'
 interface Props {
   slug: string
   cursos: { id: string; nombre: string; materias: { id: string; nombre: string }[] }[]
+  isAdmin?: boolean
 }
 
-export default function NuevoComunicadoSheet({ cursos }: Props) {
+export default function NuevoComunicadoSheet({ cursos, isAdmin }: Props) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -24,7 +25,8 @@ export default function NuevoComunicadoSheet({ cursos }: Props) {
   const [cursoId, setCursoId] = useState('')
   const [materiaId, setMateriaId] = useState('')
 
-  const materiasDelCurso = cursos.find(c => c.id === cursoId)?.materias ?? []
+  const esParaTodos = cursoId === 'all'
+  const materiasDelCurso = esParaTodos ? [] : (cursos.find(c => c.id === cursoId)?.materias ?? [])
 
   function handleCursoChange(id: string) {
     setCursoId(id)
@@ -101,10 +103,17 @@ export default function NuevoComunicadoSheet({ cursos }: Props) {
               <Select value={cursoId} onValueChange={v => handleCursoChange(v ?? '')}>
                 <SelectTrigger id="com-curso">
                   <SelectValue placeholder="Seleccionar curso...">
-                    {cursoId ? (cursos.find(c => c.id === cursoId)?.nombre ?? 'Seleccionar curso...') : 'Seleccionar curso...'}
+                    {cursoId === 'all'
+                      ? 'Todos los cursos'
+                      : cursoId
+                        ? (cursos.find(c => c.id === cursoId)?.nombre ?? 'Seleccionar curso...')
+                        : 'Seleccionar curso...'}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
+                  {isAdmin && (
+                    <SelectItem value="all">Todos los cursos</SelectItem>
+                  )}
                   {cursos.map(c => (
                     <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>
                   ))}
@@ -112,7 +121,7 @@ export default function NuevoComunicadoSheet({ cursos }: Props) {
               </Select>
             </div>
 
-            {cursoId && materiasDelCurso.length > 0 && (
+            {cursoId && !esParaTodos && materiasDelCurso.length > 0 && (
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="com-materia">Materia <span className="text-muted-foreground font-normal">(opcional)</span></Label>
                 <Select value={materiaId || 'todas'} onValueChange={v => setMateriaId(v === 'todas' ? '' : (v ?? ''))}>
@@ -148,7 +157,7 @@ export default function NuevoComunicadoSheet({ cursos }: Props) {
 
             <Button
               type="submit"
-              disabled={loading || !titulo || !contenido || !cursoId}
+              disabled={loading || !titulo.trim() || !contenido.trim() || !cursoId}
               className="mt-2"
             >
               {loading && <Loader2 data-icon="inline-start" className="animate-spin" />}

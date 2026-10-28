@@ -14,7 +14,7 @@ export function deduplicarResponsables(
 export const CreateComunicadoSchema = z.object({
   titulo:     z.string().min(1).max(300),
   contenido:  z.string().min(1).max(5000),
-  curso_id:   z.string().uuid(),
+  curso_id:   z.union([z.string().uuid(), z.literal('all')]),
   materia_id: z.string().uuid().optional(),
 })
 
