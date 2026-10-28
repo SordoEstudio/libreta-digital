@@ -221,15 +221,17 @@ export default function EditarEvaluacionSheet({ evaluacion, periodos, dimensione
               </div>
             )}
 
-            <label className="flex items-center gap-2 text-sm cursor-pointer">
-              <input
-                type="checkbox"
-                checked={permiteRecuperatorio}
-                onChange={e => setPermiteRecuperatorio(e.target.checked)}
-                className="size-4 cursor-pointer accent-primary"
-              />
-              <span>Permite recuperatorio</span>
-            </label>
+            {tipo !== 'concepto' && (
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={permiteRecuperatorio}
+                  onChange={e => setPermiteRecuperatorio(e.target.checked)}
+                  className="size-4 cursor-pointer accent-primary"
+                />
+                <span>Permite recuperatorio</span>
+              </label>
+            )}
 
             <Button
               type="submit"

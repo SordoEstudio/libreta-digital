@@ -120,6 +120,7 @@ export default async function BoletinPage({ params }: Params) {
     templateId: string
     nombre: string
     orden: number
+    tipo: string
     periodoId: string | null
     periodoNombre: string
     periodoOrden: number
@@ -238,6 +239,7 @@ export default async function BoletinPage({ params }: Params) {
           templateId: ev.template_id,
           nombre: tpl?.nombre ?? ev.nombre,
           orden: tpl?.orden ?? 0,
+          tipo: ev.tipo,
           periodoId: ev.periodo_id,
           periodoNombre: ev.periodos?.nombre ?? 'Sin período',
           periodoOrden: ev.periodos?.orden ?? 9999,
@@ -249,9 +251,11 @@ export default async function BoletinPage({ params }: Params) {
   }
 
   // Sort columns: período.orden → template.orden
-  const sortedCols = [...templateColMap.values()].sort((a, b) =>
+  const allSortedCols = [...templateColMap.values()].sort((a, b) =>
     a.periodoOrden !== b.periodoOrden ? a.periodoOrden - b.periodoOrden : a.orden - b.orden
   )
+  const sortedCols = allSortedCols.filter(c => c.tipo !== 'concepto')
+  const sortedColsConceptuales = allSortedCols.filter(c => c.tipo === 'concepto')
 
   // Group columns by período for row-1 headers
   type PeriodoGroup = { id: string | null; nombre: string; orden: number; cols: TemplateCol[] }
@@ -264,10 +268,19 @@ export default async function BoletinPage({ params }: Params) {
       periodoGroups.push({ id: col.periodoId, nombre: col.periodoNombre, orden: col.periodoOrden, cols: [col] })
     }
   }
+  const periodoGroupsConceptuales: PeriodoGroup[] = []
+  for (const col of sortedColsConceptuales) {
+    const existing = periodoGroupsConceptuales.find(g => g.id === col.periodoId)
+    if (existing) {
+      existing.cols.push(col)
+    } else {
+      periodoGroupsConceptuales.push({ id: col.periodoId, nombre: col.periodoNombre, orden: col.periodoOrden, cols: [col] })
+    }
+  }
 
   const hasDefinitiva = [...materiaDataMap.values()].some(m => m.definitivaMap.size > 0)
   const hasDimensionCol = [...materiaDataMap.values()].some(m => m.dimensions.size > 0)
-  const noData = materiaDataMap.size === 0 && sortedCols.length === 0
+  const noData = materiaDataMap.size === 0 && sortedCols.length === 0 && sortedColsConceptuales.length === 0
 
   // Fetch docentes for visible materias (admin client: personas RLS is own-only)
   type DocenteMateria = { nombre: string; apellido: string | null; materias: string[] }
@@ -330,12 +343,12 @@ export default async function BoletinPage({ params }: Params) {
           </div>
         </div>
 
-        {/* Notas — tabla unificada */}
+        {/* Notas — tabla numérica */}
         {noData ? (
           <p className="text-center text-muted-foreground py-8">
             {isResponsableOnly ? 'Aún no hay períodos publicados.' : 'Sin notas registradas.'}
           </p>
-        ) : (
+        ) : sortedCols.length === 0 ? null : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse">
               <thead>
@@ -409,7 +422,6 @@ export default async function BoletinPage({ params }: Params) {
                         {/* Template columns for this dimension */}
                         {sortedCols.map(col => {
                           const nota = matData.notasMap.get(col.templateId)?.get(dim.id)
-                            ?? (dimIdx === 0 ? matData.notasMap.get(col.templateId)?.get(null) : undefined)
                           const isAusente = nota?.valor_literal === 'A'
                           return (
                             <td key={col.templateId} className="text-center py-1.5 px-2">
@@ -469,6 +481,70 @@ export default async function BoletinPage({ params }: Params) {
                 })}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* Evaluación Conceptual */}
+        {sortedColsConceptuales.length > 0 && (
+          <div className="mt-6">
+            <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 print:text-gray-600">
+              Evaluación Conceptual
+            </h2>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm border-collapse">
+                <thead>
+                  <tr className="text-xs uppercase tracking-wide text-muted-foreground print:text-gray-600">
+                    <th className="text-left pb-1 pr-4 font-medium border-b-2 border-border" rowSpan={2}>
+                      Materia
+                    </th>
+                    {periodoGroupsConceptuales.map(pg => (
+                      <th
+                        key={pg.id ?? 'sin-periodo'}
+                        colSpan={pg.cols.length}
+                        className="text-center pb-1 px-1 font-semibold border-b border-border/50 capitalize"
+                      >
+                        {pg.nombre}
+                      </th>
+                    ))}
+                  </tr>
+                  <tr className="text-xs text-muted-foreground print:text-gray-600">
+                    {sortedColsConceptuales.map(col => (
+                      <th
+                        key={col.templateId}
+                        className="text-center pb-1 px-2 font-medium border-b-2 border-border capitalize whitespace-nowrap"
+                      >
+                        {col.nombre}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {[...materiaDataMap.entries()]
+                    .filter(([, matData]) => sortedColsConceptuales.some(col => matData.notasMap.has(col.templateId)))
+                    .map(([matId, matData]) => (
+                      <tr key={matId} className="border-t-2 border-border/60 print:border-gray-300">
+                        <td className="py-1.5 pr-4 font-medium">{matData.nombre}</td>
+                        {sortedColsConceptuales.map(col => {
+                          const nota = matData.notasMap.get(col.templateId)?.get(null)
+                          const isAusente = nota?.valor_literal === 'A'
+                          return (
+                            <td key={col.templateId} className="text-center py-1.5 px-2">
+                              <span className={isAusente ? 'text-orange-600 font-medium' : 'font-semibold'}>
+                                {formatNota(nota)}
+                              </span>
+                              {nota?.observacion && (
+                                <span className="block text-xs italic font-normal text-muted-foreground print:text-gray-500">
+                                  {nota.observacion}
+                                </span>
+                              )}
+                            </td>
+                          )
+                        })}
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
