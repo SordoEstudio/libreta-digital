@@ -298,7 +298,8 @@ export default async function BoletinPage({ params }: Params) {
     if (nota.valor_literal === 'A') return 'Ausente'
     if (nota.valor_numerico !== null) return nota.valor_numerico.toString()
     const dim = nota.materias_dimensiones as Dimension | null
-    if (dim?.tipo === 'conceptual' && nota.valor_literal) return labelConceptual(nota.valor_literal)
+    if (nota.valor_literal && (dim?.tipo === 'conceptual' || nota._ev.tipo === 'concepto'))
+      return labelConceptual(nota.valor_literal)
     return nota.valor_literal ?? '—'
   }
 

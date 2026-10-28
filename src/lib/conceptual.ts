@@ -2,6 +2,7 @@ export const VALORES_CONCEPTUALES = [
   { codigo: 'E',  label: 'Excelente' },
   { codigo: 'MB', label: 'Muy Bueno' },
   { codigo: 'B',  label: 'Bueno' },
+  { codigo: 'S',  label: 'Suficiente' },
   { codigo: 'R',  label: 'Regular' },
   { codigo: 'I',  label: 'Insuficiente' },
 ] as const
