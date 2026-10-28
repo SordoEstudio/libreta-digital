@@ -36,6 +36,9 @@ export default function EditarEvaluacionSheet({ evaluacion, periodos, dimensione
   const { terminoRecuperatorio } = useInstitucionConfig()
   const TIPOS = [
     { value: 'parcial', label: 'Parcial' },
+    { value: 'evaluacion', label: 'Evaluación' },
+    { value: 'calificacion', label: 'Calificación' },
+    { value: 'nota_integradora', label: 'Nota integradora' },
     { value: 'final', label: 'Final' },
     { value: 'recuperatorio', label: terminoRecuperatorio },
     { value: 'tp', label: 'Trabajo práctico' },
