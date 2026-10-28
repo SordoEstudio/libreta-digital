@@ -29,9 +29,10 @@ interface Props {
   dimensiones: Array<{ id: string; nombre: string }>
   isAdmin: boolean
   showLabel?: boolean
+  disabled?: boolean
 }
 
-export default function EditarEvaluacionSheet({ evaluacion, periodos, dimensiones, isAdmin, showLabel }: Props) {
+export default function EditarEvaluacionSheet({ evaluacion, periodos, dimensiones, isAdmin, showLabel, disabled }: Props) {
   const { terminoRecuperatorio } = useInstitucionConfig()
   const TIPOS = [
     { value: 'parcial', label: 'Parcial' },
@@ -120,7 +121,7 @@ export default function EditarEvaluacionSheet({ evaluacion, periodos, dimensione
   return (
     <>
       {showLabel ? (
-        <Button variant="outline" size="sm" onClick={() => handleOpen(true)}>
+        <Button variant="outline" size="sm" onClick={() => handleOpen(true)} disabled={disabled}>
           <Pencil data-icon="inline-start" className="size-3.5" />
           Editar
         </Button>
@@ -130,9 +131,11 @@ export default function EditarEvaluacionSheet({ evaluacion, periodos, dimensione
           size="sm"
           className="size-7 p-0 text-muted-foreground hover:text-foreground"
           onClick={() => handleOpen(true)}
+          disabled={disabled}
+          title={disabled ? 'El período está cerrado' : 'Editar evaluación'}
         >
           <Pencil className="size-3.5" />
-          <span className="sr-only">Editar evaluación</span>
+          <span className="sr-only">{disabled ? 'Período cerrado' : 'Editar evaluación'}</span>
         </Button>
       )}
 
