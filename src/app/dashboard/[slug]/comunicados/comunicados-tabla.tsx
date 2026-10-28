@@ -109,7 +109,7 @@ export default function ComunicadosTabla({ slug, comunicados }: Props) {
           <div className="w-48">
             <Select value={cursoFiltro || '__all__'} onValueChange={v => setCursoFiltro((v ?? '') === '__all__' ? '' : (v ?? ''))}>
               <SelectTrigger>
-                <SelectValue placeholder="Todos los cursos" />
+                <SelectValue>{cursoFiltro || 'Todos los cursos'}</SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="__all__">Todos los cursos</SelectItem>
