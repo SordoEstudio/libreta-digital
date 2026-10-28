@@ -7,7 +7,7 @@ import { ok, created, Err } from '@/lib/api'
 
 const CreateSchema = z.object({
   nombre: z.string().min(1),
-  tipo: z.enum(['parcial', 'final', 'recuperatorio', 'tp', 'concepto']),
+  tipo: z.enum(['parcial', 'evaluacion', 'calificacion', 'nota_integradora', 'final', 'recuperatorio', 'tp', 'concepto']),
   peso: z.number().positive().default(1),
   orden: z.number().int().positive().default(1),
   periodo_id: zId().optional().nullable(),

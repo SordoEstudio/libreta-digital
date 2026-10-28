@@ -163,7 +163,9 @@ export default function EditarEvaluacionSheet({ evaluacion, periodos, dimensione
               <Label htmlFor="ev-tipo">Tipo *</Label>
               <Select value={tipo} onValueChange={v => setTipo(v ?? tipo)}>
                 <SelectTrigger id="ev-tipo">
-                  <SelectValue />
+                  <SelectValue>
+                    {TIPOS.find(t => t.value === tipo)?.label ?? tipo}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {TIPOS.map(t => (
