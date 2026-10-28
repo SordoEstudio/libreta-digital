@@ -233,6 +233,7 @@ export default async function EvaluacionesPage({ params }: Params) {
                               periodos={periodos ?? []}
                               dimensiones={dimensiones ?? []}
                               isAdmin={isAdminLevel}
+                              disabled={esCerrado}
                             />
                           </TableCell>
                         </TableRow>
