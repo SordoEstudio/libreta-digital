@@ -37,11 +37,12 @@ export default async function BoletinPage({ params }: Params) {
 
   // Alumno gate: can only view their own boletín
   if (isAlumnoOnly) {
+    if (!session.persona_id) redirect(`/dashboard/${slug}`)
     const { data: propioAlumno } = await supabase
       .from('alumnos')
       .select('id')
       .eq('id', alumno_id)
-      .eq('persona_id', session.persona_id ?? '')
+      .eq('persona_id', session.persona_id)
       .maybeSingle()
     if (!propioAlumno) redirect(`/dashboard/${slug}`)
   }

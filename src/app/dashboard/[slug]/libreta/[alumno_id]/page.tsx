@@ -28,11 +28,12 @@ export default async function LibretaPage({ params }: Params) {
   // Alumno gate: can only view their own libreta
   if (!isSuperadmin(session) && hasRole(session, inst.id, 'alumno') &&
       !hasAnyRole(session, inst.id, ['admin', 'docente', 'responsable'])) {
+    if (!session.persona_id) redirect(`/dashboard/${slug}`)
     const { data: propioAlumno } = await supabase
       .from('alumnos')
       .select('id')
       .eq('id', alumno_id)
-      .eq('persona_id', session.persona_id ?? '')
+      .eq('persona_id', session.persona_id)
       .maybeSingle()
     if (!propioAlumno) redirect(`/dashboard/${slug}`)
     redirect(`/dashboard/${slug}/libreta/${alumno_id}/boletin`)

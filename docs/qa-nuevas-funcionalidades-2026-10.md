@@ -6,15 +6,15 @@
 
 ---
 
-## Setup previo
+## Claves de acceso 
 
-- Institución de prueba con slug conocido (ej. `demo`)
-- Al menos 1 año lectivo activo con 2 períodos
-- 1 curso con 3+ alumnos, cada uno con un responsable con email válido
-- 1 docente asignado a al menos 1 materia del curso
-- Admin y docente con cuentas activas
+ Cuentas por rol: 
+ admin@ism.com, 
+ docente@ism.com, 
+ responsable@ism.com, 
+ alumno@ism.com 
 
----
+ todas con password ISM2026!
 
 ## 1. Dimensiones por materia
 
