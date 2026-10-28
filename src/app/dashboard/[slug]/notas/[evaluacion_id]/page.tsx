@@ -239,6 +239,7 @@ export default async function NotasPage({ params, searchParams }: Params) {
               dimensiones={todasDimensiones ?? []}
               isAdmin={isAdminLevel}
               showLabel
+              disabled={isCerrado}
             />
           </div>
         </div>
