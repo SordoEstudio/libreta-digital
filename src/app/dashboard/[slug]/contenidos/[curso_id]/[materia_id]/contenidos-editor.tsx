@@ -187,7 +187,7 @@ export default function ContenidosEditor({ unidades: initialUnidades, dimensione
                               </a>
                             )}
                             {item.tipo === 'archivo' && item.signedUrl && (
-                              <a href={`/api/v1/contenidos/items/${item.id}/download`}>
+                              <a href={`/api/v1/contenidos/items/${item.id}/download`} target="_blank" rel="noopener noreferrer">
                                 <Button variant="outline" size="sm" className="h-7 text-xs w-full">
                                   <Download className="size-3" />
                                   Descargar
@@ -202,7 +202,7 @@ export default function ContenidosEditor({ unidades: initialUnidades, dimensione
                                     Ver
                                   </Button>
                                 </a>
-                                <a href={`/api/v1/contenidos/items/${item.id}/download`}>
+                                <a href={`/api/v1/contenidos/items/${item.id}/download`} target="_blank" rel="noopener noreferrer">
                                   <Button variant="outline" size="sm" className="h-7 text-xs w-full">
                                     <Download className="size-3" />
                                     Descargar

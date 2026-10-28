@@ -36,7 +36,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
   const adminClient = createAdminClient()
   const { data: signed, error } = await adminClient.storage
     .from('contenidos')
-    .createSignedUrl(item.storage_path, SIGNED_URL_TTL)
+    .createSignedUrl(item.storage_path, SIGNED_URL_TTL, { download: true })
 
   if (error || !signed?.signedUrl) return Err.server(error?.message ?? 'No se pudo generar URL')
 
