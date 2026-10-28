@@ -4,7 +4,6 @@ import { zId } from '@/lib/validators'
 import { createClient } from '@/lib/supabase/server'
 import { getSession, isSuperadmin, hasAnyRole } from '@/lib/auth'
 import { ok, Err } from '@/lib/api'
-import { notificarNotaCargada } from '@/lib/notificaciones'
 import { logActividad } from '@/lib/actividad'
 import { isCerradoParaCurso, PeriodoCierreOverride } from '@/lib/cierre-periodo'
 
@@ -106,19 +105,6 @@ export async function POST(request: NextRequest) {
     return Err.server(error.message)
   }
 
-  const uniqueAlumnoIds = [...new Set(data.map(n => n.alumno_id))]
-  const { data: alumnos } = await supabase
-    .from('alumnos')
-    .select('id, nombre')
-    .in('id', uniqueAlumnoIds)
-
-  const alumnoMap = new Map((alumnos ?? []).map(a => [a.id, a.nombre]))
-  const { data: inst } = await supabase
-    .from('instituciones')
-    .select('nombre, logo_rectangular_url')
-    .eq('id', evaluacion.institucion_id)
-    .single()
-
   await logActividad({
     institucion_id: evaluacion.institucion_id,
     persona_id: session.persona_id,
@@ -132,30 +118,6 @@ export async function POST(request: NextRequest) {
       count: data.length,
     },
   })
-
-  // Deduplicate notifications by alumno_id — one notif per alumno regardless of dimensions
-  const notifByAlumno = new Map<string, typeof data[number]>()
-  for (const nota of data) {
-    if (!notifByAlumno.has(nota.alumno_id)) notifByAlumno.set(nota.alumno_id, nota)
-  }
-
-  void Promise.allSettled(
-    Array.from(notifByAlumno.values()).map(nota =>
-      notificarNotaCargada({
-        nota_id: nota.id,
-        alumno_id: nota.alumno_id,
-        alumno_nombre: alumnoMap.get(nota.alumno_id) ?? 'Alumno',
-        evaluacion_nombre: evaluacion.nombre,
-        evaluacion_tipo: evaluacion.tipo,
-        materia_nombre: (mat?.materias_catalogo as { nombre: string } | null)?.nombre ?? '',
-        curso_nombre: mat?.cursos?.nombre ?? '',
-        valor: (nota.valor_numerico?.toString() ?? nota.valor_literal) ?? '—',
-        institucion_id: evaluacion.institucion_id,
-        institucion_nombre: inst?.nombre ?? '',
-        logo_url: inst?.logo_rectangular_url ?? undefined,
-      })
-    )
-  )
 
   return ok({ upserted: data.length, skipped: notas.length - toUpsert.length })
 }

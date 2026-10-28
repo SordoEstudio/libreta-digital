@@ -4,7 +4,6 @@ import { zId } from '@/lib/validators'
 import { createClient } from '@/lib/supabase/server'
 import { getSession, isSuperadmin, hasAnyRole } from '@/lib/auth'
 import { created, Err } from '@/lib/api'
-import { notificarNotaCargada } from '@/lib/notificaciones'
 
 const CreateSchema = z.object({
   evaluacion_id: zId(),
@@ -80,29 +79,6 @@ export async function POST(request: NextRequest) {
 
   if (error?.code === '23505') return Err.conflict('Ya existe una nota para este alumno en esta evaluación')
   if (error) return Err.server(error.message)
-
-  const { data: inst } = await supabase
-    .from('instituciones')
-    .select('nombre, logo_rectangular_url')
-    .eq('id', evaluacion.institucion_id)
-    .single()
-
-  const valor = (data.valor_numerico?.toString() ?? data.valor_literal) ?? '—'
-  const materiaNombre = (mat?.materias_catalogo as { nombre: string } | null)?.nombre ?? ''
-
-  void notificarNotaCargada({
-    nota_id: data.id,
-    alumno_id: data.alumno_id,
-    alumno_nombre: alumno?.nombre ?? 'Alumno',
-    evaluacion_nombre: evaluacion.nombre,
-    evaluacion_tipo: evaluacion.tipo,
-    materia_nombre: materiaNombre,
-    curso_nombre: mat?.cursos?.nombre ?? '',
-    valor,
-    institucion_id: evaluacion.institucion_id,
-    institucion_nombre: inst?.nombre ?? '',
-    logo_url: inst?.logo_rectangular_url ?? undefined,
-  })
 
   return created(data)
 }
