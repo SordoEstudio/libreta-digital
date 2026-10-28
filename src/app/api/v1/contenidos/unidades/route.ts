@@ -1,11 +1,12 @@
-import { NextRequest } from 'next/server'
+﻿import { NextRequest } from 'next/server'
 import { z } from 'zod'
+import { zId } from '@/lib/validators'
 import { createClient } from '@/lib/supabase/server'
 import { getSession, isSuperadmin, hasAnyRole } from '@/lib/auth'
 import { ok, created, Err } from '@/lib/api'
 
 const CreateUnidadSchema = z.object({
-  materia_id:  z.string().uuid(),
+  materia_id:  zId(),
   nombre:      z.string().min(1).max(120),
   descripcion: z.string().max(500).optional().nullable(),
   orden:       z.number().int().min(0).default(0),

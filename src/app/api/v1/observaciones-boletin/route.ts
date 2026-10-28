@@ -1,12 +1,13 @@
-import { NextRequest } from 'next/server'
+﻿import { NextRequest } from 'next/server'
 import { z } from 'zod'
+import { zId } from '@/lib/validators'
 import { createClient } from '@/lib/supabase/server'
 import { getSession, isSuperadmin, hasRole } from '@/lib/auth'
 import { ok, created, Err } from '@/lib/api'
 
 const Body = z.object({
-  alumno_id:  z.string().uuid(),
-  periodo_id: z.string().uuid(),
+  alumno_id:  zId(),
+  periodo_id: zId(),
   texto:      z.string().max(1000),
 })
 

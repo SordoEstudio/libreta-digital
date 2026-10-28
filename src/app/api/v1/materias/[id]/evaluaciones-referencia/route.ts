@@ -1,5 +1,6 @@
-import { NextRequest } from 'next/server'
+﻿import { NextRequest } from 'next/server'
 import { z } from 'zod'
+import { zId } from '@/lib/validators'
 import { createClient } from '@/lib/supabase/server'
 import { getSession, isSuperadmin, hasAnyRole } from '@/lib/auth'
 import { ok, created, Err } from '@/lib/api'
@@ -8,9 +9,9 @@ const CreateSchema = z.object({
   nombre: z.string().min(1).max(200),
   tipo: z.enum(['numerica', 'conceptual']),
   fecha: z.string().date().optional().nullable(),
-  periodo_id: z.string().uuid().optional().nullable(),
-  dimension_ids: z.array(z.string().uuid()).optional(),
-  unidad_ids: z.array(z.string().uuid()).optional(),
+  periodo_id: zId().optional().nullable(),
+  dimension_ids: z.array(zId()).optional(),
+  unidad_ids: z.array(zId()).optional(),
 }).strict()
 
 type Params = { params: Promise<{ id: string }> }

@@ -1,13 +1,14 @@
-import { NextRequest } from 'next/server'
+﻿import { NextRequest } from 'next/server'
 import { z } from 'zod'
+import { zId } from '@/lib/validators'
 import { createClient } from '@/lib/supabase/server'
 import { getSession, isSuperadmin, hasRole, hasAnyRole } from '@/lib/auth'
 import { ok, created, Err } from '@/lib/api'
 
 const CreateSchema = z.object({
   nombre: z.string().min(1),
-  escala_id: z.string().uuid().optional(),
-  docentes_ids: z.array(z.string().uuid()).default([]),
+  escala_id: zId().optional(),
+  docentes_ids: z.array(zId()).default([]),
 })
 
 type Params = { params: Promise<{ id: string }> }

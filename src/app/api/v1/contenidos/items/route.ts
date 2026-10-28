@@ -1,16 +1,17 @@
-import { NextRequest } from 'next/server'
+﻿import { NextRequest } from 'next/server'
 import { z } from 'zod'
+import { zId } from '@/lib/validators'
 import { createClient } from '@/lib/supabase/server'
 import { getSession, isSuperadmin, hasAnyRole } from '@/lib/auth'
 import { ok, created, Err } from '@/lib/api'
 
 const CreateItemLinkSchema = z.object({
-  unidad_id:    z.string().uuid(),
+  unidad_id:    zId(),
   tipo:         z.literal('link'),
   titulo:       z.string().min(1).max(200),
   url:          z.string().url(),
   nota:         z.string().max(1000).optional().nullable(),
-  dimension_id: z.string().uuid().optional().nullable(),
+  dimension_id: zId().optional().nullable(),
   orden:        z.number().int().min(0).default(0),
 })
 

@@ -1,5 +1,6 @@
-import { NextRequest } from 'next/server'
+﻿import { NextRequest } from 'next/server'
 import { z } from 'zod'
+import { zId } from '@/lib/validators'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getSession, isSuperadmin, hasAnyRole, hasRole } from '@/lib/auth'
@@ -255,7 +256,7 @@ export async function POST(request: NextRequest) {
 }
 
 const ListQuerySchema = z.object({
-  institucion_id: z.string().uuid(),
+  institucion_id: zId(),
 })
 
 export async function GET(request: NextRequest) {

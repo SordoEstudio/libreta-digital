@@ -1,4 +1,5 @@
-import { z } from 'zod'
+﻿import { z } from 'zod'
+import { zId } from '@/lib/validators'
 
 export function deduplicarResponsables(
   rows: { persona_id: string; email: string }[]
@@ -14,8 +15,8 @@ export function deduplicarResponsables(
 export const CreateComunicadoSchema = z.object({
   titulo:     z.string().min(1).max(300),
   contenido:  z.string().min(1).max(5000),
-  curso_id:   z.union([z.string().uuid(), z.literal('all')]),
-  materia_id: z.string().uuid().optional(),
+  curso_id:   z.union([zId(), z.literal('all')]),
+  materia_id: zId().optional(),
 })
 
 export type CreateComunicadoInput = z.infer<typeof CreateComunicadoSchema>

@@ -1,5 +1,6 @@
-import { NextRequest } from 'next/server'
+﻿import { NextRequest } from 'next/server'
 import { z } from 'zod'
+import { zId } from '@/lib/validators'
 import { createClient } from '@/lib/supabase/server'
 import { getSession, isSuperadmin, hasAnyRole } from '@/lib/auth'
 import { ok, Err } from '@/lib/api'
@@ -9,9 +10,9 @@ const PatchSchema = z.object({
   nombre: z.string().min(1).max(200).optional(),
   tipo: z.enum(['numerica', 'conceptual']).optional(),
   fecha: z.string().date().nullable().optional(),
-  periodo_id: z.string().uuid().nullable().optional(),
-  dimension_ids: z.array(z.string().uuid()).optional(),
-  unidad_ids: z.array(z.string().uuid()).optional(),
+  periodo_id: zId().nullable().optional(),
+  dimension_ids: z.array(zId()).optional(),
+  unidad_ids: z.array(zId()).optional(),
 }).strict()
 
 type Params = { params: Promise<{ ref_id: string }> }

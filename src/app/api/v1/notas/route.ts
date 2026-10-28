@@ -1,13 +1,14 @@
-import { NextRequest } from 'next/server'
+﻿import { NextRequest } from 'next/server'
 import { z } from 'zod'
+import { zId } from '@/lib/validators'
 import { createClient } from '@/lib/supabase/server'
 import { getSession, isSuperadmin, hasAnyRole } from '@/lib/auth'
 import { created, Err } from '@/lib/api'
 import { notificarNotaCargada } from '@/lib/notificaciones'
 
 const CreateSchema = z.object({
-  evaluacion_id: z.string().uuid(),
-  alumno_id: z.string().uuid(),
+  evaluacion_id: zId(),
+  alumno_id: zId(),
   valor_numerico: z.number().optional(),
   valor_literal: z.string().optional(),
   observacion: z.string().optional(),

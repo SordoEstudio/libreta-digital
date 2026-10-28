@@ -1,11 +1,12 @@
-import { NextRequest } from 'next/server'
+﻿import { NextRequest } from 'next/server'
 import { z } from 'zod'
+import { zId } from '@/lib/validators'
 import { createClient } from '@/lib/supabase/server'
 import { getSession, isSuperadmin, hasRole } from '@/lib/auth'
 import { created, ok, Err } from '@/lib/api'
 
 const PostSchema = z.object({
-  curso_id: z.string().uuid(),
+  curso_id: zId(),
 }).strict()
 
 type Params = { params: Promise<{ id: string }> }

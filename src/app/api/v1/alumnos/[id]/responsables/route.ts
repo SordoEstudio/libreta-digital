@@ -1,12 +1,13 @@
-import { NextRequest } from 'next/server'
+﻿import { NextRequest } from 'next/server'
 import { z } from 'zod'
+import { zId } from '@/lib/validators'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getSession, isSuperadmin, hasRole } from '@/lib/auth'
 import { ok, created, Err } from '@/lib/api'
 
 const CreateSchema = z.object({
-  persona_id: z.string().uuid(),
+  persona_id: zId(),
   relacion: z.string().optional(),
 })
 
