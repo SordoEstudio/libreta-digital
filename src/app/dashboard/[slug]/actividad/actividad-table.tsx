@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { Input } from '@/components/ui/input'
+import { SearchableSelect } from '@/components/ui/searchable-select'
 import { Search, X } from 'lucide-react'
 
 const ACCION_LABELS: Record<string, string> = {
@@ -81,11 +82,12 @@ export function ActividadTable({ rows }: Props) {
   const [query, setQuery] = useState('')
   const [accionFiltro, setAccionFiltro] = useState<string | null>(null)
 
-  const accionesUnicas = useMemo(() => {
+  const accionOptions = useMemo(() => {
     const set = new Set(rows.map(r => r.accion))
-    return [...set].sort((a, b) =>
-      (ACCION_LABELS[a] ?? a).localeCompare(ACCION_LABELS[b] ?? b, 'es')
-    )
+    const opciones = [...set]
+      .sort((a, b) => (ACCION_LABELS[a] ?? a).localeCompare(ACCION_LABELS[b] ?? b, 'es'))
+      .map(a => ({ value: a, label: ACCION_LABELS[a] ?? a }))
+    return [{ value: '', label: 'Todas las acciones' }, ...opciones]
   }, [rows])
 
   const filtrados = useMemo(() => {
@@ -124,21 +126,15 @@ export function ActividadTable({ rows }: Props) {
           )}
         </div>
 
-        {accionesUnicas.length > 1 && (
-          <div className="flex flex-wrap gap-1.5">
-            {accionesUnicas.map(accion => (
-              <button
-                key={accion}
-                onClick={() => setAccionFiltro(accion === accionFiltro ? null : accion)}
-                className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors ${
-                  accionFiltro === accion
-                    ? 'bg-primary text-primary-foreground border-primary'
-                    : 'border-border text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                {ACCION_LABELS[accion] ?? accion}
-              </button>
-            ))}
+        {accionOptions.length > 2 && (
+          <div className="w-56">
+            <SearchableSelect
+              options={accionOptions}
+              value={accionFiltro ?? ''}
+              onValueChange={v => setAccionFiltro(v === '' ? null : v)}
+              placeholder="Filtrar por acción"
+              searchPlaceholder="Buscar acción…"
+            />
           </div>
         )}
       </div>
