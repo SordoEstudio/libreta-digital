@@ -101,7 +101,9 @@ export default function NuevaEvaluacionSheet({ materiaId, periodos, dimensiones,
               <Label htmlFor="ev-tipo">Tipo *</Label>
               <Select value={tipo} onValueChange={v => setTipo(v ?? '')}>
                 <SelectTrigger id="ev-tipo">
-                  <SelectValue placeholder="Seleccionar tipo..." />
+                  <SelectValue placeholder="Seleccionar tipo...">
+                    {TIPOS.find(t => t.value === tipo)?.label ?? tipo || undefined}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {TIPOS.map(t => (

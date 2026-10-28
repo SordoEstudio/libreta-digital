@@ -8,7 +8,7 @@ import { isPeriodoCerrado, isCerradoParaCurso } from '@/lib/cierre-periodo'
 
 const PatchSchema = z.object({
   nombre: z.string().min(1).optional(),
-  tipo: z.enum(['parcial', 'final', 'recuperatorio', 'tp', 'concepto']).optional(),
+  tipo: z.enum(['parcial', 'evaluacion', 'calificacion', 'nota_integradora', 'final', 'recuperatorio', 'tp', 'concepto']).optional(),
   peso: z.number().positive().optional(),
   orden: z.number().int().positive().optional(),
   periodo_id: zId().nullable().optional(),
