@@ -50,6 +50,7 @@ interface NotasEditorProps {
   permiteRecuperatorio: boolean
   recuperatorioId: string | null
   esRecuperatorio: boolean
+  esConcepto?: boolean
   // For recuperatorios: Map<alumno_id, Set<dim_id | '__none__'>> of eligible (failed) cells
   // null = not a recuperatorio, show all students
   eligibles?: Map<string, Set<string>> | null
@@ -74,8 +75,8 @@ function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
 export function NotasEditor({
   evaluacionId, evaluacionNombre, cursoNombre, materiaNombre, periodoNombre,
   alumnos, notasExistentes, dimensiones, slug,
-  notaAprobacion, permiteRecuperatorio, recuperatorioId, esRecuperatorio, eligibles,
-  escalaMin, escalaMax, isCerrado,
+  notaAprobacion, permiteRecuperatorio, recuperatorioId, esRecuperatorio, esConcepto,
+  eligibles, escalaMin, escalaMax, isCerrado,
 }: NotasEditorProps) {
   const { terminoRecuperatorio } = useInstitucionConfig()
   const hasDims = dimensiones.length > 0
@@ -428,7 +429,7 @@ export function NotasEditor({
         </Button>
       </div>
 
-      {permiteRecuperatorio && !esRecuperatorio && (
+      {permiteRecuperatorio && !esRecuperatorio && !esConcepto && (
         <div className="flex items-center justify-between rounded-md border p-3 bg-muted/30">
           <p className="text-sm text-muted-foreground">
             {recuperatorioId
@@ -456,7 +457,7 @@ export function NotasEditor({
         </div>
       )}
 
-      {esRecuperatorio && (
+      {esRecuperatorio && !esConcepto && (
         <p className="text-sm text-muted-foreground">Esta es la instancia de {terminoRecuperatorio.toLowerCase()}.</p>
       )}
     </div>

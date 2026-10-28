@@ -155,7 +155,9 @@ export default async function NotasPage({ params, searchParams }: Params) {
 
   const recuperatorio_de_id = evaluacion.recuperatorio_de_evaluacion_id ?? null
 
-  if (esRecuperatorio && recuperatorio_de_id && notaAprobacion !== null) {
+  const esConcepto = evaluacion.tipo === 'concepto'
+
+  if (esRecuperatorio && !esConcepto && recuperatorio_de_id && notaAprobacion !== null) {
     const { data: notasOriginales } = await supabase
       .from('notas')
       .select('alumno_id, dimension_id, valor_numerico, valor_literal')
@@ -259,6 +261,7 @@ export default async function NotasPage({ params, searchParams }: Params) {
         permiteRecuperatorio={permiteRecuperatorio}
         recuperatorioId={recuperatorioExistente?.id ?? null}
         esRecuperatorio={esRecuperatorio}
+        esConcepto={esConcepto}
         eligibles={eligibles}
         escalaMin={escala?.min_valor ?? null}
         escalaMax={escala?.max_valor ?? null}
