@@ -409,6 +409,7 @@ export default async function BoletinPage({ params }: Params) {
                         {/* Template columns for this dimension */}
                         {sortedCols.map(col => {
                           const nota = matData.notasMap.get(col.templateId)?.get(dim.id)
+                            ?? (dimIdx === 0 ? matData.notasMap.get(col.templateId)?.get(null) : undefined)
                           const isAusente = nota?.valor_literal === 'A'
                           return (
                             <td key={col.templateId} className="text-center py-1.5 px-2">
