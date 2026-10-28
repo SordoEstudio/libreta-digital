@@ -1,11 +1,12 @@
-import { NextRequest } from 'next/server'
+﻿import { NextRequest } from 'next/server'
 import { z } from 'zod'
+import { zId } from '@/lib/validators'
 import { createClient } from '@/lib/supabase/server'
 import { getSession, isSuperadmin, hasRole, hasAnyRole } from '@/lib/auth'
 import { ok, created, Err } from '@/lib/api'
 
 const CreateSchema = z.object({
-  año_lectivo_id: z.string().uuid(),
+  año_lectivo_id: zId(),
   nombre: z.string().min(1),
   orden: z.number().int().positive().default(1),
   tipo: z.enum(['regular', 'anual']).default('regular'),

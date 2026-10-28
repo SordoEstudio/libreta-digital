@@ -1,13 +1,14 @@
-import { NextRequest } from 'next/server'
+﻿import { NextRequest } from 'next/server'
 import { z } from 'zod'
+import { zId } from '@/lib/validators'
 import { createClient } from '@/lib/supabase/server'
 import { getSession, isSuperadmin, hasRole } from '@/lib/auth'
 import { ok, Err } from '@/lib/api'
 
 const PatchSchema = z.object({
   nombre: z.string().min(1).optional(),
-  escala_id: z.string().uuid().nullable().optional(),
-  docentes_ids: z.array(z.string().uuid()).optional(),
+  escala_id: zId().nullable().optional(),
+  docentes_ids: z.array(zId()).optional(),
 }).strict()
 
 type Params = { params: Promise<{ id: string }> }

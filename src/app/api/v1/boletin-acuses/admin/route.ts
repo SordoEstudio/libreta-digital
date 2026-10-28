@@ -1,22 +1,23 @@
-import { NextRequest } from 'next/server'
+﻿import { NextRequest } from 'next/server'
 import { z } from 'zod'
+import { zId } from '@/lib/validators'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getSession, hasRole, isSuperadmin } from '@/lib/auth'
 import { created, ok, Err } from '@/lib/api'
 import { logActividad } from '@/lib/actividad'
 
 const PostSchema = z.object({
-  alumno_id: z.string().uuid(),
-  persona_id: z.string().uuid(),
-  periodo_id: z.string().uuid(),
-  institucion_id: z.string().uuid(),
+  alumno_id: zId(),
+  persona_id: zId(),
+  periodo_id: zId(),
+  institucion_id: zId(),
 }).strict()
 
 const DeleteSchema = z.object({
-  alumno_id: z.string().uuid(),
-  persona_id: z.string().uuid(),
-  periodo_id: z.string().uuid(),
-  institucion_id: z.string().uuid(),
+  alumno_id: zId(),
+  persona_id: zId(),
+  periodo_id: zId(),
+  institucion_id: zId(),
 }).strict()
 
 export async function POST(request: NextRequest) {

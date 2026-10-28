@@ -1,13 +1,14 @@
-import { NextRequest } from 'next/server'
+﻿import { NextRequest } from 'next/server'
 import { z } from 'zod'
+import { zId } from '@/lib/validators'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getSession } from '@/lib/auth'
 import { created, Err } from '@/lib/api'
 
 const PostSchema = z.object({
-  alumno_id: z.string().uuid(),
-  periodo_ids: z.array(z.string().uuid()).min(1).max(20),
+  alumno_id: zId(),
+  periodo_ids: z.array(zId()).min(1).max(20),
 }).strict()
 
 export async function POST(request: NextRequest) {

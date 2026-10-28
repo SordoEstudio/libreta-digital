@@ -1,5 +1,6 @@
-import { NextRequest } from 'next/server'
+﻿import { NextRequest } from 'next/server'
 import { z } from 'zod'
+import { zId } from '@/lib/validators'
 import { createClient } from '@/lib/supabase/server'
 import { getSession, isSuperadmin, hasRole } from '@/lib/auth'
 import { ok, created, Err } from '@/lib/api'
@@ -9,7 +10,7 @@ const CreateSchema = z.object({
   tipo: z.enum(['parcial', 'final', 'recuperatorio', 'tp', 'concepto']),
   peso: z.number().positive().default(1),
   orden: z.number().int().positive().default(1),
-  periodo_id: z.string().uuid().optional().nullable(),
+  periodo_id: zId().optional().nullable(),
   fecha: z.string().date().nullable().optional(),
   permite_recuperatorio: z.boolean().default(false),
 }).strict()

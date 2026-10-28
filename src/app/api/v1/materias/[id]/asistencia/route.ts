@@ -1,18 +1,19 @@
-import { NextRequest } from 'next/server'
+﻿import { NextRequest } from 'next/server'
 import { z } from 'zod'
+import { zId } from '@/lib/validators'
 import { createClient } from '@/lib/supabase/server'
 import { getSession, isSuperadmin, hasAnyRole, hasRole } from '@/lib/auth'
 import { ok, Err } from '@/lib/api'
 import { isCerradoParaCurso } from '@/lib/cierre-periodo'
 
 const RegistroSchema = z.object({
-  alumno_id:     z.string().uuid(),
+  alumno_id:     zId(),
   inasistencias: z.number().int().min(0),
   observacion:   z.string().max(500).optional().nullable(),
 })
 
 const BulkSchema = z.object({
-  periodo_id: z.string().uuid(),
+  periodo_id: zId(),
   registros:  z.array(RegistroSchema).min(1),
 })
 

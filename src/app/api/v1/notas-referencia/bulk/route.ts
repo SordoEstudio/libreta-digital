@@ -1,15 +1,16 @@
-import { NextRequest } from 'next/server'
+﻿import { NextRequest } from 'next/server'
 import { z } from 'zod'
+import { zId } from '@/lib/validators'
 import { createClient } from '@/lib/supabase/server'
 import { getSession, isSuperadmin, hasAnyRole } from '@/lib/auth'
 import { ok, Err } from '@/lib/api'
 import { logActividad } from '@/lib/actividad'
 
 const BulkRefSchema = z.object({
-  evaluacion_ref_id: z.string().uuid(),
+  evaluacion_ref_id: zId(),
   notas: z.array(z.object({
-    alumno_id: z.string().uuid(),
-    dimension_id: z.string().uuid().nullable().optional(),
+    alumno_id: zId(),
+    dimension_id: zId().nullable().optional(),
     valor_numerico: z.number().nullable().optional(),
     valor_literal: z.string().nullable().optional(),
     observacion: z.string().optional(),
