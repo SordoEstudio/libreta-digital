@@ -247,6 +247,9 @@ export default async function NotasPage({ params, searchParams }: Params) {
       <NotasEditor
         evaluacionId={evaluacion_id}
         evaluacionNombre={evaluacion.nombre}
+        cursoNombre={mat.cursos?.nombre ?? ''}
+        materiaNombre={materiaNombre}
+        periodoNombre={evalPeriodo?.nombre ?? null}
         alumnos={alumnos ?? []}
         notasExistentes={notasExistentes ?? []}
         dimensiones={dimensiones}

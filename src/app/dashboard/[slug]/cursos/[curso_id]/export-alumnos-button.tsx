@@ -22,11 +22,13 @@ function displayNombre(a: Alumno) {
 
 export default function ExportAlumnosButton({ alumnos, cursoNombre }: Props) {
   function handleExport() {
-    const rows = alumnos.map(a => ({
-      Nombre: displayNombre(a),
-      Estado: a.activo ? 'Activo' : 'Inactivo',
-    }))
-    const ws = XLSX.utils.json_to_sheet(rows)
+    const aoa = [
+      ['Curso', cursoNombre],
+      [],
+      ['Nombre', 'Estado'],
+      ...alumnos.map(a => [displayNombre(a), a.activo ? 'Activo' : 'Inactivo']),
+    ]
+    const ws = XLSX.utils.aoa_to_sheet(aoa)
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, 'Alumnos')
     XLSX.writeFile(wb, `Alumnos - ${cursoNombre}.xlsx`)

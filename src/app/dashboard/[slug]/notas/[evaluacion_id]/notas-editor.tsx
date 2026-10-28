@@ -39,6 +39,9 @@ interface Dimension {
 interface NotasEditorProps {
   evaluacionId: string
   evaluacionNombre: string
+  cursoNombre: string
+  materiaNombre: string
+  periodoNombre?: string | null
   alumnos: Alumno[]
   notasExistentes: NotaExistente[]
   dimensiones: Dimension[]
@@ -69,7 +72,8 @@ function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
 }
 
 export function NotasEditor({
-  evaluacionId, evaluacionNombre, alumnos, notasExistentes, dimensiones, slug,
+  evaluacionId, evaluacionNombre, cursoNombre, materiaNombre, periodoNombre,
+  alumnos, notasExistentes, dimensiones, slug,
   notaAprobacion, permiteRecuperatorio, recuperatorioId, esRecuperatorio, eligibles,
   escalaMin, escalaMax, isCerrado,
 }: NotasEditorProps) {
@@ -145,30 +149,41 @@ export function NotasEditor({
   }
 
   function handleExport() {
+    const metaRows: string[][] = [
+      ['Curso', cursoNombre],
+      ['Materia', materiaNombre],
+      ['Evaluación', evaluacionNombre],
+      ...(periodoNombre ? [['Período', periodoNombre]] : []),
+      [],
+    ]
+
+    let dataRows: string[][]
     if (hasDims) {
-      const rows = sortedAlumnos.map(a => {
-        const row: Record<string, string> = { Alumno: displayNombre(a) }
-        for (const dim of dimensiones) {
-          const v = valoresDim[a.id]?.[dim.id] ?? ''
-          row[dim.nombre] = v.toUpperCase() === 'A' ? 'Ausente' : (v || '—')
-        }
-        return row
-      })
-      const ws = XLSX.utils.json_to_sheet(rows)
-      const wb = XLSX.utils.book_new()
-      XLSX.utils.book_append_sheet(wb, ws, 'Notas')
-      XLSX.writeFile(wb, `${evaluacionNombre}.xlsx`)
+      dataRows = [
+        ['Alumno', ...dimensiones.map(d => d.nombre)],
+        ...sortedAlumnos.map(a => [
+          displayNombre(a),
+          ...dimensiones.map(dim => {
+            const v = valoresDim[a.id]?.[dim.id] ?? ''
+            return v.toUpperCase() === 'A' ? 'Ausente' : (v || '—')
+          }),
+        ]),
+      ]
     } else {
-      const rows = sortedAlumnos.map(a => ({
-        Alumno: displayNombre(a),
-        Nota: (valores[a.id] ?? '').toUpperCase() === 'A' ? 'Ausente' : (valores[a.id] || '—'),
-        Observación: (valores[a.id] ?? '').toUpperCase() === 'A' ? '' : (observaciones[a.id] ?? ''),
-      }))
-      const ws = XLSX.utils.json_to_sheet(rows)
-      const wb = XLSX.utils.book_new()
-      XLSX.utils.book_append_sheet(wb, ws, 'Notas')
-      XLSX.writeFile(wb, `${evaluacionNombre}.xlsx`)
+      dataRows = [
+        ['Alumno', 'Nota', 'Observación'],
+        ...sortedAlumnos.map(a => [
+          displayNombre(a),
+          (valores[a.id] ?? '').toUpperCase() === 'A' ? 'Ausente' : (valores[a.id] || '—'),
+          (valores[a.id] ?? '').toUpperCase() === 'A' ? '' : (observaciones[a.id] ?? ''),
+        ]),
+      ]
     }
+
+    const ws = XLSX.utils.aoa_to_sheet([...metaRows, ...dataRows])
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Notas')
+    XLSX.writeFile(wb, `${cursoNombre} - ${materiaNombre} - ${evaluacionNombre}.xlsx`)
   }
 
   async function handleSave() {
