@@ -237,9 +237,10 @@ export default function CuadernoTabla({
     }
   }
 
-  async function handleSaveProceso(): Promise<{ errors: number }> {
+  async function handleSaveProceso(): Promise<{ errors: number; errorMessage?: string }> {
     setSavingProceso(true)
     let errorCount = 0
+    let errorMessage: string | undefined
     for (const ev of evalRefs) {
       const notas = alumnos.flatMap(a => {
         const cols = ev.dimensiones.length > 0 ? ev.dimensiones : [null as null]
@@ -260,13 +261,19 @@ export default function CuadernoTabla({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ evaluacion_ref_id: ev.id, notas }),
       })
-      if (!res.ok) errorCount++
+      if (!res.ok) {
+        errorCount++
+        if (!errorMessage) {
+          const data = await res.json().catch(() => null)
+          errorMessage = data?.error ?? data?.message ?? undefined
+        }
+      }
     }
     setSavingProceso(false)
-    return { errors: errorCount }
+    return { errors: errorCount, errorMessage }
   }
 
-  async function handleSaveLibreta(): Promise<{ errors: number }> {
+  async function handleSaveLibreta(): Promise<{ errors: number; errorMessage?: string }> {
     const evs = evalsLibreta ?? []
     if (evs.length === 0) return { errors: 0 }
 
@@ -277,6 +284,7 @@ export default function CuadernoTabla({
     ])
 
     let errors = 0
+    let errorMessage: string | undefined
     await Promise.allSettled(
       allToSave.map(async ev => {
         const cols = ev.dimensiones.length > 0 ? ev.dimensiones : [null as null]
@@ -301,10 +309,16 @@ export default function CuadernoTabla({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ evaluacion_id: ev.id, notas }),
         })
-        if (!res.ok) errors++
+        if (!res.ok) {
+          errors++
+          if (!errorMessage) {
+            const data = await res.json().catch(() => null)
+            errorMessage = data?.error ?? data?.message ?? undefined
+          }
+        }
       })
     )
-    return { errors }
+    return { errors, errorMessage }
   }
 
   async function handleSaveAll() {
@@ -317,7 +331,8 @@ export default function CuadernoTabla({
 
     const total = libreraResult.errors + procesoResult.errors
     if (total > 0) {
-      toast.error(`${total} error(es) al guardar`)
+      const msg = libreraResult.errorMessage ?? procesoResult.errorMessage
+      toast.error(msg ? `Error al guardar: ${msg}` : `${total} error(es) al guardar`)
     } else {
       toast.success('Notas guardadas')
     }
@@ -601,7 +616,7 @@ export default function CuadernoTabla({
                               ...prev,
                               [procesoKey(ev.id, alumno.id, dim?.id ?? null)]: e.target.value
                             }))}
-                            readOnly={!!periodoCerrado}
+                            disabled={!!periodoCerrado}
                             className={`h-7 w-20 text-sm text-center mx-auto ${procBg}`}
                             placeholder="—"
                           />

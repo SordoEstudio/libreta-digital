@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -11,14 +10,14 @@ import { toast } from 'sonner'
 
 interface Props {
   instId: string
+  onCreated: () => Promise<void>
 }
 
 interface ItemDraft {
   nombre: string
 }
 
-export default function NuevaPlantillaSheet({ instId }: Props) {
-  const router = useRouter()
+export default function NuevaPlantillaSheet({ instId, onCreated }: Props) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [nombre, setNombre] = useState('')
@@ -67,7 +66,7 @@ export default function NuevaPlantillaSheet({ instId }: Props) {
 
     toast.success('Plantilla creada')
     setOpen(false)
-    router.refresh()
+    await onCreated()
   }
 
   const canSubmit = nombre.trim().length > 0 && items.length > 0 && items.every(i => i.nombre.trim().length > 0)

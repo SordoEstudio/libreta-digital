@@ -1,4 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
+import { redirect } from 'next/navigation'
+import { Button } from '@/components/ui/button'
+import Link from 'next/link'
 
 type Params = { params: Promise<{ conf_id: string }> }
 
@@ -21,7 +24,7 @@ export default async function ConfirmarPage({ params }: Params) {
 
   const { data: conf } = await supabase
     .from('comunicado_confirmaciones')
-    .select('id, confirmed_at, comunicados(titulo, instituciones(nombre))')
+    .select('id, confirmed_at, comunicados(titulo, contenido, instituciones(nombre, slug))')
     .eq('id', conf_id)
     .single()
 
@@ -35,25 +38,49 @@ export default async function ConfirmarPage({ params }: Params) {
 
   const comunicado = Array.isArray(conf.comunicados) ? conf.comunicados[0] : conf.comunicados
   const titulo = comunicado?.titulo
+  const contenido = (comunicado as { contenido?: string } | null)?.contenido ?? null
   const instRaw = comunicado && 'instituciones' in comunicado ? comunicado.instituciones : null
-  const institucion = Array.isArray(instRaw) ? instRaw[0]?.nombre : instRaw?.nombre
+  const instData = Array.isArray(instRaw) ? instRaw[0] : instRaw
+  const institucion = (instData as { nombre?: string } | null)?.nombre
+  const slug = (instData as { slug?: string } | null)?.slug
+  const backHref = slug ? `/dashboard/${slug}` : '/dashboard'
 
   if (conf.confirmed_at) {
     return (
       <ConfirmarLayout titulo={titulo} institucion={institucion}>
-        <p className="text-gray-700">Ya confirmaste la lectura de este comunicado. ¡Gracias!</p>
+        <p className="text-gray-700 mb-6">Ya confirmaste la lectura de este comunicado. ¡Gracias!</p>
+        <Button variant="outline" render={<Link href={backHref} />}>
+          Ir al inicio
+        </Button>
       </ConfirmarLayout>
     )
   }
 
-  await supabase
-    .from('comunicado_confirmaciones')
-    .update({ confirmed_at: new Date().toISOString() })
-    .eq('id', conf_id)
+  async function handleConfirmar() {
+    'use server'
+    const adminClient = createAdminClient()
+    await adminClient
+      .from('comunicado_confirmaciones')
+      .update({ confirmed_at: new Date().toISOString() })
+      .eq('id', conf_id)
+    redirect(`/confirmar/${conf_id}`)
+  }
 
   return (
     <ConfirmarLayout titulo={titulo} institucion={institucion}>
-      <p className="text-gray-700">Gracias por confirmar la lectura.</p>
+      {contenido && (
+        <div className="mb-6 rounded-md bg-gray-50 border border-gray-200 p-4">
+          <p className="text-sm text-gray-700 whitespace-pre-wrap">{contenido}</p>
+        </div>
+      )}
+      <form action={handleConfirmar} className="flex flex-col gap-3">
+        <Button type="submit" className="w-full">
+          Confirmar lectura
+        </Button>
+        <Button variant="outline" render={<Link href={backHref} />}>
+          Volver sin confirmar
+        </Button>
+      </form>
     </ConfirmarLayout>
   )
 }

@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getSession, isSuperadmin, hasAnyRole } from '@/lib/auth'
 import { ok, Err } from '@/lib/api'
 import { logActividad } from '@/lib/actividad'
+import { isCerradoParaCurso, PeriodoCierreOverride } from '@/lib/cierre-periodo'
 
 const BulkRefSchema = z.object({
   evaluacion_ref_id: zId(),
@@ -31,7 +32,7 @@ export async function POST(request: NextRequest) {
 
   const { data: evRef } = await supabase
     .from('evaluaciones_referencia')
-    .select('institucion_id, materia_id, materias(curso_id)')
+    .select('institucion_id, materia_id, periodo_id, materias(curso_id)')
     .eq('id', evaluacion_ref_id)
     .is('deleted_at', null)
     .single()
@@ -42,6 +43,24 @@ export async function POST(request: NextRequest) {
 
   const cursoId = (evRef.materias as { curso_id: string } | null)?.curso_id
   if (!cursoId) return Err.notFound('Materia sin curso asignado')
+
+  if (evRef.periodo_id) {
+    const { data: periodo } = await supabase
+      .from('periodos')
+      .select('cerrado_at')
+      .eq('id', evRef.periodo_id)
+      .is('deleted_at', null)
+      .single()
+    const { data: cierreOverride } = await supabase
+      .from('periodo_cierre_cursos')
+      .select('cerrado_at, publicado_at, abierto_at')
+      .eq('periodo_id', evRef.periodo_id)
+      .eq('curso_id', cursoId)
+      .maybeSingle()
+    if (isCerradoParaCurso(periodo?.cerrado_at ?? null, cierreOverride as PeriodoCierreOverride)) {
+      return Err.conflict('Período cerrado')
+    }
+  }
 
   const { data: inscripciones } = await supabase
     .from('alumno_inscripciones')

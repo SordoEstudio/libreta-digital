@@ -78,8 +78,13 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
       cursoId: m.cursos?.id ?? '',
       añoLectivoId: null as string | null,
     }))
+    .sort((a, b) => {
+      const cursoComp = a.cursoNombre.localeCompare(b.cursoNombre, 'es')
+      if (cursoComp !== 0) return cursoComp
+      return a.nombre.localeCompare(b.nombre, 'es')
+    })
 
-  // Resolve selected materia — default to first materia when no param
+  // Resolve selected materia — default to first materia (sorted by curso then nombre)
   const selectedMateria = materia_id
     ? materias.find(m => m.id === materia_id)
     : (materias[0] ?? null)
@@ -100,6 +105,17 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
         .eq('año_lectivo_id', cursoData.año_lectivo_id)
         .order('orden')
       periodos = (periodoRows ?? []) as Periodo[]
+    }
+  }
+
+  // Auto-redirect to active period when landing with no params
+  if (!materia_id && !periodo_id && selectedMateria && periodos.length > 0) {
+    const activePeriodo =
+      periodos.find(p => p.activo) ??
+      periodos.find(p => !p.cerrado_at) ??
+      periodos[periodos.length - 1]
+    if (activePeriodo) {
+      redirect(`/dashboard/${slug}/cuaderno?materia_id=${selectedMateria.id}&periodo_id=${activePeriodo.id}`)
     }
   }
 

@@ -44,6 +44,7 @@ export default async function ComunicadosPage({ params }: Params) {
       comunicados: {
         id: string
         titulo: string
+        contenido?: string | null
         created_at: string
         deleted_at: string | null
         cursos: { nombre: string } | null
@@ -52,7 +53,7 @@ export default async function ComunicadosPage({ params }: Params) {
     }
     const { data: confsRaw } = await admin
       .from('comunicado_confirmaciones')
-      .select('id, confirmed_at, comunicados(id, titulo, created_at, deleted_at, cursos(nombre), materias(materias_catalogo(nombre)))')
+      .select('id, confirmed_at, comunicados(id, titulo, contenido, created_at, deleted_at, cursos(nombre), materias(materias_catalogo(nombre)))')
       .eq('persona_id', session.persona_id)
       .order('created_at', { ascending: false })
 
@@ -62,6 +63,7 @@ export default async function ComunicadosPage({ params }: Params) {
         confId: c.id,
         confirmed: !!c.confirmed_at,
         titulo: c.comunicados!.titulo,
+        contenido: (c.comunicados as { contenido?: string | null } | null)?.contenido ?? null,
         created_at: c.comunicados!.created_at,
         cursoNombre: (c.comunicados!.cursos as { nombre: string } | null)?.nombre ?? '—',
         materiaNombre: (c.comunicados!.materias as { materias_catalogo: { nombre: string } | null } | null)?.materias_catalogo?.nombre ?? null,
@@ -84,29 +86,34 @@ export default async function ComunicadosPage({ params }: Params) {
         {comunicados.length > 0 ? (
           <div className="flex flex-col gap-2">
             {comunicados.map(c => (
-              <div key={c.confId} className="flex items-start justify-between gap-3 rounded-lg border px-4 py-3">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium leading-snug">{c.titulo}</p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    {c.cursoNombre}
-                    {c.materiaNombre && ` · ${c.materiaNombre}`}
-                    {' · '}
-                    {new Date(c.created_at).toLocaleDateString('es-AR')}
-                  </p>
+              <div key={c.confId} className="flex flex-col gap-2 rounded-lg border px-4 py-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium leading-snug">{c.titulo}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {c.cursoNombre}
+                      {c.materiaNombre && ` · ${c.materiaNombre}`}
+                      {' · '}
+                      {new Date(c.created_at).toLocaleDateString('es-AR')}
+                    </p>
+                  </div>
+                  <div className="shrink-0 flex items-center gap-2">
+                    {c.confirmed ? (
+                      <span className="flex items-center gap-1 text-xs text-emerald-600 font-medium">
+                        <CheckCircle2 className="size-3.5" />
+                        Confirmado
+                      </span>
+                    ) : (
+                      <Button variant="outline" size="sm" render={<Link href={`/confirmar/${c.confId}`} />}>
+                        <Clock data-icon="inline-start" />
+                        Confirmar
+                      </Button>
+                    )}
+                  </div>
                 </div>
-                <div className="shrink-0 flex items-center gap-2">
-                  {c.confirmed ? (
-                    <span className="flex items-center gap-1 text-xs text-emerald-600 font-medium">
-                      <CheckCircle2 className="size-3.5" />
-                      Confirmado
-                    </span>
-                  ) : (
-                    <Button variant="outline" size="sm" render={<Link href={`/confirmar/${c.confId}`} />}>
-                      <Clock data-icon="inline-start" />
-                      Confirmar
-                    </Button>
-                  )}
-                </div>
+                {c.contenido && (
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap border-t pt-2">{c.contenido}</p>
+                )}
               </div>
             ))}
           </div>

@@ -49,13 +49,17 @@ export default async function AsistenciaPage({ params, searchParams }: Props) {
 
   const { data: periodos } = await supabase
     .from('periodos')
-    .select('id, nombre, cerrado_at')
+    .select('id, nombre, activo, cerrado_at')
     .eq('institucion_id', inst.id)
     .is('deleted_at', null)
     .order('orden')
 
   const periodosList = periodos ?? []
-  const periodoId = periodosList.find(p => p.id === periodoParam)?.id ?? periodosList[0]?.id ?? null
+  const defaultPeriodo =
+    periodosList.find(p => p.activo) ??
+    periodosList.find(p => !p.cerrado_at) ??
+    periodosList[periodosList.length - 1]
+  const periodoId = periodosList.find(p => p.id === periodoParam)?.id ?? defaultPeriodo?.id ?? null
   const selectedPeriodo = periodosList.find(p => p.id === periodoId)
 
   const { data: inscripciones } = await supabase

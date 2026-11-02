@@ -1,6 +1,7 @@
 import { requireSession, isSuperadmin, hasRole } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import { notFound, redirect } from 'next/navigation'
+import { refresh } from 'next/cache'
 import { Layers } from 'lucide-react'
 import NuevaPlantillaSheet from './nueva-plantilla-sheet'
 import EliminarPlantillaButton from './eliminar-plantilla-button'
@@ -28,6 +29,11 @@ export default async function DimensionPlantillasPage({ params }: Props) {
 
   if (!isSuperadmin(session) && !hasRole(session, inst.id, 'admin')) notFound()
 
+  async function onPlantillaCreada() {
+    'use server'
+    refresh()
+  }
+
   const { data: plantillas } = await supabase
     .from('dimension_plantillas')
     .select('id, nombre, dimension_plantilla_items(id, nombre, peso, orden)')
@@ -48,7 +54,7 @@ export default async function DimensionPlantillasPage({ params }: Props) {
           <Layers className="size-5 text-muted-foreground" />
           <h1 className="text-xl font-semibold">Plantillas de dimensiones</h1>
         </div>
-        <NuevaPlantillaSheet instId={inst.id} />
+        <NuevaPlantillaSheet instId={inst.id} onCreated={onPlantillaCreada} />
       </div>
 
       {list.length === 0 ? (
