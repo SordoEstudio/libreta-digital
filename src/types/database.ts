@@ -2012,6 +2012,7 @@ export type Database = {
         Returns: {
           has_logged_in: boolean
           persona_id: string
+          auth_provider: string | null
         }[]
       }
       has_any_role: {

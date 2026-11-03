@@ -46,10 +46,12 @@ export default async function PersonalPage({ params }: Params) {
   const personaIds = (memberships ?? []).map(m => (m.personas as PersonaCol)?.id).filter(Boolean) as string[]
 
   const pendienteSet = new Set<string>()
+  const providerMap = new Map<string, string | null>()
   if (personaIds.length > 0) {
     const { data: loginStatus } = await admin.rpc('get_personas_login_status', { p_ids: personaIds })
     for (const row of loginStatus ?? []) {
       if (!row.has_logged_in) pendienteSet.add(row.persona_id)
+      providerMap.set(row.persona_id, row.auth_provider ?? null)
     }
   }
 
@@ -105,6 +107,7 @@ export default async function PersonalPage({ params }: Params) {
               rol: m.rol,
               activo: m.activo,
               pendiente: pendienteSet.has(id),
+              provider: providerMap.get(id) ?? null,
               telefono: persona?.telefono ?? null,
               dni: persona?.dni ?? null,
               direccion: persona?.direccion ?? null,
