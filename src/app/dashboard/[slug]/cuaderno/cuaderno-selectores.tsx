@@ -59,7 +59,6 @@ export default function CuadernoSelectores({
             {periodos.map(p => (
               <option key={p.id} value={p.id}>{p.nombre}</option>
             ))}
-            <option value="__anual__">Anual</option>
           </select>
         </div>
       )}

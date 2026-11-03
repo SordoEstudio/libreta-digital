@@ -14,7 +14,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import type { SessionUser } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/client'
 import {
-  Building2, BarChart3, LayoutDashboard, GraduationCap,
+  Building2, LayoutDashboard, GraduationCap,
   BookOpen, LogOut, Settings, Library, BookMarked, MessageSquare, Layers, NotebookPen,
   FolderOpen, FileText, HelpCircle, ClipboardCheck, UserCog, UsersRound, Activity,
 } from 'lucide-react'
@@ -95,15 +95,6 @@ export function AppSidebar({ session }: AppSidebarProps) {
                   >
                     <Building2 />
                     Instituciones
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    render={<Link href="/dashboard/stats" />}
-                    isActive={pathname === '/dashboard/stats'}
-                  >
-                    <BarChart3 />
-                    Estadísticas
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               </SidebarMenu>
