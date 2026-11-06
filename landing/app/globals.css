@@ -1,0 +1,8 @@
+@import "tailwindcss";
+
+@theme {
+  --color-harvi-dark:       #203143;
+  --color-harvi-green-lime: #cbdf4a;
+  --color-harvi-blue-light: #c5daf3;
+  --color-harvi-grey:       #f7f7f7;
+}
