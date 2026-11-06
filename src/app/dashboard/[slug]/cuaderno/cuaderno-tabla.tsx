@@ -569,7 +569,7 @@ export default function CuadernoTabla({
                             value={valoresLibreta[k] ?? ''}
                             onChange={e => setValoresLibreta(prev => ({ ...prev, [k]: e.target.value }))}
                             disabled={isClosed(ev.periodo_id)}
-                            className={`h-7 w-16 text-center text-xs p-1 ${mainBg}`}
+                            className={`h-7 w-16 text-center text-xs p-1 ${mainBg} disabled:border-transparent disabled:bg-transparent disabled:opacity-100 disabled:shadow-none disabled:cursor-default disabled:text-foreground`}
                             placeholder="—"
                           />
                         </td>
@@ -592,7 +592,7 @@ export default function CuadernoTabla({
                               value={valoresLibreta[rk] ?? ''}
                               onChange={e => setValoresLibreta(prev => ({ ...prev, [rk]: e.target.value }))}
                               disabled={isClosed(ev.periodo_id)}
-                              className={`h-7 w-14 text-center text-xs p-1 ${recupBg}`}
+                              className={`h-7 w-14 text-center text-xs p-1 ${recupBg} disabled:border-transparent disabled:bg-transparent disabled:opacity-100 disabled:shadow-none disabled:cursor-default disabled:text-foreground`}
                               placeholder="—"
                             />
                           )}
@@ -619,7 +619,7 @@ export default function CuadernoTabla({
                               [procesoKey(ev.id, alumno.id, dim?.id ?? null)]: e.target.value
                             }))}
                             disabled={isClosed(ev.periodoId)}
-                            className={`h-7 w-20 text-sm text-center mx-auto ${procBg}`}
+                            className={`h-7 w-20 text-sm text-center mx-auto ${procBg} disabled:border-transparent disabled:bg-transparent disabled:opacity-100 disabled:shadow-none disabled:cursor-default disabled:text-foreground`}
                             placeholder="—"
                           />
                         </td>

@@ -361,7 +361,7 @@ export function NotasEditor({
                             value={dimVal}
                             disabled={!!isCerrado}
                             onChange={e => handleChangeDim(alumno.id, dim.id, e.target.value.toUpperCase() === 'A' ? 'A' : e.target.value)}
-                            className={`w-20 ${isAusenteDim ? 'text-orange-600 font-bold text-center' : ''} ${inputStatusClass}`}
+                            className={`w-20 ${isAusenteDim ? 'text-orange-600 font-bold text-center' : ''} ${inputStatusClass} disabled:border-transparent disabled:bg-transparent disabled:opacity-100 disabled:shadow-none disabled:cursor-default disabled:text-foreground`}
                           />
                         )}
                       </TableCell>
@@ -383,7 +383,7 @@ export function NotasEditor({
                             value={sv}
                             disabled={!!isCerrado}
                             onChange={e => handleChange(alumno.id, e.target.value.toUpperCase() === 'A' ? 'A' : e.target.value)}
-                            className={`w-24 ${sv.toUpperCase() === 'A' ? 'text-orange-600 font-bold text-center' : ''} ${sc}`}
+                            className={`w-24 ${sv.toUpperCase() === 'A' ? 'text-orange-600 font-bold text-center' : ''} ${sc} disabled:border-transparent disabled:bg-transparent disabled:opacity-100 disabled:shadow-none disabled:cursor-default disabled:text-foreground`}
                           />
                         )
                       })()}
@@ -395,7 +395,7 @@ export function NotasEditor({
                         value={observaciones[alumno.id] ?? ''}
                         onChange={e => handleObservacion(alumno.id, e.target.value)}
                         disabled={!!isCerrado || (valores[alumno.id] ?? '').toUpperCase() === 'A'}
-                        className="min-w-40"
+                        className="min-w-40 disabled:border-transparent disabled:bg-transparent disabled:opacity-100 disabled:shadow-none disabled:cursor-default disabled:text-foreground"
                       />
                     </TableCell>
                     {notaAprobacion !== null && (
