@@ -58,10 +58,10 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   const session = await getSession()
   if (!session) return Err.unauthorized()
 
-  const supabase = await createClient()
-  const { data: alumno } = await supabase
+  const admin = createAdminClient()
+  const { data: alumno } = await admin
     .from('alumnos')
-    .select('institucion_id')
+    .select('institucion_id, persona_id')
     .eq('id', id)
     .single()
 
@@ -72,6 +72,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   const parsed = PatchSchema.safeParse(body)
   if (!parsed.success) return Err.validation(parsed.error.issues[0].message)
 
+  const supabase = await createClient()
   const { data, error } = await supabase
     .from('alumnos')
     .update(parsed.data)
@@ -80,5 +81,23 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     .single()
 
   if (error) return Err.server(error.message)
+
+  // Propagate email change to personas + auth.users
+  if (parsed.data.email && alumno.persona_id) {
+    const newEmail = parsed.data.email.trim().toLowerCase()
+
+    const { data: persona } = await admin
+      .from('personas')
+      .select('auth_id')
+      .eq('id', alumno.persona_id)
+      .single()
+
+    await admin.from('personas').update({ email: newEmail }).eq('id', alumno.persona_id)
+
+    if (persona?.auth_id) {
+      await admin.auth.admin.updateUserById(persona.auth_id, { email: newEmail })
+    }
+  }
+
   return ok(data)
 }
