@@ -34,7 +34,7 @@ export async function POST(_req: NextRequest, { params }: Params) {
   // findOrCreate persona
   const { data: existente } = await admin
     .from('personas')
-    .select('id')
+    .select('id, auth_id')
     .eq('email', email)
     .is('deleted_at', null)
     .maybeSingle()
@@ -44,6 +44,16 @@ export async function POST(_req: NextRequest, { params }: Params) {
 
   if (existente) {
     persona_id = existente.id
+    // Persona exists but lost its auth account (e.g. reset flow) — re-create auth user
+    if (!existente.auth_id) {
+      const { data: authData, error: authError } = await admin.auth.admin.createUser({
+        email,
+        email_confirm: true,
+      })
+      if (authError || !authData.user) return Err.server(authError?.message ?? 'Error al crear usuario')
+      await admin.from('personas').update({ auth_id: authData.user.id }).eq('id', persona_id)
+      isNewUser = true
+    }
   } else {
     const { data: authData, error: authError } = await admin.auth.admin.createUser({
       email,
