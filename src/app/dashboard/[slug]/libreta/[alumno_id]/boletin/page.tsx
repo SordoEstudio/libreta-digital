@@ -54,7 +54,7 @@ export default async function BoletinPage({ params }: Params) {
 
   const { data: alumno } = await supabase
     .from('alumnos')
-    .select('id, nombre, apellido, activo, alumno_inscripciones(curso_id, activo, deleted_at)')
+    .select('id, nombre, apellido, activo')
     .eq('id', alumno_id)
     .eq('institucion_id', inst.id)
     .single()
@@ -136,15 +136,20 @@ export default async function BoletinPage({ params }: Params) {
     dimensions: Map<string, Dimension>
   }
 
-  // Fetch per-curso overrides for the alumno's active course (used by responsables)
-  type InscripcionItem = { curso_id: string; activo: boolean; deleted_at: string | null }
-  const activaInsc = ((alumno.alumno_inscripciones ?? []) as InscripcionItem[])
-    .find(i => i.activo && !i.deleted_at)
-  const cursoBoletin = activaInsc?.curso_id ?? null
+  // Fetch per-curso overrides — use admin client: alumno_inscripciones RLS blocks responsables
+  const adminBoletin = createAdminClient()
+  const { data: inscripcionActiva } = await adminBoletin
+    .from('alumno_inscripciones')
+    .select('curso_id')
+    .eq('alumno_id', alumno_id)
+    .eq('activo', true)
+    .is('deleted_at', null)
+    .maybeSingle()
+  const cursoBoletin = inscripcionActiva?.curso_id ?? null
 
   let overrideByPeriodo = new Map<string, PeriodoCierreOverride>()
   if (cursoBoletin) {
-    const { data: overrides } = await supabase
+    const { data: overrides } = await adminBoletin
       .from('periodo_cierre_cursos')
       .select('periodo_id, cerrado_at, publicado_at, abierto_at')
       .eq('curso_id', cursoBoletin)
@@ -157,11 +162,11 @@ export default async function BoletinPage({ params }: Params) {
   let añoLectivoId: string | null = null
   let cursoNombre: string | undefined
   let añoNombre: string | undefined
-  if (activaInsc?.curso_id) {
+  if (cursoBoletin) {
     const { data: cursoRow } = await supabase
       .from('cursos')
       .select('*')
-      .eq('id', activaInsc.curso_id)
+      .eq('id', cursoBoletin)
       .single()
     cursoNombre = cursoRow?.nombre
     añoLectivoId = cursoRow?.año_lectivo_id ?? null
