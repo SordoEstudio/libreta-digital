@@ -148,6 +148,7 @@ export default function CuadernoTabla({
   const [expandedAlumnoId, setExpandedAlumnoId] = useState<string | null>(null)
   const [obsTextos, setObsTextos] = useState<Record<string, string>>(() => observacionesMap ?? {})
   const [savingObsId, setSavingObsId] = useState<string | null>(null)
+  const periodoCerrado = (closedPeriodoIds?.size ?? 0) > 0
 
   // Libreta state — notasMap keys are `${alumnoId}::${dimId|'__'}`, procesoKey = `${evalId}::${alumnoId}::${dimId|'__'}`
   const [valoresLibreta, setValoresLibreta] = useState<Record<string, string>>(() => {
@@ -639,19 +640,19 @@ export default function CuadernoTabla({
                   {/* Obs cell */}
                   {observacionesMap !== undefined && (
                     <td
-                      className="px-2 py-1 border-l cursor-pointer hover:bg-muted/30 transition-colors"
-                      onClick={() => setExpandedAlumnoId(expandedAlumnoId === alumno.id ? null : alumno.id)}
+                      className={`px-2 py-1 border-l ${periodoCerrado ? 'cursor-default' : 'cursor-pointer hover:bg-muted/30 transition-colors'}`}
+                      onClick={() => { if (!periodoCerrado) setExpandedAlumnoId(expandedAlumnoId === alumno.id ? null : alumno.id) }}
                     >
                       {obsTextos[alumno.id]
                         ? <span className="text-xs text-muted-foreground line-clamp-1 block max-w-[96px]">{obsTextos[alumno.id]}</span>
-                        : <MessageSquarePlus className="size-3.5 text-muted-foreground/30 mx-auto" />
+                        : !periodoCerrado && <MessageSquarePlus className="size-3.5 text-muted-foreground/30 mx-auto" />
                       }
                     </td>
                   )}
                 </tr>
               )
 
-              if (observacionesMap === undefined || expandedAlumnoId !== alumno.id) return row
+              if (observacionesMap === undefined || expandedAlumnoId !== alumno.id || periodoCerrado) return row
 
               return [row,
                 <tr key={`obs-expanded::${alumno.id}`}>
