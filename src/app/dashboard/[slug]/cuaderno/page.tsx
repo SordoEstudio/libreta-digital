@@ -139,6 +139,23 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
     ? isCerradoParaCurso(selectedPeriodo.cerrado_at, cierreOverride)
     : false
 
+  let closedPeriodoIds = new Set<string>()
+  if (isTodos && selectedMateria?.cursoId && periodos.length > 0) {
+    const { data: allOverrides } = await supabase
+      .from('periodo_cierre_cursos')
+      .select('periodo_id, cerrado_at, publicado_at, abierto_at')
+      .eq('curso_id', selectedMateria.cursoId)
+      .in('periodo_id', periodos.map(p => p.id))
+    const overrideMap = new Map((allOverrides ?? []).map(o => [o.periodo_id, o]))
+    for (const p of periodos) {
+      if (isCerradoParaCurso(p.cerrado_at, overrideMap.get(p.id) ?? null)) {
+        closedPeriodoIds.add(p.id)
+      }
+    }
+  } else if (selectedPeriodo && periodoCerrado) {
+    closedPeriodoIds.add(selectedPeriodo.id)
+  }
+
   // Fetch unidades for the selected materia
   type Unidad = { id: string; nombre: string; orden: number; fecha_inicio: string | null; fecha_fin: string | null }
   const { data: unidadesRaw } = selectedMateria
@@ -155,6 +172,7 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
     id: string
     nombre: string
     tipo: string
+    periodo_id: string | null
     dimensionIds: string[]
     dimensiones: Array<{ id: string; nombre: string; orden: number }>
     notasMap: Record<string, string>
@@ -181,7 +199,7 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
       notasMap: Record<string, string>
     }>
     allMaterialDims: Array<{ id: string; nombre: string; orden: number }>
-    periodoCerrado: boolean
+    closedPeriodoIds: Set<string>
     evalsLibreta: EvalLibretaCol[]
     notaAprobacion: number | null
     observacionesMap?: Record<string, string>
@@ -346,6 +364,7 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
         id: ev.id,
         nombre: ev.nombre,
         tipo: ev.tipo,
+        periodo_id: ev.periodo_id ?? null,
         dimensionIds: (ev.evaluacion_dimensiones as Array<{ dimension_id: string }>).map(d => d.dimension_id),
         dimensiones: dims,
         notasMap: notasByEval.get(ev.id) ?? {},
@@ -377,7 +396,7 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
       alumnos,
       evalRefs,
       allMaterialDims,
-      periodoCerrado,
+      closedPeriodoIds,
       evalsLibreta,
       notaAprobacion,
       observacionesMap,
@@ -442,7 +461,7 @@ export default async function CuadernoPage({ params, searchParams }: Params) {
             periodos={periodos}
             todasDimensiones={tableData.allMaterialDims}
             todasUnidades={unidades.map(u => ({ id: u.id, nombre: u.nombre }))}
-            periodoCerrado={tableData.periodoCerrado}
+            closedPeriodoIds={tableData.closedPeriodoIds}
             evalsLibreta={tableData.evalsLibreta}
             notaAprobacion={tableData.notaAprobacion}
             observacionesMap={tableData.observacionesMap}

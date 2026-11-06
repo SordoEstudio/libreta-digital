@@ -30,6 +30,7 @@ interface EvalLibretaColTabla {
   id: string
   nombre: string
   tipo: string
+  periodo_id: string | null
   dimensionIds: string[]
   dimensiones: Dimension[]
   notasMap: Record<string, string>
@@ -51,7 +52,7 @@ interface Props {
   periodos: Periodo[]
   todasDimensiones: Dimension[]
   todasUnidades: Unidad[]
-  periodoCerrado?: boolean
+  closedPeriodoIds?: Set<string>
   evalsLibreta?: EvalLibretaColTabla[]
   notaAprobacion?: number | null
   observacionesMap?: Record<string, string>
@@ -99,13 +100,14 @@ export default function CuadernoTabla({
   periodos,
   todasDimensiones,
   todasUnidades,
-  periodoCerrado,
+  closedPeriodoIds,
   evalsLibreta,
   notaAprobacion,
   observacionesMap,
   slug,
 }: Props) {
   const router = useRouter()
+  const isClosed = (periodoId: string | null) => periodoId != null && (closedPeriodoIds?.has(periodoId) ?? false)
 
   const unitColorMap = useMemo(() => {
     const m: Record<string, string> = {}
@@ -420,7 +422,7 @@ export default function CuadernoTabla({
               <th className="min-w-44 sticky left-0 bg-muted" />
               {showLibreta && (evalsLibreta ?? []).length > 0 && (
                 <th colSpan={libretaColCount} className="text-xs font-semibold text-sky-700 bg-sky-50/50 px-2 py-1 text-left border-b">
-                  Libreta {periodoCerrado && <span className="ml-1 text-[10px] font-normal text-amber-600">(período cerrado)</span>}
+                  Libreta {(evalsLibreta ?? []).length > 0 && (evalsLibreta ?? []).every(ev => isClosed(ev.periodo_id)) && <span className="ml-1 text-[10px] font-normal text-amber-600">(período cerrado)</span>}
                 </th>
               )}
               {showProceso && evalRefsFiltradas.length > 0 && (
@@ -566,7 +568,7 @@ export default function CuadernoTabla({
                           <Input
                             value={valoresLibreta[k] ?? ''}
                             onChange={e => setValoresLibreta(prev => ({ ...prev, [k]: e.target.value }))}
-                            disabled={!!periodoCerrado}
+                            disabled={isClosed(ev.periodo_id)}
                             className={`h-7 w-16 text-center text-xs p-1 ${mainBg}`}
                             placeholder="—"
                           />
@@ -589,7 +591,7 @@ export default function CuadernoTabla({
                             <Input
                               value={valoresLibreta[rk] ?? ''}
                               onChange={e => setValoresLibreta(prev => ({ ...prev, [rk]: e.target.value }))}
-                              disabled={!!periodoCerrado}
+                              disabled={isClosed(ev.periodo_id)}
                               className={`h-7 w-14 text-center text-xs p-1 ${recupBg}`}
                               placeholder="—"
                             />
@@ -616,7 +618,7 @@ export default function CuadernoTabla({
                               ...prev,
                               [procesoKey(ev.id, alumno.id, dim?.id ?? null)]: e.target.value
                             }))}
-                            disabled={!!periodoCerrado}
+                            disabled={isClosed(ev.periodoId)}
                             className={`h-7 w-20 text-sm text-center mx-auto ${procBg}`}
                             placeholder="—"
                           />
@@ -714,7 +716,7 @@ export default function CuadernoTabla({
 
       {(showProceso || (evalsLibreta ?? []).length > 0) && (
         <div className="flex justify-end">
-          <Button onClick={handleSaveAll} disabled={saving || !!periodoCerrado} size="sm">
+          <Button onClick={handleSaveAll} disabled={saving || ((closedPeriodoIds?.size ?? 0) > 0 && (evalsLibreta ?? []).every(ev => isClosed(ev.periodo_id)) && evalRefs.every(ev => isClosed(ev.periodoId)))} size="sm">
             {saving
               ? <><Loader2 data-icon="inline-start" className="animate-spin size-3.5" />Guardando...</>
               : <><Save data-icon="inline-start" className="size-3.5" />Guardar notas</>
