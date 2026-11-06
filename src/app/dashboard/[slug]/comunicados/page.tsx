@@ -104,7 +104,7 @@ export default async function ComunicadosPage({ params }: Params) {
                         Confirmado
                       </span>
                     ) : (
-                      <Button variant="outline" size="sm" render={<Link href={`/confirmar/${c.confId}`} />}>
+                      <Button size="sm" render={<Link href={`/confirmar/${c.confId}`} />}>
                         <Clock data-icon="inline-start" />
                         Confirmar
                       </Button>

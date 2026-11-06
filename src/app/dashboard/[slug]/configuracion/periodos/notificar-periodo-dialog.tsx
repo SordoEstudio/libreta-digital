@@ -41,7 +41,7 @@ export default function NotificarPeriodoDialog({ instId, periodoId, periodoNombr
 
   return (
     <AlertDialog>
-      <AlertDialogTrigger render={<Button variant="outline" size="sm" disabled={loading} />}>
+      <AlertDialogTrigger render={<Button size="sm" disabled={loading} />}>
         {loading ? (
           <Loader2 data-icon="inline-start" className="animate-spin" />
         ) : (

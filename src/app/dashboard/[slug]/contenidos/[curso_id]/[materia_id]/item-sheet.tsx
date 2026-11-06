@@ -144,7 +144,7 @@ export default function ItemSheet(props: Props) {
   return (
     <>
       {props.mode === 'create' ? (
-        <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
+        <Button size="sm" onClick={() => setOpen(true)}>
           <Plus data-icon="inline-start" />
           Agregar material
         </Button>

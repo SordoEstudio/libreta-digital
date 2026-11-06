@@ -41,7 +41,7 @@ export default function PublicarAñoButton({ instId, añoId, añoNombre }: Props
 
   return (
     <AlertDialog>
-      <AlertDialogTrigger render={<Button variant="outline" size="sm" disabled={loading} />}>
+      <AlertDialogTrigger render={<Button size="sm" disabled={loading} />}>
         {loading ? <Loader2 data-icon="inline-start" className="animate-spin" /> : <Globe data-icon="inline-start" />}
         Publicar boletín anual
       </AlertDialogTrigger>

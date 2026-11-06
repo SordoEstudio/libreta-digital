@@ -265,7 +265,7 @@ export default function ContenidosEditor({ unidades: initialUnidades, dimensione
                 />
               </div>
             ) : (
-              <Button variant="outline" onClick={() => setAddingUnidad(true)}>
+              <Button onClick={() => setAddingUnidad(true)}>
                 <Plus data-icon="inline-start" />
                 Nueva unidad
               </Button>

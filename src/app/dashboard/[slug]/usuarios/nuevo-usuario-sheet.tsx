@@ -256,7 +256,6 @@ export default function NuevoUsuarioSheet({ instId, roles, buttonLabel, sheetTit
                     <Button
                       onClick={handleAsignar}
                       disabled={asignando || alumnosSeleccionados.size === 0}
-                      variant="outline"
                     >
                       {asignando && <Loader2 data-icon="inline-start" className="animate-spin" />}
                       {asignando ? 'Asignando...' : `Asignar ${alumnosSeleccionados.size > 0 ? `(${alumnosSeleccionados.size})` : ''}`}

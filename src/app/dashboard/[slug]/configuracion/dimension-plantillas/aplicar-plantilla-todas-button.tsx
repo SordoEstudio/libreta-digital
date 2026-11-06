@@ -40,10 +40,9 @@ export default function AplicarPlantillaTodas({ plantillaId, plantillaNombre }: 
       <AlertDialogTrigger
         render={
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
             disabled={loading}
-            className="text-muted-foreground hover:text-foreground"
           />
         }
       >

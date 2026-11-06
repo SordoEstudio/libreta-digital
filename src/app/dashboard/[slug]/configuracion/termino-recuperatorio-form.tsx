@@ -44,7 +44,6 @@ export default function TerminoRecuperatorioForm({ instId, value }: Props) {
         placeholder="Ej: Recuperatorio"
       />
       <Button
-        variant="outline"
         size="sm"
         onClick={handleSave}
         disabled={loading || !termino.trim() || termino.trim() === value}

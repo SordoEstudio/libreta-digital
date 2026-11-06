@@ -62,7 +62,6 @@ export default function DirectorForm({ instId, directorNombre, directorCargo }: 
         />
       </div>
       <Button
-        variant="outline"
         size="sm"
         onClick={handleSave}
         disabled={loading || unchanged}

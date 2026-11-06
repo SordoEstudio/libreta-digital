@@ -552,7 +552,7 @@ export default function AlumnoConfigSheet({ alumnoId, alumnoNombre, instId, open
                             placeholder="Relación (opcional)"
                             className="text-sm"
                           />
-                          <Button type="submit" size="sm" variant="outline" disabled={adding || !addId}>
+                          <Button type="submit" size="sm" disabled={adding || !addId}>
                             {adding && <Loader2 data-icon="inline-start" className="animate-spin" />}
                             <Plus className="size-4" />
                             {adding ? 'Asignando...' : 'Asignar'}

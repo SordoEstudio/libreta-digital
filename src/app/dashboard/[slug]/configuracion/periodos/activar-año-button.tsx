@@ -35,7 +35,7 @@ export default function ActivarAñoButton({ añoId }: Props) {
   }
 
   return (
-    <Button variant="outline" size="sm" onClick={handleActivar} disabled={loading}>
+    <Button size="sm" onClick={handleActivar} disabled={loading}>
       {loading && <Loader2 data-icon="inline-start" className="animate-spin" />}
       Activar
     </Button>
