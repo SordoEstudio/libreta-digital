@@ -313,7 +313,7 @@ export default function CuadernoTabla({
           errors++
           if (!errorMessage) {
             const data = await res.json().catch(() => null)
-            errorMessage = data?.error ?? data?.message ?? undefined
+            errorMessage = data?.error?.message ?? data?.message ?? undefined
           }
         }
       })
