@@ -359,7 +359,7 @@ export function NotasEditor({
                             type="text"
                             placeholder="—"
                             value={dimVal}
-                            readOnly={isCerrado}
+                            disabled={!!isCerrado}
                             onChange={e => handleChangeDim(alumno.id, dim.id, e.target.value.toUpperCase() === 'A' ? 'A' : e.target.value)}
                             className={`w-20 ${isAusenteDim ? 'text-orange-600 font-bold text-center' : ''} ${inputStatusClass}`}
                           />
@@ -381,7 +381,7 @@ export function NotasEditor({
                             type="text"
                             placeholder="—"
                             value={sv}
-                            readOnly={isCerrado}
+                            disabled={!!isCerrado}
                             onChange={e => handleChange(alumno.id, e.target.value.toUpperCase() === 'A' ? 'A' : e.target.value)}
                             className={`w-24 ${sv.toUpperCase() === 'A' ? 'text-orange-600 font-bold text-center' : ''} ${sc}`}
                           />
@@ -393,9 +393,8 @@ export function NotasEditor({
                         type="text"
                         placeholder="—"
                         value={observaciones[alumno.id] ?? ''}
-                        readOnly={isCerrado}
                         onChange={e => handleObservacion(alumno.id, e.target.value)}
-                        disabled={(valores[alumno.id] ?? '').toUpperCase() === 'A'}
+                        disabled={!!isCerrado || (valores[alumno.id] ?? '').toUpperCase() === 'A'}
                         className="min-w-40"
                       />
                     </TableCell>
