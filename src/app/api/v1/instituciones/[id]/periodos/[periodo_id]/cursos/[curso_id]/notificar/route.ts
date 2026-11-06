@@ -4,6 +4,8 @@ import { getSession, isSuperadmin, hasRole } from '@/lib/auth'
 import { ok, Err } from '@/lib/api'
 import { sendCierrePeriodo } from '@/lib/email'
 import { logActividad } from '@/lib/actividad'
+import { isCerradoParaCurso } from '@/lib/cierre-periodo'
+import type { PeriodoCierreOverride } from '@/lib/cierre-periodo'
 
 type Params = { params: Promise<{ id: string; periodo_id: string; curso_id: string }> }
 
@@ -24,7 +26,18 @@ export async function POST(_request: NextRequest, { params }: Params) {
     .single()
   if (periodoErr || !periodoRaw) return Err.notFound('Período no encontrado')
   const periodo = periodoRaw as { id: string; nombre: string; cerrado_at: string | null }
-  if (!periodo.cerrado_at) return Err.validation('El período debe estar cerrado antes de notificar')
+
+  // Check per-course override (individual course close takes precedence)
+  const { data: override } = await supabase
+    .from('periodo_cierre_cursos')
+    .select('cerrado_at, publicado_at, abierto_at')
+    .eq('periodo_id', periodo_id)
+    .eq('curso_id', curso_id)
+    .maybeSingle()
+
+  if (!isCerradoParaCurso(periodo.cerrado_at, override as PeriodoCierreOverride ?? null)) {
+    return Err.validation('El período debe estar cerrado antes de notificar')
+  }
 
   const { data: inst } = await supabase
     .from('instituciones')
