@@ -6,7 +6,6 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getSession, isSuperadmin, hasAnyRole, hasRole } from '@/lib/auth'
 import { ok, created, Err } from '@/lib/api'
 import { CreateComunicadoSchema, deduplicarResponsables } from '@/lib/comunicados'
-import { sendComunicadoBatch } from '@/lib/email'
 
 export async function POST(request: NextRequest) {
   const session = await getSession()
@@ -92,8 +91,6 @@ export async function POST(request: NextRequest) {
     .single()
 
   const institucion_nombre = inst?.nombre ?? 'Libreta Digital'
-  const logo_url = inst?.logo_rectangular_url ?? undefined
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
 
   // ── Resolve target courses ─────────────────────────────────────────────────
   let targetCursoIds: string[]
@@ -225,28 +222,6 @@ export async function POST(request: NextRequest) {
   // ── Mark as sent ───────────────────────────────────────────────────────────
   const now = new Date().toISOString()
   await supabase.from('comunicados').update({ enviado_at: now }).in('id', comunicadoIds)
-
-  // ── Fetch real confirmacion ids for email links ────────────────────────────
-  const { data: createdConfs } = await adminSupabase
-    .from('comunicado_confirmaciones')
-    .select('id, persona_id')
-    .in('comunicado_id', comunicadoIds)
-
-  const confByPersona = new Map((createdConfs ?? []).map(c => [c.persona_id, c.id]))
-
-  void sendComunicadoBatch(
-    responsables
-      .map(r => {
-        const confId = confByPersona.get(r.persona_id)
-        if (!confId) return null
-        return {
-          email: r.email,
-          props: { titulo, contenido, institucion_nombre, confirm_url: `${appUrl}/confirmar/${confId}`, logo_url },
-          confId,
-        }
-      })
-      .filter((x): x is NonNullable<typeof x> => x !== null)
-  )
 
   return created({
     ids: comunicadoIds,
